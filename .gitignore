@@ -1,3 +1,9 @@
+# Models
+*.obj
+*.bin
+*.ply
+*.mtl
+
 # Prerequisites
 *.d
 
@@ -5,7 +11,6 @@
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -30,3 +35,9 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio	
+.vs/*
+MeshFragments/Debug/*
+MeshFragments/Release/*
+MeshFragments/x64/*
