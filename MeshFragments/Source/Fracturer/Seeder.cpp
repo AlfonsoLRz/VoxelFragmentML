@@ -13,7 +13,7 @@ namespace fracturer {
             {
                 glm::vec3 f = frags[i];
                 glm::vec3 s = glm::vec3(seed);
-                float distance;
+                float distance = .0f;
 
                 switch (dfunc) {
                 case EUCLIDEAN_DISTANCE:
@@ -39,12 +39,7 @@ namespace fracturer {
         }
     }
 
-    std::vector<glm::uvec4> Seeder::uniform(const vox::Space& space, unsigned int nseeds) {
-        // Check MAX_SEEDS
-        if (nseeds > MAX_SEEDS)
-            throw TooManySeedsError("Max number of seeds surpassed (" +
-                std::to_string(nseeds) + " > " + std::to_string(MAX_SEEDS) + ")");
-
+    std::vector<glm::uvec4> Seeder::uniform(const RegularGrid& grid, unsigned int nseeds) {
         // Custom glm::uvec3 comparator
         auto comparator = [](const glm::uvec3& lhs, const glm::uvec3& rhs) {
             if      (lhs.x != rhs.x) return lhs.x < rhs.x;
@@ -65,14 +60,13 @@ namespace fracturer {
                     std::to_string(MAX_TRIES) + ")");
 
             // Generate random seed
-            int x = rand() % space.dims().x;
-            int y = rand() % space.dims().y;
-            int z = rand() % space.dims().z;
-
+            int x = rand() % grid.getNumSubdivisions().x;
+            int y = rand() % grid.getNumSubdivisions().y;
+            int z = rand() % grid.getNumSubdivisions().z;
             glm::uvec3 voxel(x, y, z);
 
             // Is occupied the voxel?
-            bool occupied = space.isOccupied(x, y, z);
+            bool occupied = grid.isOccupied(x, y, z);
 
             // Is repeated?
             bool isFree = seeds.find(voxel) == seeds.end();
@@ -87,7 +81,8 @@ namespace fracturer {
         std::vector<glm::uvec4> ret;
 
         // Generate array of seed
-        unsigned int nseed = 2; // 2 because first seed id must be greater than 1
+        unsigned int nseed = VOXEL_FREE + 1;         // 2 because first seed id must be greater than 1
+    	
         for (glm::uvec3 seed : seeds)
             ret.push_back(glm::uvec4(seed, nseed++));
 

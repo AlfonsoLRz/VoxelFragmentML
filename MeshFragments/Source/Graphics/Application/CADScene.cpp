@@ -149,7 +149,7 @@ void CADScene::loadModels()
 
 		_aabbRenderer = new AABBSet(aabbs);
 		_aabbRenderer->load();
-		_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
+		_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
 	}
 }
 

@@ -2,22 +2,24 @@
 #include "NaiveFracturer.h"
 
 namespace fracturer {
+	// [Public methods]
+	
     NaiveFracturer::NaiveFracturer() : _dfunc(EUCLIDEAN_DISTANCE), _spaceTexture(0)
     {
 	    
     }
 
-    void NaiveFracturer::removeIsolatedRegions(vox::Space& space, const std::vector<glm::uvec4>& seeds)
+    void NaiveFracturer::removeIsolatedRegions(RegularGrid& grid, const std::vector<glm::uvec4>& seeds)
 	{
         // Final 3D image
-        vox::Space dest(space.dims().x, space.dims().y, space.dims().z);
+        RegularGrid newGrid (grid.getNumSubdivisions());
 
         // Linked list where to push/pop voxels
         std::list<glm::uvec4> front(seeds.begin(), seeds.end());
 
         for (glm::uvec4 seed : seeds) 
         {
-            dest.set(seed.x, seed.y, seed.z, seed.w);
+            newGrid.set(seed.x, seed.y, seed.z, seed.w);
             //std::cout << seed.x << ", " << seed.y << ", " << seed.z << ", " << seed.w << std::endl;
         }
 
@@ -28,10 +30,10 @@ namespace fracturer {
 
             // Expand front
             #define expand(dx, dy, dz)\
-                if (space.at(v.x + (dx), v.y + (dy), v.z + (dz)) ==\
-                    v.w && dest.at(v.x + (dx), v.y +(dy), v.z + (dz)) == vox::Space::VOXEL_EMPTY) {\
+                if (grid.at(v.x + (dx), v.y + (dy), v.z + (dz)) ==\
+                    v.w && newGrid.at(v.x + (dx), v.y +(dy), v.z + (dz)) == VOXEL_EMPTY) {\
                     front.push_back(glm::uvec4(v.x + (dx), v.y + (dy), v.z + (dz), v.w));\
-                    dest.set(v.x + (dx), v.y + (dy), v.z + (dz), v.w);\
+                    newGrid.set(v.x + (dx), v.y + (dy), v.z + (dz), v.w);\
                 }
 
             // Remove from list
@@ -46,91 +48,94 @@ namespace fracturer {
         }
 
         // Move operator
-        space = std::move(dest);
+        grid = std::move(newGrid);
     }
 
     void NaiveFracturer::init() {
         // Create and compile the buffers
-        _seedsBuffer.create();
-        _spaceBuffer.create();
+        //_seedsBuffer.create();
+        //_spaceBuffer.create();
 
-        // Generate space texture and link with space buffer
-        glGenTextures(1, &_spaceTexture);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_BUFFER, _spaceTexture);
+        //// Generate space texture and link with space buffer
+        //glGenTextures(1, &_spaceTexture);
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_BUFFER, _spaceTexture);
 
-        // Create voronoi compute shaders
-        opengl::ShaderObject comp(GL_COMPUTE_SHADER,
-            #include "shaders/Naive.comp"
-        );
+        //// Create voronoi compute shaders
+        //opengl::ShaderObject comp(GL_COMPUTE_SHADER,
+        //    #include "shaders/Naive.comp"
+        //);
 
-        comp.create();
-        comp.compile();
+        //comp.create();
+        //comp.compile();
 
-        std::cout << comp.getCompileLog() << std::endl;
+        //std::cout << comp.getCompileLog() << std::endl;
 
-        // Create shaders program
-        _program.create();
-        _program.attach(comp);
-        _program.link();
+        //// Create shaders program
+        //_program.create();
+        //_program.attach(comp);
+        //_program.link();
 
-        // Destroy shaders object
-        comp.destroy();
+        //// Destroy shaders object
+        //comp.destroy();
     }
 
-    void NaiveFracturer::destroy() {
-        _seedsBuffer.destroy();
-        _spaceBuffer.destroy();
-        _program.destroy();
+    void NaiveFracturer::destroy()
+	{
+        //_seedsBuffer.destroy();
+        //_spaceBuffer.destroy();
+        //_program.destroy();
     }
 
-    void NaiveFracturer::build(vox::Space &space, const std::vector<glm::uvec4>& seeds) {
+    void NaiveFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds)
+	{
         // Prepare uniforms
-        const glm::uvec3 size(space.size().y * space.size().z, space.size().z, 1);
-        const glm::uvec3 dim = space.dims();
+        //const glm::uvec3 size(space.size().y * space.size().z, space.size().z, 1);
+        //const glm::uvec3 dim = space.dims();
 
-        // Use program and set uniforms
-        _program.use();
-        _program.uniform("nseeds",          GLuint(seeds.size()));
-        _program.uniform("size",            size);
-        _program.uniform("dim",             dim);
-        _program.uniform("voxspaceSampler", GLint(0)); // Texture unit zero
-        glUniformSubroutinesuiv(GL_COMPUTE_SHADER, 1, (GLuint*)&_dfunc);
+        //// Use program and set uniforms
+        //_program.use();
+        //_program.uniform("nseeds",          GLuint(seeds.size()));
+        //_program.uniform("size",            size);
+        //_program.uniform("dim",             dim);
+        //_program.uniform("voxspaceSampler", GLint(0)); // Texture unit zero
+        //glUniformSubroutinesuiv(GL_COMPUTE_SHADER, 1, (GLuint*)&_dfunc);
 
-        // Set Seeds data
-        _seedsBuffer.bind();
-        _seedsBuffer.setData(seeds.data(), seeds.size() * sizeof(glm::uvec4), GL_STATIC_READ);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, _seedsBuffer.getHandler());
+        //// Set Seeds data
+        //_seedsBuffer.bind();
+        //_seedsBuffer.setData(seeds.data(), seeds.size() * sizeof(glm::uvec4), GL_STATIC_READ);
+        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, _seedsBuffer.getHandler());
 
-        // Set space data
-        _spaceBuffer.bind();
-        _spaceBuffer.setData(space.data(), space.length(), GL_DYNAMIC_DRAW);
+        //// Set space data
+        //_spaceBuffer.bind();
+        //_spaceBuffer.setData(space.data(), space.length(), GL_DYNAMIC_DRAW);
 
-        // Bind texture
-        glTexBuffer(GL_TEXTURE_BUFFER, GL_R8UI, _spaceBuffer.getHandler());
-        glBindImageTexture(3, _spaceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8UI);
+        //// Bind texture
+        //glTexBuffer(GL_TEXTURE_BUFFER, GL_R8UI, _spaceBuffer.getHandler());
+        //glBindImageTexture(3, _spaceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8UI);
 
-        // Compute number of work groups
-        GLuint workGroupsX = GLuint(std::ceil(space.dims().x / 8.0f));
-        GLuint workGroupsY = GLuint(std::ceil(space.dims().y / 8.0f));
-        GLuint workGroupsZ = GLuint(std::ceil(space.dims().z / 8.0f));
+        //// Compute number of work groups
+        //GLuint workGroupsX = GLuint(std::ceil(space.dims().x / 8.0f));
+        //GLuint workGroupsY = GLuint(std::ceil(space.dims().y / 8.0f));
+        //GLuint workGroupsZ = GLuint(std::ceil(space.dims().z / 8.0f));
 
-        // Dispatch compute shader and wait until finalization
-        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        //// Dispatch compute shader and wait until finalization
+        //glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-        // Unbind buffers
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-        glBindImageTexture(1, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R8UI);
+        //// Unbind buffers
+        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+        //glBindImageTexture(1, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R8UI);
 
-        // Read back result
-        glBindBuffer(GL_TEXTURE_BUFFER, _spaceBuffer.getHandler());
-        uint8_t* ptr = (uint8_t*) glMapBuffer(GL_TEXTURE_BUFFER, GL_READ_ONLY);
-        memcpy(space.data(), ptr, space.length());
-        glUnmapBuffer(GL_TEXTURE_BUFFER);
+        //// Read back result
+        //glBindBuffer(GL_TEXTURE_BUFFER, _spaceBuffer.getHandler());
+        //uint8_t* ptr = (uint8_t*) glMapBuffer(GL_TEXTURE_BUFFER, GL_READ_ONLY);
+        //memcpy(space.data(), ptr, space.length());
+        //glUnmapBuffer(GL_TEXTURE_BUFFER);
     }
 
-    void NaiveFracturer::setDistanceFunction(DistanceFunction dfunc) {
+    void NaiveFracturer::setDistanceFunction(DistanceFunction dfunc)
+	{
         _dfunc = dfunc;
     }
 }
