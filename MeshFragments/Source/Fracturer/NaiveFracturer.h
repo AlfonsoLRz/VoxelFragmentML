@@ -13,12 +13,19 @@ namespace fracturer {
     class NaiveFracturer : public Singleton<NaiveFracturer>, public Fracturer
 	{
         friend class Singleton<NaiveFracturer>;
-    	
+
+    protected:
+        /**
+        *   @brief Constructor.
+        */
         NaiveFracturer();
-        ~NaiveFracturer() = default;
 
     public:
-
+    	/**
+    	*   @brief Destructor. 
+    	*/
+        ~NaiveFracturer() {};
+    	
         /**
         *   Remove isolated regions.
         *   @param[inout] grid Space where we want to remove isolated regions
@@ -41,7 +48,7 @@ namespace fracturer {
         *   @param[in] grid Volumetric space we want to split into fragments
         *   @param[in] seed  Seeds used to generate fragments
         */
-        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds);
+        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer);
 
         /**
         *   Set distance funcion.

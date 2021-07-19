@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "NaiveFracturer.h"
 
+#include "Graphics/Core/ShaderList.h"
+
 namespace fracturer {
 	// [Public methods]
 	
@@ -87,51 +89,31 @@ namespace fracturer {
         //_program.destroy();
     }
 
-    void NaiveFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds)
+    void NaiveFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer)
 	{
-        // Prepare uniforms
-        //const glm::uvec3 size(space.size().y * space.size().z, space.size().z, 1);
-        //const glm::uvec3 dim = space.dims();
+        ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::NAIVE_FRACTURER);
 
-        //// Use program and set uniforms
-        //_program.use();
-        //_program.uniform("nseeds",          GLuint(seeds.size()));
-        //_program.uniform("size",            size);
-        //_program.uniform("dim",             dim);
-        //_program.uniform("voxspaceSampler", GLint(0)); // Texture unit zero
-        //glUniformSubroutinesuiv(GL_COMPUTE_SHADER, 1, (GLuint*)&_dfunc);
+        // Input data
+        uvec3 numDivs = grid.getNumSubdivisions();
+        unsigned numThreads = numDivs.x * numDivs.y * numDivs.z;
+        unsigned numGroups = ComputeShader::getNumGroups(numThreads);
+        uint16_t* gridData = grid.data();
+        std::vector<uint16_t> gridDD = std::vector<uint16_t>(gridData, gridData + numThreads);
 
-        //// Set Seeds data
-        //_seedsBuffer.bind();
-        //_seedsBuffer.setData(seeds.data(), seeds.size() * sizeof(glm::uvec4), GL_STATIC_READ);
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, _seedsBuffer.getHandler());
+        const GLuint seedSSBO = ComputeShader::setReadBuffer(seeds, GL_STATIC_DRAW);
+        const GLuint gridSSBO = ComputeShader::setReadBuffer(&gridData[0], numThreads, GL_STATIC_DRAW);
+        const GLuint resSSBO = ComputeShader::setWriteBuffer(uint16_t(), numThreads, GL_DYNAMIC_DRAW);
+    	
+        shader->bindBuffers(std::vector<GLuint>{ seedSSBO, gridSSBO, resSSBO });
+        shader->use();
+        shader->setUniform("gridDims", numDivs);
+        shader->setUniform("numSeeds", GLuint(seeds.size()));
+        shader->setSubroutineUniform(GL_COMPUTE_SHADER, "distanceUniform", "manhattanDistance");
+        shader->applyActiveSubroutines();
+        shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-        //// Set space data
-        //_spaceBuffer.bind();
-        //_spaceBuffer.setData(space.data(), space.length(), GL_DYNAMIC_DRAW);
-
-        //// Bind texture
-        //glTexBuffer(GL_TEXTURE_BUFFER, GL_R8UI, _spaceBuffer.getHandler());
-        //glBindImageTexture(3, _spaceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8UI);
-
-        //// Compute number of work groups
-        //GLuint workGroupsX = GLuint(std::ceil(space.dims().x / 8.0f));
-        //GLuint workGroupsY = GLuint(std::ceil(space.dims().y / 8.0f));
-        //GLuint workGroupsZ = GLuint(std::ceil(space.dims().z / 8.0f));
-
-        //// Dispatch compute shader and wait until finalization
-        //glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-        //// Unbind buffers
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-        //glBindImageTexture(1, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R8UI);
-
-        //// Read back result
-        //glBindBuffer(GL_TEXTURE_BUFFER, _spaceBuffer.getHandler());
-        //uint8_t* ptr = (uint8_t*) glMapBuffer(GL_TEXTURE_BUFFER, GL_READ_ONLY);
-        //memcpy(space.data(), ptr, space.length());
-        //glUnmapBuffer(GL_TEXTURE_BUFFER);
+        uint16_t* resultPointer = ComputeShader::readData(resSSBO, uint16_t());
+        resultBuffer = std::vector<uint16_t>(resultPointer, resultPointer + numThreads);
     }
 
     void NaiveFracturer::setDistanceFunction(DistanceFunction dfunc)

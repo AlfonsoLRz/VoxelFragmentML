@@ -153,6 +153,13 @@ public:
 	bool setUniform(const std::string& name, const vec3& value);
 
 	/**
+	*	@brief Modifies the value of an unsigned Vector3 uniform.
+	*	@param name Name of uniform.
+	*	@param value Value of uniform.
+	*/
+	bool setUniform(const std::string& name, const uvec3& value);
+
+	/**
 	*	@brief Modifies the value of a Vector4 uniform.
 	*	@param name Name of uniform.
 	*	@param value Value of uniform.

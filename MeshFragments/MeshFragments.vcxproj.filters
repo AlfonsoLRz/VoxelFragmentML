@@ -241,6 +241,9 @@
     <Filter Include="Archivos de origen\Fracturer">
       <UniqueIdentifier>{090440b4-612a-40ab-948e-3d39a51887d0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Archivos de recursos\Shaders\Compute\Fracturer">
+      <UniqueIdentifier>{a65b06a4-71d7-4b07-be85-9859e643d62a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Geometry\2D\Vector2.h">
@@ -996,6 +999,15 @@
     </None>
     <None Include="Assets\Shaders\Triangles\multiInstanceTriangleMeshPosition-vert.glsl">
       <Filter>Archivos de recursos\Shaders\Triangles</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\voxel.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>
 </Project>

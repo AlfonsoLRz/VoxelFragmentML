@@ -21,28 +21,37 @@ bool AABBSet::load(const mat4& modelMatrix)
 
 		// Multi-instancing VBOs
 		std::vector<vec3> offset, scale;
-		std::vector<float> colorIndex;
 
 		for (AABB& aabb: _aabb)
 		{
 			offset.push_back(aabb.center());
 			scale.push_back(aabb.extent() * 2.0f);
-			colorIndex.push_back(.0f);
 		}
 
 		vao->defineMultiInstancingVBO(RendEnum::VBO_OFFSET, vec3(), .0f, GL_FLOAT);
 		vao->defineMultiInstancingVBO(RendEnum::VBO_SCALE, vec3(), .0f, GL_FLOAT);
-		vao->defineMultiInstancingVBO(RendEnum::VBO_INDEX, .0f, .0f, GL_FLOAT);
+		vao->defineMultiInstancingVBO(RendEnum::VBO_INDEX, float(), .0f, GL_FLOAT);
 
 		vao->setVBOData(RendEnum::VBO_OFFSET, offset);
 		vao->setVBOData(RendEnum::VBO_SCALE, scale);
-		vao->setVBOData(RendEnum::VBO_INDEX, colorIndex);
 
 		_modelComp[0]->_vao = vao;	
 		_loaded = true;
 	}
 
 	return true;
+}
+
+void AABBSet::setColorIndex(std::vector<uint16_t>& colorBuffer)
+{
+	std::vector<float> colorIndex(colorBuffer.size());
+
+	for (int idx = 0; idx < colorBuffer.size(); ++idx)
+	{
+		colorIndex[idx] = colorBuffer[idx];
+	}
+	
+	_modelComp[0]->_vao->setVBOData(RendEnum::VBO_INDEX, colorIndex);
 }
 
 // [Protected methods]

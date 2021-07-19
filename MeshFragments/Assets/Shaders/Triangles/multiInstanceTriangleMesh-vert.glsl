@@ -1,13 +1,16 @@
 #version 450
 
+#extension GL_NV_gpu_shader5 : enable
+
 // ********** PARAMETERS & VARIABLES ***********
 
-layout(location = 0) in vec3 vPosition;
-layout(location = 1) in vec3 vNormal;
-layout(location = 2) in vec2 vTextCoord;
-layout(location = 3) in vec3 vTangent;
-layout(location = 4) in vec3 vOffset;
-layout(location = 5) in vec3 vScale;
+layout(location = 0) in vec3		vPosition;
+layout(location = 1) in vec3		vNormal;
+layout(location = 2) in vec2		vTextCoord;
+layout(location = 3) in vec3		vTangent;
+layout(location = 4) in vec3		vOffset;
+layout(location = 5) in vec3		vScale;
+layout(location = 7) in float	vColorIndex;
 
 
 // ------------- Light types ----------------
@@ -33,6 +36,7 @@ out vec3 position;
 out vec3 normal;
 out vec2 textCoord;
 out vec4 shadowCoord;
+out float colorIndex;
 
 // Lighting related
 out vec3 lightPos;
@@ -129,6 +133,7 @@ void main()
 	normal = vec3(mModelView * transformationMatrix * vec4(vNormal, 0.0f));
 	shadowCoord = mShadow * transformationMatrix * vec4(vPosition, 1.0f);
 	textCoord = vTextCoord;
+	colorIndex = vColorIndex;
 
 	const mat3 TBN = displacementUniform();
 	lightUniform(TBN);

@@ -39,6 +39,22 @@ void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
 
 // [Protected methods]
 
+void CADScene::fractureModel()
+{
+	std::vector<uint16_t> resultBuffer;
+	auto seeds = fracturer::Seeder::uniform(*_meshGrid, 64);
+	fracturer::DistanceFunction dfunc = fracturer::EUCLIDEAN_DISTANCE;
+	fracturer::Fracturer* fracturer = fracturer::NaiveFracturer::getInstance();
+
+	// Fracture object
+	fracturer->init();
+	fracturer->setDistanceFunction(dfunc);
+	fracturer->build(*_meshGrid, seeds, resultBuffer);
+	fracturer->destroy();
+
+	_aabbRenderer->setColorIndex(resultBuffer);
+}
+
 bool CADScene::isExtensionReadable(const std::string& filename)
 {
 	return filename.find(CADModel::OBJ_EXTENSION) != std::string::npos;
@@ -150,6 +166,8 @@ void CADScene::loadModels()
 		_aabbRenderer = new AABBSet(aabbs);
 		_aabbRenderer->load();
 		_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
+
+		this->fractureModel();
 	}
 }
 

@@ -20,7 +20,7 @@
 class RegularGrid
 {   
 protected:
-	uint16_t***		_grid;
+	uint16_t*		_grid;
 
 	AABB			_aabb;									//!< Bounding box of the scene
 	vec3			_cellSize;								//!< Size of each grid cell
@@ -41,6 +41,11 @@ protected:
 	*	@return Index of grid cell to be filled.
 	*/
 	uvec3 getPositionIndex(const vec3& position);
+
+	/**
+	*	@return Index in grid array of a non-real position. 
+	*/
+	unsigned getPositionIndex(int x, int y, int z) const;
 
 public:
 	/**
@@ -84,7 +89,7 @@ public:
     *   Get data pointer.
     *   @return Internal data pointer.
     */
-    uint16_t*** data();
+    uint16_t* data();
 
     /**
     *   Read voxel.

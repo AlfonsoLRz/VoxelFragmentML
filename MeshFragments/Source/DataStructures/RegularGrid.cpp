@@ -42,7 +42,7 @@ void RegularGrid::getAABBs(std::vector<AABB>& aabb)
 		{
 			for (int z = 0; z < _numDivs.z; ++z)
 			{
-				if (_grid[x][y][z] != VOXEL_EMPTY)
+				if (_grid[this->getPositionIndex(x, y, z)] != VOXEL_EMPTY)
 				{
 					min = _aabb.min() + _cellSize * vec3(x, y, z);
 					max = min + _cellSize;
@@ -58,17 +58,17 @@ void RegularGrid::insertPoint(const vec3& position, unsigned index)
 {
 	uvec3 gridIndex = getPositionIndex(position);
 
-	_grid[gridIndex.x][gridIndex.y][gridIndex.z] = index;
+	_grid[this->getPositionIndex(gridIndex.x, gridIndex.y, gridIndex.z)] = index;
 }
 
-uint16_t*** RegularGrid::data()
+uint16_t* RegularGrid::data()
 {
 	return _grid;
 }
 
 uint16_t RegularGrid::at(int x, int y, int z) const
 {
-	return _grid[x][y][z];
+	return _grid[this->getPositionIndex(x, y, z)];
 }
 
 glm::uvec3 RegularGrid::getNumSubdivisions() const
@@ -102,43 +102,24 @@ size_t RegularGrid::length() const
 
 void RegularGrid::set(int x, int y, int z, uint8_t i)
 {
-	_grid[x][y][z] = i;
+	_grid[this->getPositionIndex(x, y, z)] = i;
 }
 
 /// Protected methods	
 
 void RegularGrid::buildGrid()
 {
-	_grid = new uint16_t**[_numDivs.x];
+	unsigned size = _numDivs.x * _numDivs.y * _numDivs.z;
+	_grid = new uint16_t[_numDivs.x * _numDivs.y * _numDivs.z];
 	
-	for (int x = 0; x < _numDivs.x; ++x)
+	for (int idx = 0; idx < size; ++idx)
 	{
-		_grid[x] = new uint16_t * [_numDivs.y];
-
-		for (int y = 0; y < _numDivs.y; ++y)
-		{
-			_grid[x][y] = new uint16_t[_numDivs.z];
-
-			for (int z = 0; z < _numDivs.z; ++z)
-			{
-				_grid[x][y][z] = VOXEL_EMPTY;
-			}
-		}
+		_grid[idx] = VOXEL_EMPTY;
 	}
 }
 
 void RegularGrid::destroyGrid()
 {
-	for (int x = 0; x < _numDivs.x; ++x)
-	{
-		for (int y = 0; y < _numDivs.y; ++y)
-		{
-			delete[] _grid[x][y];
-		}
-
-		delete[] _grid[x];
-	}
-
 	delete[] _grid;
 }
 
@@ -148,4 +129,9 @@ uvec3 RegularGrid::getPositionIndex(const vec3& position)
 	unsigned zeroUnsigned = 0;
 
 	return uvec3(glm::clamp(x, zeroUnsigned, _numDivs.x - 1), glm::clamp(y, zeroUnsigned, _numDivs.y - 1), glm::clamp(z, zeroUnsigned, _numDivs.z - 1));
+}
+
+unsigned RegularGrid::getPositionIndex(int x, int y, int z) const
+{
+	return y * _numDivs.x * _numDivs.z + x * _numDivs.z + z;
 }

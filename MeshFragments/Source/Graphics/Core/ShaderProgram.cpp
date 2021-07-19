@@ -148,6 +148,22 @@ bool ShaderProgram::setUniform(const std::string& name, const vec3& value)
 	return false;
 }
 
+bool ShaderProgram::setUniform(const std::string& name, const uvec3& value)
+{
+	GLint location = glGetUniformLocation(_handler, name.c_str());
+
+	if (location >= 0)
+	{
+		glUniform3uiv(location, 1, &value[0]);
+
+		return true;
+	}
+
+	std::cout << "Cannot find localization for: " << name << std::endl;
+
+	return false;
+}
+
 bool ShaderProgram::setUniform(const std::string& name, const vec4& value)
 {
 	GLint location = glGetUniformLocation(_handler, name.c_str());

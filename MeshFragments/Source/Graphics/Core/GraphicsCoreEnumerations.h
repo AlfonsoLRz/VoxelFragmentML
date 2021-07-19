@@ -110,13 +110,16 @@ struct RendEnum
 		MODEL_APPLY_MODEL_MATRIX,
 		MODEL_MESH_GENERATION,
 		PLANAR_SURFACE_GENERATION,
-		PLANAR_SURFACE_TOPOLOGY
+		PLANAR_SURFACE_TOPOLOGY,
+
+		// FRACTURER
+		NAIVE_FRACTURER
 	};
 
 	/**
 	*	@return Number of compute shaders.
 	*/
-	const static GLsizei numComputeShaderTypes() { return PLANAR_SURFACE_TOPOLOGY + 1; }
+	const static GLsizei numComputeShaderTypes() { return NAIVE_FRACTURER + 1; }
 
 	/**
 	*	@return Number of rendering shaders.

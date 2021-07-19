@@ -2,6 +2,9 @@
 
 #include "DataStructures/Octree.h"
 #include "DataStructures/RegularGrid.h"
+#include "Fracturer/FloodFracturer.h"
+#include "Fracturer/NaiveFracturer.h"
+#include "Fracturer/Seeder.h"
 #include "Graphics/Application/SSAOScene.h"
 #include "Graphics/Core/AABBSet.h"
 
@@ -55,6 +58,11 @@ protected:
 	RegularGrid*	_meshGrid;								//!< Mesh regular grid
 
 protected:
+	/**
+	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm. 
+	*/
+	void fractureModel();
+	
 	/**
 	*	@brief True if the file is a known model file, such as obj.
 	*/

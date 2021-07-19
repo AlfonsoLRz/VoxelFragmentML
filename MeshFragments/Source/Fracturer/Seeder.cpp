@@ -78,14 +78,14 @@ namespace fracturer {
         }
 
         // Array of generated seeds
-        std::vector<glm::uvec4> ret;
+        std::vector<glm::uvec4> result;
 
         // Generate array of seed
         unsigned int nseed = VOXEL_FREE + 1;         // 2 because first seed id must be greater than 1
     	
         for (glm::uvec3 seed : seeds)
-            ret.push_back(glm::uvec4(seed, nseed++));
+            result.push_back(glm::uvec4(seed, nseed++));
 
-        return ret;
+        return result;
     }
 }

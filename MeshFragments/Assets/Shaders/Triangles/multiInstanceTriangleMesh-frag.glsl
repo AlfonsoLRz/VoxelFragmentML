@@ -1,5 +1,7 @@
 #version 450
 
+#extension GL_NV_gpu_shader5 : enable
+
 // ********** PARAMETERS & VARIABLES ***********
 
 // ------------ Constraints ------------
@@ -12,6 +14,7 @@ in vec3 position;
 in vec3 normal;
 in vec2 textCoord;
 in vec4 shadowCoord;
+flat in float colorIndex;
 
 // ------------ Lighting ------------
 in vec3 lightPos;
@@ -325,7 +328,7 @@ void noShadow(out float shadowDiffuseFactor, out float shadowSpecFactor)
 
 void main()
 {
-	const vec4 fragKad = semiTransparentUniform(getKad());
+	const vec4 fragKad = semiTransparentUniform(vec4(vec3(colorIndex), 1.0f));
 	const vec4 fragKs = getKs();
 	const vec3 fragNormal = displacementUniform();
 
