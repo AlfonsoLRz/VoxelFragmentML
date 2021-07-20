@@ -1012,5 +1012,8 @@
     <None Include="Assets\Shaders\Compute\Templates\colorHSV.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Templates</Filter>
     </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
   </ItemGroup>
 </Project>

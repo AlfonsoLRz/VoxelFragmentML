@@ -278,6 +278,7 @@
     <None Include="Assets\Shaders\Compute\Collision\computeBVHCollision-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Collision\computeMeshBVHCollision-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\voxel.glsl" />
     <None Include="Assets\Shaders\Compute\Generic\resetBufferIndex-comp.glsl" />

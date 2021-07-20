@@ -41,7 +41,8 @@ namespace fracturer {
         /**
         *   Exception thrown when voxel stack is overflow.
         */
-        class StackOverflowError : public std::runtime_error {
+        class StackOverflowError : public std::runtime_error
+    	{
         public:
             explicit StackOverflowError(const std::string& msg) : std::runtime_error(msg) {  }
         };
@@ -63,7 +64,7 @@ namespace fracturer {
         *   @param[in] grid Volumetric space we want to split into fragments
         *   @param[in] seed  Seeds used to generate fragments
         */
-        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds);
+        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer);
 
         /**
         *   Set distance funcion.
@@ -74,19 +75,6 @@ namespace fracturer {
     private:
 
         DistanceFunction _dfunc;    //!< Inner distance metric
-
-        /** Reset atomic counter to zero and return previous value. */
-        GLuint _resetAtomicCounter();
-
-        GLuint                _spaceTexture;    //!< Texture used to sample space buffer in shader
-        //opengl::BufferObject  _spaceBuffer;     //!< Voxel space imageBuffer object
-
-        //opengl::BufferObject  _frontBuffer;     //!< First frontier buffer 
-        //opengl::BufferObject  _newFrontBuffer;  //!< Second frontier buffer 
-
-        //opengl::BufferObject  _atomicBuffer;    //!< Buffer for atomic variables 
-
-        //opengl::ShaderProgram _expandFront;     //!< Expand front shader program
     };
 
 }

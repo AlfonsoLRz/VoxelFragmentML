@@ -1,22 +1,7 @@
-//    Copyright(C) 2019, 2020 José María Cruz Lorite
-//
-//    This file is part of voxfracturer.
-//
-//    voxfracturer is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    voxfracturer is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with voxfracturer.  If not, see <https://www.gnu.org/licenses/>.
-
 #include "stdafx.h"
 #include "FloodFracturer.h"
+
+#include "Graphics/Core/ShaderList.h"
 
 namespace fracturer {
 
@@ -41,96 +26,28 @@ namespace fracturer {
         glm::ivec4(0, 0, -1, 0), glm::ivec4(0, 0, 1, 0)
     };
 
-    FloodFracturer::FloodFracturer()
-        : _dfunc(MANHATTAN_DISTANCE)
-        , _spaceTexture(0)
-/*        , _spaceBuffer(GL_TEXTURE_BUFFER)
-        , _frontBuffer(GL_SHADER_STORAGE_BUFFER)
-        , _newFrontBuffer(GL_SHADER_STORAGE_BUFFER)
-        , _atomicBuffer(GL_ATOMIC_COUNTER_BUFFER)
-        , _expandFront()*/ {       
+    FloodFracturer::FloodFracturer() : _dfunc(MANHATTAN_DISTANCE)
+	{       
 
     }
 
-    void FloodFracturer::init() {
-        //// Create buffers
-        //_frontBuffer.create();
-        //_newFrontBuffer.create();
-        //_spaceBuffer.create();
-        //_atomicBuffer.create();
+    void FloodFracturer::init()
+	{
 
-        //// Initialize atomic buffer
-        //_atomicBuffer.bind();
-        //_atomicBuffer.setData(nullptr, sizeof(GLuint), GL_DYNAMIC_COPY);
-        //_atomicBuffer.unbind();
-
-        //// Generate space texture and link with space buffer
-        //glGenTextures(1, &_spaceTexture);
-
-        //// Initialize shader programs
-        //_initShaderProgram(_expandFront,
-        //    #include "shaders/ExpandFront.comp"
-        //);
     }
 
-    void FloodFracturer::destroy() {
-        //_expandFront.destroy();
-        //_frontBuffer.destroy();
-        //_newFrontBuffer.destroy();
-        //_atomicBuffer.destroy();
-        //_spaceBuffer.destroy();
-        glDeleteTextures(1, &_spaceTexture);
+    void FloodFracturer::destroy()
+	{
     }
 
-    GLuint FloodFracturer::_resetAtomicCounter() {
-        //_atomicBuffer.bind();
+    void FloodFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer) {
+        grid.homogenize();
 
-        // Map buffer memory
-        GLuint *ac = (GLuint*) glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_READ_ONLY);
-        GLuint value = *ac;
-        *ac = 0;
+        // Set seeds
+        for (auto& seed : seeds)
+            grid.set(seed.x, seed.y, seed.z, seed.w);
 
-        // Unmap the buffer
-        glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
-        //_atomicBuffer.unbind();
-
-        return value;
-    }
-
-    void FloodFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds) {
-        //space.homogenize();
-
-        //// Set seeds
-        //for (auto& seed : seeds)
-        //    space.set(seed.x, seed.y, seed.z, seed.w);
-
-        //// Prepare uniforms
-        //const glm::uvec3 size(space.size().y * space.size().z, space.size().z, 1);
-
-        //// Set program uniforms
-        //_expandFront.use();
-        //_expandFront.uniform("size",            size);
-        //_expandFront.uniform("voxspaceSampler", GLint(0)); // Texture unit zero
-
-        //// Set space buffer data
-        //_spaceBuffer.bind();
-        //_spaceBuffer.setData(space.data(), space.length(), GL_DYNAMIC_DRAW);
-
-        //// Bind texture
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_BUFFER, _spaceTexture);
-        //glTexBuffer(GL_TEXTURE_BUFFER, GL_R8UI, _spaceBuffer.getHandler());
-        //glBindImageTexture(3, _spaceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8UI);
-
-        //// Set frontier size
-        //GLuint frontierBufferSize = GLuint(space.size().x * space.size().y * space.size().z / 8.0f);
-
-        //_frontBuffer.bind();
-        //_frontBuffer.setData(nullptr, frontierBufferSize * sizeof(glm::uvec4), GL_STREAM_COPY);
-        //_newFrontBuffer.bind();
-        //_newFrontBuffer.setData(nullptr, frontierBufferSize * sizeof(glm::uvec4), GL_STREAM_COPY);
-
-        //// Initialize first iteration frontier
+        // Initialize first iteration frontier
         //_frontBuffer.bind();
         //_frontBuffer.setSubData(seeds.data(), seeds.size() * sizeof(glm::uvec4), 0);
 
@@ -171,24 +88,49 @@ namespace fracturer {
         //    std::swap(buffer1, buffer2);
         //}
 
-        //// Read back result
-        //glBindBuffer(GL_TEXTURE_BUFFER, _spaceBuffer.getHandler());
-        //uint8_t* ptr = (uint8_t*) glMapBuffer(GL_TEXTURE_BUFFER, GL_READ_ONLY);
-        //memcpy(space.data(), ptr, space.length());
-        //glUnmapBuffer(GL_TEXTURE_BUFFER);
+        ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::FLOOD_FRACTURER);
 
-        //// Unbind buffers
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
-        //glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, 0);
-        //glBindImageTexture(3, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R8UI);
-        //glBindImageTexture(4, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R8UI);
+        // Input data
+        uvec3 numDivs       = grid.getNumSubdivisions();
+        unsigned numCells   = numDivs.x * numDivs.y * numDivs.z;
+        unsigned numGroups  = ComputeShader::getNumGroups(numCells);
+        unsigned nullCount  = 0;
+        unsigned stackSize  = seeds.size();
+        uint16_t* gridData  = grid.data();
+
+        const GLuint stack1SSBO     = ComputeShader::setWriteBuffer(uint16_t(), numCells, GL_DYNAMIC_DRAW);
+        const GLuint stack2SSBO     = ComputeShader::setWriteBuffer(uint16_t(), numCells, GL_DYNAMIC_DRAW);
+        const GLuint gridSSBO       = ComputeShader::setWriteBuffer(uint16_t(), numCells, GL_DYNAMIC_DRAW);
+        const GLuint neighborSSBO   = ComputeShader::setReadBuffer(_dfunc == 1 ? VON_NEUMANN : MOORE, GL_STATIC_DRAW);
+        const GLuint stackSizeSSBO  = ComputeShader::setWriteBuffer(GLuint(), 1, GL_DYNAMIC_DRAW);
+
+    	// Load seeds as a subset
+        ComputeShader::updateReadBufferSubset(stack1SSBO, seeds.data(), 0, seeds.size());
+
+        shader->bindBuffers(std::vector<GLuint>{ gridSSBO, stack1SSBO, stack2SSBO, stackSizeSSBO, neighborSSBO });
+        shader->use();
+        shader->setUniform("numNeighbors", _dfunc == 1 ? GLuint(VON_NEUMANN.size()) : GLuint(MOORE.size()));
+
+        while (stackSize > 0) 
+        {
+            ComputeShader::updateReadBuffer(stackSizeSSBO, &nullCount, 1, GL_DYNAMIC_DRAW);
+        	
+            shader->setUniform("gridDims", numDivs);
+            shader->setUniform("stackSize", stackSize);
+            shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+        }
+
+        uint16_t* resultPointer = ComputeShader::readData(gridSSBO, uint16_t());
+        resultBuffer = std::vector<uint16_t>(resultPointer, resultPointer + numCells);
+
+        GLuint deleteBuffers[] = { stack1SSBO, stack2SSBO, gridSSBO, neighborSSBO, stackSize };
+        glDeleteBuffers(sizeof(deleteBuffers) / sizeof(GLuint), deleteBuffers);
     }
 
     void FloodFracturer::setDistanceFunction(DistanceFunction dfunc) {
         // EUCLIDEAN_DISTANCE is forbid
         if (dfunc == EUCLIDEAN_DISTANCE)
-            throw std::invalid_argument("Flood fraturing is not compatible with euclidean metric. Try with naive method.");
+            throw std::invalid_argument("Flood method is not compatible with euclidean metric. Try with naive method.");
 
         _dfunc = dfunc;
     }

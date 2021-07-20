@@ -43,8 +43,10 @@ void CADScene::fractureModel()
 {
 	std::vector<uint16_t> resultBuffer;
 	auto seeds = fracturer::Seeder::uniform(*_meshGrid, 64);
-	fracturer::DistanceFunction dfunc = fracturer::EUCLIDEAN_DISTANCE;
+	fracturer::DistanceFunction dfunc = fracturer::MANHATTAN_DISTANCE;
+	
 	fracturer::Fracturer* fracturer = fracturer::NaiveFracturer::getInstance();
+	//fracturer::Fracturer* fracturer = fracturer::FloodFracturer::getInstance();
 
 	// Fracture object
 	fracturer->init();

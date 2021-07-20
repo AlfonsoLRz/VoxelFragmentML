@@ -8,7 +8,6 @@ namespace fracturer {
 	
     NaiveFracturer::NaiveFracturer() : _dfunc(EUCLIDEAN_DISTANCE), _spaceTexture(0)
     {
-	    
     }
 
     void NaiveFracturer::removeIsolatedRegions(RegularGrid& grid, const std::vector<glm::uvec4>& seeds)
@@ -54,39 +53,10 @@ namespace fracturer {
     }
 
     void NaiveFracturer::init() {
-        // Create and compile the buffers
-        //_seedsBuffer.create();
-        //_spaceBuffer.create();
-
-        //// Generate space texture and link with space buffer
-        //glGenTextures(1, &_spaceTexture);
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_BUFFER, _spaceTexture);
-
-        //// Create voronoi compute shaders
-        //opengl::ShaderObject comp(GL_COMPUTE_SHADER,
-        //    #include "shaders/Naive.comp"
-        //);
-
-        //comp.create();
-        //comp.compile();
-
-        //std::cout << comp.getCompileLog() << std::endl;
-
-        //// Create shaders program
-        //_program.create();
-        //_program.attach(comp);
-        //_program.link();
-
-        //// Destroy shaders object
-        //comp.destroy();
     }
 
     void NaiveFracturer::destroy()
 	{
-        //_seedsBuffer.destroy();
-        //_spaceBuffer.destroy();
-        //_program.destroy();
     }
 
     void NaiveFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer)
@@ -100,10 +70,9 @@ namespace fracturer {
         uint16_t* gridData  = grid.data();
 
         const GLuint seedSSBO   = ComputeShader::setReadBuffer(seeds, GL_STATIC_DRAW);
-        const GLuint gridSSBO   = ComputeShader::setReadBuffer(&gridData[0], numThreads, GL_STATIC_DRAW);
-        const GLuint resSSBO    = ComputeShader::setWriteBuffer(uint16_t(), numThreads, GL_DYNAMIC_DRAW);
+        const GLuint gridSSBO   = ComputeShader::setReadBuffer(&gridData[0], numThreads, GL_DYNAMIC_DRAW);
     	
-        shader->bindBuffers(std::vector<GLuint>{ seedSSBO, gridSSBO, resSSBO });
+        shader->bindBuffers(std::vector<GLuint>{ seedSSBO, gridSSBO });
         shader->use();
         shader->setUniform("gridDims", numDivs);
         shader->setUniform("numSeeds", GLuint(seeds.size()));
@@ -111,12 +80,11 @@ namespace fracturer {
         shader->applyActiveSubroutines();
         shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-        uint16_t* resultPointer = ComputeShader::readData(resSSBO, uint16_t());
+        uint16_t* resultPointer = ComputeShader::readData(gridSSBO, uint16_t());
         resultBuffer = std::vector<uint16_t>(resultPointer, resultPointer + numThreads);
 
         glDeleteBuffers(1, &seedSSBO);
         glDeleteBuffers(1, &gridSSBO);
-        glDeleteBuffers(1, &resSSBO);
     }
 
     void NaiveFracturer::setDistanceFunction(DistanceFunction dfunc)

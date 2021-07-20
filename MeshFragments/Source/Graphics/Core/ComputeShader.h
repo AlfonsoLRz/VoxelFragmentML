@@ -130,10 +130,15 @@ public:
 
 	/**
 	*	@brief Defines a new buffer at OpenGL context.
-	*	@return ID of new buffer, so we can ask for reading operations.
 	*/
 	template<typename T>
 	static void updateReadBuffer(const GLuint id, const T* data, const unsigned arraySize, const GLuint changeFrequency = GL_DYNAMIC_DRAW);
+
+	/**
+	*	@brief Updates a subset of the buffer.
+	*/
+	template<typename T>
+	static void updateReadBufferSubset(const GLuint id, const T* data, const unsigned offset, const unsigned arraySize);
 };
 
 template<typename T>
@@ -196,3 +201,11 @@ inline void ComputeShader::updateReadBuffer(const GLuint id, const T* data, cons
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * arraySize, data, changeFrequency);
 }
+
+template<typename T>
+inline void ComputeShader::updateReadBufferSubset(const GLuint id, const T* data, const unsigned offset, const unsigned arraySize)
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, sizeof(T) * arraySize, data);
+}
+
