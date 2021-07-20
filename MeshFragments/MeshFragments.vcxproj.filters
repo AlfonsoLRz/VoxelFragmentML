@@ -1009,5 +1009,8 @@
     <None Include="Assets\Shaders\Compute\Fracturer\voxel.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
+    <None Include="Assets\Shaders\Compute\Templates\colorHSV.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Templates</Filter>
+    </None>
   </ItemGroup>
 </Project>

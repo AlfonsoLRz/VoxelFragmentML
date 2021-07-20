@@ -94,15 +94,14 @@ namespace fracturer {
         ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::NAIVE_FRACTURER);
 
         // Input data
-        uvec3 numDivs = grid.getNumSubdivisions();
+        uvec3 numDivs       = grid.getNumSubdivisions();
         unsigned numThreads = numDivs.x * numDivs.y * numDivs.z;
-        unsigned numGroups = ComputeShader::getNumGroups(numThreads);
-        uint16_t* gridData = grid.data();
-        std::vector<uint16_t> gridDD = std::vector<uint16_t>(gridData, gridData + numThreads);
+        unsigned numGroups  = ComputeShader::getNumGroups(numThreads);
+        uint16_t* gridData  = grid.data();
 
-        const GLuint seedSSBO = ComputeShader::setReadBuffer(seeds, GL_STATIC_DRAW);
-        const GLuint gridSSBO = ComputeShader::setReadBuffer(&gridData[0], numThreads, GL_STATIC_DRAW);
-        const GLuint resSSBO = ComputeShader::setWriteBuffer(uint16_t(), numThreads, GL_DYNAMIC_DRAW);
+        const GLuint seedSSBO   = ComputeShader::setReadBuffer(seeds, GL_STATIC_DRAW);
+        const GLuint gridSSBO   = ComputeShader::setReadBuffer(&gridData[0], numThreads, GL_STATIC_DRAW);
+        const GLuint resSSBO    = ComputeShader::setWriteBuffer(uint16_t(), numThreads, GL_DYNAMIC_DRAW);
     	
         shader->bindBuffers(std::vector<GLuint>{ seedSSBO, gridSSBO, resSSBO });
         shader->use();
@@ -114,6 +113,10 @@ namespace fracturer {
 
         uint16_t* resultPointer = ComputeShader::readData(resSSBO, uint16_t());
         resultBuffer = std::vector<uint16_t>(resultPointer, resultPointer + numThreads);
+
+        glDeleteBuffers(1, &seedSSBO);
+        glDeleteBuffers(1, &gridSSBO);
+        glDeleteBuffers(1, &resSSBO);
     }
 
     void NaiveFracturer::setDistanceFunction(DistanceFunction dfunc)

@@ -10,7 +10,7 @@ layout(location = 2) in vec2		vTextCoord;
 layout(location = 3) in vec3		vTangent;
 layout(location = 4) in vec3		vOffset;
 layout(location = 5) in vec3		vScale;
-layout(location = 7) in float	vColorIndex;
+layout(location = 7) in float		vColorIndex;
 
 
 // ------------- Light types ----------------

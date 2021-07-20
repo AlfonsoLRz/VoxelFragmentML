@@ -1,11 +1,11 @@
 #version 450
 
 #extension GL_ARB_compute_variable_group_size: enable
-#extension GL_NV_gpu_shader5: enable
+#extension GL_NV_gpu_shader5 : enable
 
 layout (local_size_variable) in;
 
-layout (std430, binding = 0) buffer SeedBuffer	{ vec4		seed[]; };
+layout (std430, binding = 0) buffer SeedBuffer	{ uvec4		seed[]; };
 layout (std430, binding = 1) buffer GridBuffer	{ uint16_t  grid[]; };
 layout (std430, binding = 2) buffer IndexBuffer { uint16_t  indexResult[]; };
 
@@ -27,12 +27,14 @@ void main()
 		return;
 	}
 
-	indexResult[index] = uint16_t(1);
-	return;
+	float x = index / float(gridDims.y * gridDims.z);  
+	float w = index % (gridDims.y * gridDims.z); 
+	float y = w / gridDims.z;        
+	float z = uint(w) % gridDims.z;         
 
 	// Compute coordinates
-	vec3 position = vec3(floor(index % (gridDims.x * gridDims.z)), floor(index / (gridDims.x * gridDims.z)), index % gridDims.z);
-	float minDistance = UINT_MAX, seedColor = grid[index], distance;
+	float minDistance = UINT_MAX, distance;
+	vec3 position = vec3(x, y, z);
 
 	for (int seedIdx = 0; seedIdx < numSeeds; ++seedIdx)
 	{

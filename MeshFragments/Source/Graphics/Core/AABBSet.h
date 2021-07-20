@@ -24,6 +24,13 @@ protected:
 	*	@param primitive Primitive we need to use to render the VAO.
 	*/
 	virtual void renderTriangles(RenderingShader* shader, const RendEnum::RendShaderTypes shaderType, std::vector<mat4>& matrix, ModelComponent* modelComp, const GLuint primitive);
+	
+	/**
+	*	@brief Renders a component as a set of lines.
+	*	@param modelComp Component where the VAO is located.
+	*	@param primitive Primitive we need to use to render the VAO.
+	*/
+	virtual void renderTriangles4Shadows(RenderingShader* shader, const RendEnum::RendShaderTypes shaderType, std::vector<mat4>& matrix, ModelComponent* modelComp, const GLuint primitive);
 
 public:
 	/**

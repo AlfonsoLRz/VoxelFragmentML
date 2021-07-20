@@ -300,6 +300,7 @@
     <None Include="Assets\Shaders\Compute\RadixSort\reallocateIndices-radixSort-comp.glsl" />
     <None Include="Assets\Shaders\Compute\PrefixScan\reduce-prefixScan-comp.glsl" />
     <None Include="Assets\Shaders\Compute\PrefixScan\resetLastPosition-prefixScan-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Templates\colorHSV.glsl" />
     <None Include="Assets\Shaders\Compute\Templates\computeAxes.glsl" />
     <None Include="Assets\Shaders\Compute\Templates\constraints.glsl" />
     <None Include="Assets\Shaders\Compute\Templates\intersections.glsl" />

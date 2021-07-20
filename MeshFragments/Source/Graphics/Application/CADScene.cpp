@@ -360,58 +360,51 @@ bool CADScene::readLightsFromSettings()
 
 // [Rendering]
 
-void CADScene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParameters* rendParams)
+void CADScene::drawSceneAsPoints(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
-	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::TRIANGLE_MESH_SHADER);
-	RenderingShader* multiInstanceShader = ShaderList::getInstance()->getRenderingShader(RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER);
-	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
-	const mat4 bias = glm::translate(mat4(1.0f), vec3(0.5f)) * glm::scale(mat4(1.0f), vec3(0.5f));						// Proj: [-1, 1] => with bias: [0, 1]
+}
 
+void CADScene::drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
+{
+}
+
+void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
+{
+	if (shaderType == RendEnum::TRIANGLE_MESH_SHADER)
 	{
-		matrix[RendEnum::MODEL_MATRIX] = mModel;
-		matrix[RendEnum::VIEW_MATRIX] = camera->getViewMatrix();
-		matrix[RendEnum::VIEW_PROJ_MATRIX] = camera->getViewProjMatrix();
-
-		glDepthFunc(GL_LEQUAL);	
-	}
-
-	{
-		for (unsigned int i = 0; i < _lights.size(); ++i)																// Multipass rendering
+		for (Group3D* group : _sceneGroup)
 		{
-			if (i == 0)
-			{
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
-			else
-			{
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-			}
-
-			if (_lights[i]->shouldCastShadows())
-			{
-				matrix[RendEnum::BIAS_VIEW_PROJ_MATRIX] = bias * _lights[i]->getCamera()->getViewProjMatrix();
-			}
-
-			// ----- Scene
-			shader->use();
-			shader->setUniform("materialScattering", rendParams->_materialScattering);
-			_lights[i]->applyLight(shader, matrix[RendEnum::VIEW_MATRIX]);
-			_lights[i]->applyShadowMapTexture(shader);
-			shader->applyActiveSubroutines();
-
-			this->drawSceneAsTriangles(shader, RendEnum::TRIANGLE_MESH_SHADER, &matrix, rendParams);
-
-			// ----- Voxels
-			multiInstanceShader->use();
-			multiInstanceShader->setUniform("materialScattering", rendParams->_materialScattering);
-			_lights[i]->applyLight(multiInstanceShader, matrix[RendEnum::VIEW_MATRIX]);
-			_lights[i]->applyShadowMapTexture(multiInstanceShader);
-			multiInstanceShader->applyActiveSubroutines();
-
-			_aabbRenderer->drawAsTriangles(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER, matrix);
+			group->drawAsTriangles(shader, shaderType, *matrix);
 		}
 	}
+	else
+	{
+		_aabbRenderer->drawAsTriangles(shader, shaderType, *matrix);
+	}
+}
 
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);					// Back to initial state
-	glDepthFunc(GL_LESS);
+void CADScene::drawSceneAsTriangles4Normal(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
+{
+	if (shaderType == RendEnum::TRIANGLE_MESH_NORMAL_SHADER)
+	{
+		for (Group3D* group : _sceneGroup)
+			group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+	}
+	else
+	{
+		_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+	}
+}
+
+void CADScene::drawSceneAsTriangles4Position(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
+{
+	if (shaderType == RendEnum::TRIANGLE_MESH_POSITION_SHADER || shaderType == RendEnum::SHADOWS_SHADER)
+	{
+		for (Group3D* group : _sceneGroup)
+			group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+	}
+	else
+	{
+		_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+	}
 }

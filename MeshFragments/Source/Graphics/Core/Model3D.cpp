@@ -395,6 +395,8 @@ void Model3D::setShaderUniforms(ShaderProgram* shader, const RendEnum::RendShade
 
 	case RendEnum::TRIANGLE_MESH_NORMAL_SHADER:
 	case RendEnum::TRIANGLE_MESH_POSITION_SHADER:
+	case RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_NORMAL_SHADER:
+	case RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_POSITION_SHADER:
 		shader->setUniform("mModelView", matrix[RendEnum::VIEW_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
 		shader->setUniform("mModelViewProj", matrix[RendEnum::VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
 
@@ -402,6 +404,7 @@ void Model3D::setShaderUniforms(ShaderProgram* shader, const RendEnum::RendShade
 
 	case RendEnum::VERTEX_NORMAL_SHADER:
 	case RendEnum::SHADOWS_SHADER:
+	case RendEnum::MULTI_INSTANCE_SHADOWS_SHADER:
 		shader->setUniform("mModelViewProj", matrix[RendEnum::VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
 
 		break;

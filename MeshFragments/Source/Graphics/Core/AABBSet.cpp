@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "AABBSet.h"
 
+#include "DataStructures/RegularGrid.h"
 #include "Graphics/Core/OpenGLUtilities.h"
 
 // [Public methods]
@@ -44,11 +45,14 @@ bool AABBSet::load(const mat4& modelMatrix)
 
 void AABBSet::setColorIndex(std::vector<uint16_t>& colorBuffer)
 {
-	std::vector<float> colorIndex(colorBuffer.size());
+	std::vector<float> colorIndex;
 
 	for (int idx = 0; idx < colorBuffer.size(); ++idx)
 	{
-		colorIndex[idx] = colorBuffer[idx];
+		if (colorBuffer[idx] != VOXEL_EMPTY)
+		{
+			colorIndex.push_back(colorBuffer[idx]);
+		}
 	}
 	
 	_modelComp[0]->_vao->setVBOData(RendEnum::VBO_INDEX, colorIndex);
@@ -66,6 +70,18 @@ void AABBSet::renderTriangles(RenderingShader* shader, const RendEnum::RendShade
 		this->setShaderUniforms(shader, shaderType, matrix);
 
 		if (material) material->applyMaterial(shader);
+
+		vao->drawObject(RendEnum::IBO_TRIANGLE_MESH, primitive, 64, _aabb.size());
+	}
+}
+
+void AABBSet::renderTriangles4Shadows(RenderingShader* shader, const RendEnum::RendShaderTypes shaderType, std::vector<mat4>& matrix, ModelComponent* modelComp, const GLuint primitive)
+{
+	VAO* vao = modelComp->_vao;
+
+	if (vao && modelComp->_enabled)
+	{
+		this->setShaderUniforms(shader, shaderType, matrix);
 
 		vao->drawObject(RendEnum::IBO_TRIANGLE_MESH, primitive, 64, _aabb.size());
 	}

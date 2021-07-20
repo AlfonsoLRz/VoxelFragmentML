@@ -2,12 +2,11 @@
 
 #extension GL_NV_gpu_shader5 : enable
 
+#include <Assets/Shaders/Compute/Templates/constraints.glsl>
+#include <Assets/Shaders/Compute/Templates/colorHSV.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
+
 // ********** PARAMETERS & VARIABLES ***********
-
-// ------------ Constraints ------------
-const float EPSILON = 0.0000001f;
-const float CUTOFF = .8f;
-
 
 // ------------ Geometry ------------
 in vec3 position;
@@ -328,11 +327,10 @@ void noShadow(out float shadowDiffuseFactor, out float shadowSpecFactor)
 
 void main()
 {
-	const vec4 fragKad = semiTransparentUniform(vec4(vec3(colorIndex), 1.0f));
+	const vec4 kadColor = colorIndex != VOXEL_EMPTY ? vec4(HSVtoRGB(getHueValue(uint(colorIndex)), .99f, .99f), 1.0f) : getKad();
+	const vec4 fragKad = semiTransparentUniform(kadColor);
 	const vec4 fragKs = getKs();
 	const vec3 fragNormal = displacementUniform();
-
-	if (fragKad.w - CUTOFF < .0f) discard;
 
 	float shadowDiffuseFactor, shadowSpecFactor;
 	depthTextureUniform(shadowDiffuseFactor, shadowSpecFactor);

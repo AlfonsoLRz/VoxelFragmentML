@@ -133,6 +133,8 @@ void Scene::drawAsTriangles(const mat4& mModel, RenderingParameters* rendParams)
 void Scene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParameters* rendParams)
 {
 	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::TRIANGLE_MESH_SHADER);
+	RenderingShader* multiInstanceShader = ShaderList::getInstance()->getRenderingShader(RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER);
+	
 	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
 	const mat4 bias = glm::translate(mat4(1.0f), vec3(0.5f)) * glm::scale(mat4(1.0f), vec3(0.5f));						// Proj: [-1, 1] => with bias: [0, 1]
 
@@ -142,9 +144,6 @@ void Scene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParamet
 		matrix[RendEnum::VIEW_PROJ_MATRIX] = camera->getViewProjMatrix();
 
 		glDepthFunc(GL_LEQUAL);
-
-		shader->use();
-		shader->setUniform("materialScattering", rendParams->_materialScattering);										// Ambient lighting
 	}
 
 	{
@@ -164,11 +163,21 @@ void Scene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParamet
 				matrix[RendEnum::BIAS_VIEW_PROJ_MATRIX] = bias * _lights[i]->getCamera()->getViewProjMatrix();
 			}
 
+			shader->use();
+			shader->setUniform("materialScattering", rendParams->_materialScattering);			
 			_lights[i]->applyLight(shader, matrix[RendEnum::VIEW_MATRIX]);
 			_lights[i]->applyShadowMapTexture(shader);
 			shader->applyActiveSubroutines();
 
 			this->drawSceneAsTriangles(shader, RendEnum::TRIANGLE_MESH_SHADER, &matrix, rendParams);
+
+			multiInstanceShader->use();
+			multiInstanceShader->setUniform("materialScattering", rendParams->_materialScattering);
+			_lights[i]->applyLight(multiInstanceShader, matrix[RendEnum::VIEW_MATRIX]);
+			_lights[i]->applyShadowMapTexture(multiInstanceShader);
+			multiInstanceShader->applyActiveSubroutines();
+
+			this->drawSceneAsTriangles(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER, &matrix, rendParams);
 		}
 	}
 
@@ -180,6 +189,7 @@ void Scene::drawAsTriangles4Position(const mat4& mModel, RenderingParameters* re
 {
 	Camera* activeCamera = _cameraManager->getActiveCamera(); if (!activeCamera) return;
 	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::TRIANGLE_MESH_POSITION_SHADER);
+	RenderingShader* multiInstanceShader = ShaderList::getInstance()->getRenderingShader(RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_POSITION_SHADER);
 	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
 
 	{
@@ -188,8 +198,10 @@ void Scene::drawAsTriangles4Position(const mat4& mModel, RenderingParameters* re
 		matrix[RendEnum::VIEW_PROJ_MATRIX] = activeCamera->getViewProjMatrix();
 
 		shader->use();
-
 		this->drawSceneAsTriangles4Position(shader, RendEnum::TRIANGLE_MESH_POSITION_SHADER, &matrix, rendParams);
+
+		multiInstanceShader->use();
+		this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_POSITION_SHADER, &matrix, rendParams);
 	}
 }
 
@@ -197,6 +209,7 @@ void Scene::drawAsTriangles4Normal(const mat4& mModel, RenderingParameters* rend
 {
 	Camera* activeCamera = _cameraManager->getActiveCamera(); if (!activeCamera) return;
 	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::TRIANGLE_MESH_NORMAL_SHADER);
+	RenderingShader* multiInstanceShader = ShaderList::getInstance()->getRenderingShader(RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_NORMAL_SHADER);
 	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
 
 	{
@@ -205,8 +218,10 @@ void Scene::drawAsTriangles4Normal(const mat4& mModel, RenderingParameters* rend
 		matrix[RendEnum::VIEW_PROJ_MATRIX] = activeCamera->getViewProjMatrix();
 
 		shader->use();
-
 		this->drawSceneAsTriangles4Normal(shader, RendEnum::TRIANGLE_MESH_POSITION_SHADER, &matrix, rendParams);
+
+		multiInstanceShader->use();
+		this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_NORMAL_SHADER, &matrix, rendParams);
 	}
 }
 
@@ -214,6 +229,7 @@ void Scene::drawAsTriangles4Shadows(const mat4& mModel, RenderingParameters* ren
 {
 	Camera* activeCamera = _cameraManager->getActiveCamera(); if (!activeCamera) return;
 	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::SHADOWS_SHADER);
+	RenderingShader* multiInstanceShader = ShaderList::getInstance()->getRenderingShader(RendEnum::MULTI_INSTANCE_SHADOWS_SHADER);
 	const ivec2 canvasSize = rendParams->_viewportSize;
 	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
 
@@ -221,8 +237,6 @@ void Scene::drawAsTriangles4Shadows(const mat4& mModel, RenderingParameters* ren
 		matrix[RendEnum::MODEL_MATRIX] = mModel;
 
 		glEnable(GL_CULL_FACE);
-
-		shader->use();
 	}
 
 	for (unsigned int i = 0; i < _lights.size(); ++i)
@@ -243,10 +257,11 @@ void Scene::drawAsTriangles4Shadows(const mat4& mModel, RenderingParameters* ren
 
 			matrix[RendEnum::VIEW_PROJ_MATRIX] = light->getCamera()->getViewProjMatrix();
 
-			for (Group3D* group : _sceneGroup)
-			{
-				group->drawAsTriangles4Shadows(shader, RendEnum::SHADOWS_SHADER, matrix);
-			}
+			shader->use();
+			this->drawSceneAsTriangles4Position(shader, RendEnum::SHADOWS_SHADER, &matrix, rendParams);
+
+			multiInstanceShader->use();
+			this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_SHADOWS_SHADER, &matrix, rendParams);
 
 			//_computeShadowMap[i] = false;
 		}
@@ -272,9 +287,7 @@ void Scene::drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTypes 
 void Scene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
 	for (Group3D* group : _sceneGroup)
-	{
 		group->drawAsTriangles(shader, shaderType, *matrix);
-	}
 }
 
 void Scene::drawSceneAsTriangles4Normal(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)

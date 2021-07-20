@@ -106,11 +106,49 @@ protected:
 	// ------------- Rendering ----------------
 
 	/**
-	*	@brief Renders the scene as a set of triangles.
-	*	@param mModel Additional model matrix to be applied over the initial model matrix.
-	*	@param rendParams Rendering parameters to be taken into account.
+	*	@brief Decides which objects are going to be rendered as points.
+	*	@param shader Rendering shader which is drawing the scene.
+	*	@param shaderType Unique ID of "shader".
+	*	@param matrix Vector of matrices, including view, projection, etc.
+	*	@param rendParams Parameters which indicates how the scene is rendered.
 	*/
-	virtual void drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParameters* rendParams);
+	virtual void drawSceneAsPoints(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams);
+
+	/**
+	*	@brief Decides which objects are going to be rendered as a wireframe mesh.
+	*	@param shader Rendering shader which is drawing the scene.
+	*	@param shaderType Unique ID of "shader".
+	*	@param matrix Vector of matrices, including view, projection, etc.
+	*	@param rendParams Parameters which indicates how the scene is rendered.
+	*/
+	virtual void drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams);
+
+	/**
+	*	@brief Decides which objects are going to be rendered as a triangle mesh.
+	*	@param shader Rendering shader which is drawing the scene.
+	*	@param shaderType Unique ID of "shader".
+	*	@param matrix Vector of matrices, including view, projection, etc.
+	*	@param rendParams Parameters which indicates how the scene is rendered.
+	*/
+	virtual void drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams);
+
+	/**
+	*	@brief Decides which objects are going to be rendered as a triangle mesh. Only the normal is calculated for each fragment.
+	*	@param shader Rendering shader which is drawing the scene.
+	*	@param shaderType Unique ID of "shader".
+	*	@param matrix Vector of matrices, including view, projection, etc.
+	*	@param rendParams Parameters which indicates how the scene is rendered.
+	*/
+	virtual void drawSceneAsTriangles4Normal(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams);
+
+	/**
+	*	@brief Decides which objects are going to be rendered as a triangle mesh. Only the position is calculated for each fragment.
+	*	@param shader Rendering shader which is drawing the scene.
+	*	@param shaderType Unique ID of "shader".
+	*	@param matrix Vector of matrices, including view, projection, etc.
+	*	@param rendParams Parameters which indicates how the scene is rendered.
+	*/
+	virtual void drawSceneAsTriangles4Position(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams);
 
 public:
 	/**

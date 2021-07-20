@@ -133,5 +133,5 @@ uvec3 RegularGrid::getPositionIndex(const vec3& position)
 
 unsigned RegularGrid::getPositionIndex(int x, int y, int z) const
 {
-	return y * _numDivs.x * _numDivs.z + x * _numDivs.z + z;
+	return x * _numDivs.y * _numDivs.z + y * _numDivs.z + z;
 }
