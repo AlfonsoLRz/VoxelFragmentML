@@ -77,6 +77,7 @@
     <ClInclude Include="Source\Graphics\Core\DrawRay3D.h" />
     <ClInclude Include="Source\Graphics\Core\FBO.h" />
     <ClInclude Include="Source\Graphics\Core\FBOScreenshot.h" />
+    <ClInclude Include="Source\Graphics\Core\FractureParameters.h" />
     <ClInclude Include="Source\Graphics\Core\GraphicsCoreEnumerations.h" />
     <ClInclude Include="Source\Graphics\Core\Group3D.h" />
     <ClInclude Include="Source\Graphics\Core\Image.h" />
@@ -277,9 +278,11 @@
     <None Include="Assets\Shaders\Compute\BVHGeneration\endLoopComputations-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Collision\computeBVHCollision-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Collision\computeMeshBVHCollision-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\voxel.glsl" />
     <None Include="Assets\Shaders\Compute\Generic\resetBufferIndex-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\computeFaceAABB-comp.glsl" />

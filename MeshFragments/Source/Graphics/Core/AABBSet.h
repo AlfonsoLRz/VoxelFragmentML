@@ -15,7 +15,7 @@
 class AABBSet: public Model3D
 {
 protected:
-	std::vector<AABB> _aabb;
+	unsigned _numAABBs;
 
 protected:
 	/**
@@ -36,7 +36,7 @@ public:
 	/**
 	*	@brief Constructor from a set of bounding boxes. 
 	*/
-	AABBSet(std::vector<AABB>& aabbs);
+	AABBSet();
 
 	/**
 	*	@brief Destructor.
@@ -44,11 +44,21 @@ public:
 	virtual ~AABBSet();
 
 	/**
+	*	@brief Reset grid color. 
+	*/
+	void homogenize();
+
+	/**
 	*	@brief Computes the model data and sends it to GPU.
 	*	@param modelMatrix Model matrix to be applied while generating geometry.
 	*	@return Success of operation.
 	*/
 	virtual bool load(const mat4& modelMatrix = mat4(1.0f));
+
+	/**
+	*	@brief Alternative loading method. 
+	*/
+	void load(std::vector<AABB>& aabbs);
 
 	/**
 	*	@brief Setup VAO to integrate colors of each voxel.

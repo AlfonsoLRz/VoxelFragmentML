@@ -8,6 +8,7 @@
 #include "Graphics/Core/CADModel.h"
 #include "Graphics/Core/Light.h"
 #include "Graphics/Core/OpenGLUtilities.h"
+#include "Utilities/ChronoUtilities.h"
 
 /// Initialization of static attributes
 const std::string CADScene::SCENE_ROOT_FOLDER = "Assets/Scene/Basement/";
@@ -20,7 +21,7 @@ const std::string CADScene::MESH_1_PATH = "Assets/Models/Teapot/teapot";
 
 // [Public methods]
 
-CADScene::CADScene() : _aabbRenderer(nullptr), _mesh(nullptr), _meshOctree(nullptr), _meshGrid(nullptr)
+CADScene::CADScene() : _aabbRenderer(nullptr), _mesh(nullptr), _meshGrid(nullptr)
 {
 }
 
@@ -28,8 +29,25 @@ CADScene::~CADScene()
 {
 	delete _aabbRenderer;
 	delete _mesh;
-	delete _meshOctree;
 	delete _meshGrid;
+}
+
+void CADScene::fractureGrid()
+{
+	this->fractureModel();
+}
+
+void CADScene::rebuildGrid()
+{
+	std::vector<AABB> aabbs;
+
+	delete _meshGrid;
+	_meshGrid = new RegularGrid(_sceneGroup[0]->getAABB(), _fractParameters._gridSubdivisions);
+	_meshGrid->fill(_mesh->getModelCompent(0)->_geometry, _mesh->getModelCompent(0)->_topology, 1, 1000);
+	_meshGrid->getAABBs(aabbs);
+
+	_aabbRenderer->load(aabbs);
+	_aabbRenderer->homogenize();
 }
 
 void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
@@ -42,17 +60,23 @@ void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
 void CADScene::fractureModel()
 {
 	std::vector<uint16_t> resultBuffer;
-	auto seeds = fracturer::Seeder::uniform(*_meshGrid, 64);
-	fracturer::DistanceFunction dfunc = fracturer::MANHATTAN_DISTANCE;
-	
-	fracturer::Fracturer* fracturer = fracturer::NaiveFracturer::getInstance();
-	//fracturer::Fracturer* fracturer = fracturer::FloodFracturer::getInstance();
+	auto seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numSeeds);
+	fracturer::DistanceFunction dfunc = static_cast<fracturer::DistanceFunction>(_fractParameters._distanceFunction);
 
-	// Fracture object
+	ChronoUtilities::initChrono();
+	
+	fracturer::Fracturer* fracturer = nullptr;
+	if (_fractParameters._fractureAlgorithm == FractureParameters::NAIVE)
+		fracturer = fracturer::NaiveFracturer::getInstance();
+	else
+		fracturer = fracturer::FloodFracturer::getInstance();
+
 	fracturer->init();
 	fracturer->setDistanceFunction(dfunc);
-	fracturer->build(*_meshGrid, seeds, resultBuffer);
+	fracturer->build(*_meshGrid, seeds, resultBuffer, &_fractParameters);
 	fracturer->destroy();
+
+	std::cout << ChronoUtilities::getDuration() << std::endl;
 
 	_aabbRenderer->setColorIndex(resultBuffer);
 }
@@ -156,19 +180,11 @@ void CADScene::loadModels()
 		_sceneGroup.push_back(group);
 
 		// Build octree and retrieve AABBs
-		std::vector<AABB> aabbs;
-		
-		//_meshOctree = new Octree(50, 1, _mesh, group->getAABB());
-		//_meshOctree->getAABBs(aabbs);
-
-		_meshGrid = new RegularGrid(group->getAABB(), uvec3(180, 100, 80));
-		_meshGrid->fill(_mesh->getModelCompent(0)->_geometry, _mesh->getModelCompent(0)->_topology, 1, 1000);
-		_meshGrid->getAABBs(aabbs);
-
-		_aabbRenderer = new AABBSet(aabbs);
+		_aabbRenderer = new AABBSet();
 		_aabbRenderer->load();
 		_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
-
+		
+		this->rebuildGrid();
 		this->fractureModel();
 	}
 }

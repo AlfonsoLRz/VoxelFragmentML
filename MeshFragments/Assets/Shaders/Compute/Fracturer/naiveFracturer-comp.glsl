@@ -12,7 +12,6 @@ layout (std430, binding = 1) buffer GridBuffer	{ uint16_t  grid[]; };
 #include <Assets/Shaders/Compute/Fracturer/distance.glsl>
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
-uniform uvec3	gridDims;
 uniform uint	numSeeds;
 
 void main()
@@ -25,14 +24,9 @@ void main()
 		return;
 	}
 
-	float x = index / float(gridDims.y * gridDims.z);  
-	float w = index % (gridDims.y * gridDims.z); 
-	float y = w / gridDims.z;        
-	float z = uint(w) % gridDims.z;         
-
 	// Compute coordinates
 	float minDistance = UINT_MAX, distance;
-	vec3 position = vec3(x, y, z);
+	uvec3 position = getPosition(index);
 
 	for (int seedIdx = 0; seedIdx < numSeeds; ++seedIdx)
 	{

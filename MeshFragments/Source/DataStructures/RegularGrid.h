@@ -20,22 +20,17 @@
 class RegularGrid
 {   
 protected:
-	uint16_t*		_grid;
+	std::vector<uint16_t>	_grid;									//!< Color index of regular grid
 
-	AABB			_aabb;									//!< Bounding box of the scene
-	vec3			_cellSize;								//!< Size of each grid cell
-	uvec3			_numDivs;								//!< Number of subdivisions of space between mininum and maximum point
+	AABB					_aabb;									//!< Bounding box of the scene
+	vec3					_cellSize;								//!< Size of each grid cell
+	uvec3					_numDivs;								//!< Number of subdivisions of space between mininum and maximum point
 
 protected:
 	/**
 	*	@brief Builds a 3D grid. 
 	*/
 	void buildGrid();
-
-	/**
-	*	@brief Destroys a 3D grid.
-	*/
-	void destroyGrid();
 	
 	/**
 	*	@return Index of grid cell to be filled.
@@ -43,9 +38,15 @@ protected:
 	uvec3 getPositionIndex(const vec3& position);
 
 	/**
-	*	@return Index in grid array of a non-real position. 
+	*	@return Index in grid array of a non-real position.
 	*/
 	unsigned getPositionIndex(int x, int y, int z) const;
+
+public:
+	/**
+	*	@return Index in grid array of a non-real position. 
+	*/
+	static unsigned getPositionIndex(int x, int y, int z, const uvec3& numDivs);
 
 public:
 	/**
@@ -72,6 +73,11 @@ public:
 	*	@brief  
 	*/
 	void fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, unsigned index, int numSamples);
+
+	/**
+	*	@brief
+	*/
+	void fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numSamples);
 
 	/**
 	*	@brief Retrieves grid AABBs for rendering purposes. 

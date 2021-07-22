@@ -7,6 +7,7 @@
 #include "Fracturer/Seeder.h"
 #include "Graphics/Application/SSAOScene.h"
 #include "Graphics/Core/AABBSet.h"
+#include "Graphics/Core/FractureParameters.h"
 
 #define NEW_LIGHT "!"
 
@@ -52,10 +53,10 @@ protected:
 	const static std::string MESH_1_PATH;					//!< Location of the first mesh in the file system
 
 protected:
-	AABBSet*		_aabbRenderer;							//!< Buffer of voxels
-	CADModel*		_mesh;									//!< Jar mesh
-	Octree*			_meshOctree;							//!< Octree of jar mesh
-	RegularGrid*	_meshGrid;								//!< Mesh regular grid
+	AABBSet*			_aabbRenderer;							//!< Buffer of voxels
+	FractureParameters	_fractParameters;						//!< 
+	CADModel*			_mesh;									//!< Jar mesh
+	RegularGrid*		_meshGrid;								//!< Mesh regular grid
 
 protected:
 	/**
@@ -162,10 +163,27 @@ public:
 	virtual ~CADScene();
 
 	/**
+	*	@brief Fractures voxelized model. 
+	*/
+	void fractureGrid();
+
+	/**
+	*	@brief Rebuilds the whole grid to adapt it to a different number of subdivisions. 
+	*/
+	void rebuildGrid();
+
+	/**
 	*	@brief Draws the scene as the rendering parameters specifies.
 	*	@param mModel Additional model matrix to be applied over the initial model matrix.
 	*	@param rendParams Rendering parameters to be taken into account.
 	*/
 	virtual void render(const mat4& mModel, RenderingParameters* rendParams);
+
+	// ----- Getters
+
+	/**
+	*	@return Parameters for fracturing a model.
+	*/
+	FractureParameters* getFractureParameters() { return &_fractParameters; }
 };
 

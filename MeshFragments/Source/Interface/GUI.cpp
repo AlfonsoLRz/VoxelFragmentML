@@ -9,10 +9,12 @@
 /// [Protected methods]
 
 GUI::GUI() :
-	_showRenderingSettings(false), _showSceneSettings(false), _showScreenshotSettings(false), _showAboutUs(false), _showControls(false)
+	_showRenderingSettings(false), _showSceneSettings(false), _showScreenshotSettings(false), _showAboutUs(false), _showControls(false), _showFractureSettings(false)
 {
 	_renderer			= Renderer::getInstance();	
 	_renderingParams	= Renderer::getInstance()->getRenderingParameters();
+	_scene				= dynamic_cast<CADScene*>(_renderer->getCurrentScene());
+	_fractureParameters = _scene->getFractureParameters();
 }
 
 void GUI::createMenu()
@@ -22,6 +24,7 @@ void GUI::createMenu()
 	if (_showRenderingSettings)		showRenderingSettings();
 	if (_showScreenshotSettings)	showScreenshotSettings();
 	if (_showSceneSettings)			showSceneSettings();
+	if (_showFractureSettings)		showFractureSettings();
 	if (_showAboutUs)				showAboutUsWindow();
 	if (_showControls)				showControls();
 
@@ -32,6 +35,7 @@ void GUI::createMenu()
 			ImGui::MenuItem(ICON_FA_CUBE "Rendering", NULL, &_showRenderingSettings);
 			ImGui::MenuItem(ICON_FA_IMAGE "Screenshot", NULL, &_showScreenshotSettings);
 			ImGui::MenuItem(ICON_FA_TREE "Scene", NULL, &_showSceneSettings);
+			ImGui::MenuItem(ICON_FA_HEART_BROKEN "Fracture", NULL, &_showFractureSettings);
 			ImGui::EndMenu();
 		}
 
@@ -105,6 +109,38 @@ void GUI::showControls()
 		ImGui::Columns(1);
 		ImGui::Separator();
 
+	}
+
+	ImGui::End();
+}
+
+void GUI::showFractureSettings()
+{
+	if (ImGui::Begin("Fracture Settings", &_showRenderingSettings))
+	{
+		this->leaveSpace(1);
+		
+		if (ImGui::Button("Launch Algorithm"))
+		{
+			_scene->fractureGrid();
+		}
+		
+		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);	
+		ImGui::SliderInt3("Grid Subdivisions", &_fractureParameters->_gridSubdivisions[0], 1, 500); ImGui::SameLine(0, 20);
+		if (ImGui::Button("Rebuild Grid"))
+		{
+			_scene->rebuildGrid();
+		}
+		
+		ImGui::Combo("Base Algorithm", &_fractureParameters->_fractureAlgorithm, FractureParameters::Fracture_STR, IM_ARRAYSIZE(FractureParameters::Fracture_STR));
+		ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
+		ImGui::SliderInt("Num. seeds", &_fractureParameters->_numSeeds, 2, 1000);
+		ImGui::Checkbox("Extra Seeds", &_fractureParameters->_useExtraSeeds); ImGui::SameLine(0, 20);
+		ImGui::SliderInt("Seeds", &_fractureParameters->_numExtraSeeds, 0, 1000); 
+		ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
+
+		this->leaveSpace(3); ImGui::Text("Execution Settings"); ImGui::Separator(); this->leaveSpace(2);
+		ImGui::Checkbox("Use GPU", &_fractureParameters->_launchGPU);
 	}
 
 	ImGui::End();

@@ -540,6 +540,9 @@
     <ClInclude Include="Source\Fracturer\Seeder.h">
       <Filter>Archivos de encabezado\Fracturer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\FractureParameters.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -1013,6 +1016,12 @@
       <Filter>Archivos de recursos\Shaders\Compute\Templates</Filter>
     </None>
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>

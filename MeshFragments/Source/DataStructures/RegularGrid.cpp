@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "RegularGrid.h"
 
+#include "Graphics/Core/ShaderList.h"
+
 /// Public methods
 
 RegularGrid::RegularGrid(const AABB& aabb, uvec3 subdivisions) :
@@ -18,19 +20,55 @@ RegularGrid::RegularGrid(uvec3 subdivisions) : _numDivs(subdivisions)
 
 RegularGrid::~RegularGrid()
 {
-	this->destroyGrid();
 }
 
 void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, unsigned index, int numSamples)
 {
-	for (const Model3D::FaceGPUData& face: faces)
+	ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_REGULAR_GRID);
+
+	// Input data
+	uvec3 numDivs		= this->getNumSubdivisions();
+	unsigned numCells	= numDivs.x * numDivs.y * numDivs.z;
+	unsigned numThreads = faces.size() * numSamples;
+	unsigned numGroups	= ComputeShader::getNumGroups(numThreads);
+
+	// Noise buffer
+	std::vector<float> noiseBuffer;
+	this->fillNoiseBuffer(noiseBuffer, numSamples * 2);
+
+	// Input data
+	const GLuint vertexSSBO = ComputeShader::setReadBuffer(vertices, GL_STATIC_DRAW);
+	const GLuint faceSSBO	= ComputeShader::setReadBuffer(faces, GL_DYNAMIC_DRAW);
+	const GLuint noiseSSBO	= ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
+	const GLuint gridSSBO	= ComputeShader::setReadBuffer(&_grid[0], numCells, GL_DYNAMIC_DRAW);
+
+	shader->bindBuffers(std::vector<GLuint>{ vertexSSBO, faceSSBO, noiseSSBO, gridSSBO });
+	shader->use();
+	shader->setUniform("aabbMin", _aabb.min());
+	shader->setUniform("cellSize", _cellSize);
+	shader->setUniform("gridDims", numDivs);
+	shader->setUniform("numFaces", GLuint(faces.size()));
+	shader->setUniform("numSamples", GLuint(numSamples));
+	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+	uint16_t* gridData = ComputeShader::readData(gridSSBO, uint16_t());
+	_grid = std::vector<uint16_t>(gridData, gridData + numCells);
+
+	GLuint buffers[] = { vertexSSBO, faceSSBO, noiseSSBO, gridSSBO };
+	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+}
+
+void RegularGrid::fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numSamples)
+{
+	RandomUtilities::initializeUniformDistribution(.0f, 1.0f);
+	noiseBuffer.resize(numSamples);
+
+	for (int sampleIdx = 0; sampleIdx < numSamples; ++sampleIdx)
 	{
-		int samples = numSamples;
-		
-		Triangle3D triangle(vertices[face._vertices.x]._position, vertices[face._vertices.y]._position, vertices[face._vertices.z]._position);
-		while (samples-- >= 0) this->insertPoint(triangle.getRandomPoint(), index);
+		noiseBuffer[sampleIdx] = RandomUtilities::getUniformRandomValue();
 	}
 }
+
 
 void RegularGrid::getAABBs(std::vector<AABB>& aabb)
 {
@@ -63,7 +101,7 @@ void RegularGrid::insertPoint(const vec3& position, unsigned index)
 
 uint16_t* RegularGrid::data()
 {
-	return _grid;
+	return _grid.data();
 }
 
 uint16_t RegularGrid::at(int x, int y, int z) const
@@ -108,19 +146,9 @@ void RegularGrid::set(int x, int y, int z, uint8_t i)
 /// Protected methods	
 
 void RegularGrid::buildGrid()
-{
-	unsigned size = _numDivs.x * _numDivs.y * _numDivs.z;
-	_grid = new uint16_t[_numDivs.x * _numDivs.y * _numDivs.z];
-	
-	for (int idx = 0; idx < size; ++idx)
-	{
-		_grid[idx] = VOXEL_EMPTY;
-	}
-}
-
-void RegularGrid::destroyGrid()
-{
-	delete[] _grid;
+{	
+	_grid = std::vector<uint16_t>(_numDivs.x * _numDivs.y * _numDivs.z);
+	std::fill(_grid.begin(), _grid.end(), VOXEL_EMPTY);
 }
 
 uvec3 RegularGrid::getPositionIndex(const vec3& position)
@@ -134,4 +162,9 @@ uvec3 RegularGrid::getPositionIndex(const vec3& position)
 unsigned RegularGrid::getPositionIndex(int x, int y, int z) const
 {
 	return x * _numDivs.y * _numDivs.z + y * _numDivs.z + z;
+}
+
+unsigned RegularGrid::getPositionIndex(int x, int y, int z, const uvec3& numDivs)
+{
+	return x * numDivs.y * numDivs.z + y * numDivs.z + z;
 }

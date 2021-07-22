@@ -5,6 +5,7 @@
 #include "imgui/examples/imgui_impl_opengl3.h"
 
 #include "Geometry/Animation/CatmullRom.h"
+#include "Graphics/Application/CADScene.h"
 #include "Graphics/Application/Renderer.h"
 #include "Graphics/Application/RenderingParameters.h"
 #include "imgizmo/ImGuizmo.h"
@@ -26,13 +27,16 @@ class GUI: public Singleton<GUI>
 	friend class Singleton<GUI>;
 
 protected:
+	FractureParameters*				_fractureParameters;
 	ModelComponentBuffer			_modelComponents;					//!< Model component active on the scene
 	Renderer*						_renderer;							//!< Access to current scene
 	RenderingParameters*			_renderingParams;					//!< Reference to rendering parameters
+	CADScene*						_scene;
 
 	// GUI state
 	bool							_showAboutUs;						//!< About us window
 	bool							_showControls;						//!< Shows application controls
+	bool							_showFractureSettings;
 	bool							_showRenderingSettings;				//!< Displays a window which allows the user to modify the rendering parameters
 	bool							_showSceneSettings;					//!< Displays a window with all the model components and their variables
 	bool							_showScreenshotSettings;			//!< Shows a window which allows to take an screenshot at any size
@@ -77,6 +81,11 @@ protected:
 	*	@brief Displays a table with the application controls (mouse, keyboard, etc).
 	*/
 	void showControls();
+
+	/**
+	*	@brief Shows settings for fracturing the currently displayed models. 
+	*/
+	void showFractureSettings();
 
 	/**
 	*	@brief Shows a window with general rendering configuration.

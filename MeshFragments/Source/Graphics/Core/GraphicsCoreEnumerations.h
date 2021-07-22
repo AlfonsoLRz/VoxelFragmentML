@@ -113,14 +113,16 @@ struct RendEnum
 		PLANAR_SURFACE_TOPOLOGY,
 
 		// FRACTURER
+		BUILD_REGULAR_GRID,
 		FLOOD_FRACTURER,
-		NAIVE_FRACTURER
+		NAIVE_FRACTURER,
+		REMOVE_ISOLATED_REGIONS
 	};
 
 	/**
 	*	@return Number of compute shaders.
 	*/
-	const static GLsizei numComputeShaderTypes() { return NAIVE_FRACTURER + 1; }
+	const static GLsizei numComputeShaderTypes() { return REMOVE_ISOLATED_REGIONS + 1; }
 
 	/**
 	*	@return Number of rendering shaders.

@@ -21,13 +21,12 @@ namespace fracturer {
     	*/
         FloodFracturer();
 
+    public:
         /**
 		*   Destructor.
 		*/
         ~FloodFracturer() = default;
-
-    public:
-
+    	
         /**
         *   Array with Von Neumann neighbourhood.
         */
@@ -64,7 +63,7 @@ namespace fracturer {
         *   @param[in] grid Volumetric space we want to split into fragments
         *   @param[in] seed  Seeds used to generate fragments
         */
-        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer);
+        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer, FractureParameters* fractParameters);
 
         /**
         *   Set distance funcion.
