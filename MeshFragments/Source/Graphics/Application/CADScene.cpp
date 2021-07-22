@@ -71,10 +71,8 @@ void CADScene::fractureModel()
 	else
 		fracturer = fracturer::FloodFracturer::getInstance();
 
-	fracturer->init();
 	fracturer->setDistanceFunction(dfunc);
 	fracturer->build(*_meshGrid, seeds, resultBuffer, &_fractParameters);
-	fracturer->destroy();
 
 	std::cout << ChronoUtilities::getDuration() << std::endl;
 
@@ -123,7 +121,7 @@ void CADScene::loadDefaultLights()
 	sunLight->setId(vec3(0.5f));
 	sunLight->setIs(vec3(0.0f));
 	sunLight->castShadows(true);
-	sunLight->setShadowIntensity(0.2f, 1.0f);
+	sunLight->setShadowIntensity(0.0f, 1.0f);
 	sunLight->setBlurFilterSize(5);
 
 	_lights.push_back(std::unique_ptr<Light>(sunLight));

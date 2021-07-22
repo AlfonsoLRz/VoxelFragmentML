@@ -141,6 +141,12 @@ void GUI::showFractureSettings()
 
 		this->leaveSpace(3); ImGui::Text("Execution Settings"); ImGui::Separator(); this->leaveSpace(2);
 		ImGui::Checkbox("Use GPU", &_fractureParameters->_launchGPU);
+
+		this->leaveSpace(3); ImGui::Text("Save Result"); ImGui::Separator(); this->leaveSpace(2);
+		if (ImGui::Button("Export Fragments"))
+		{
+			_scene->rebuildGrid();
+		}
 	}
 
 	ImGui::End();

@@ -42,7 +42,7 @@ protected:
 	*/
 	unsigned getPositionIndex(int x, int y, int z) const;
 
-public:
+public:	
 	/**
 	*	@return Index in grid array of a non-real position. 
 	*/
@@ -88,6 +88,11 @@ public:
 	*	@brief Inserts a new point in the grid.
 	*/
 	void insertPoint(const vec3& position, unsigned index);
+
+	/**
+	*	@brief Substitutes current grid with new values. 
+	*/
+	void swap(const std::vector<uint16_t>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }
 
 	// ----------- External functions ----------
 

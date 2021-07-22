@@ -27,17 +27,6 @@ namespace fracturer {
     */
     class Fracturer {
     public:
-
-        /**
-        *   Initialize shaders, create objects and set OpenGL needed configuration.   
-        */
-        virtual void init() = 0;
-
-        /**
-        *   Free resources. 
-        */
-        virtual void destroy() = 0;
-
         /**
         *   Split up a volumentric object into fragments.
         *   @param[in] grid Volumetric space we want to split into fragments.

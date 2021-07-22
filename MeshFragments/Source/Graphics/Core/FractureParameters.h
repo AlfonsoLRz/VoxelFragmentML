@@ -5,7 +5,7 @@
 /**
 *	@file FractureParameters.h
 *	@authors Alfonso López Ruiz (alr00048@red.ujaen.es)
-*	@date 21/7/2021
+*	@date 21/07/2021
 */
 
 /**

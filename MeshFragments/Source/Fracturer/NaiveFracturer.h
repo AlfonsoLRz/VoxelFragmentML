@@ -13,12 +13,31 @@ namespace fracturer {
     class NaiveFracturer : public Singleton<NaiveFracturer>, public Fracturer
 	{
         friend class Singleton<NaiveFracturer>;
+        typedef std::function<float(const vec3& pos1, const vec3& pos2)> DistFunction;
+        typedef std::unordered_map<uint16_t, DistFunction> DistanceFunctionMap;
 
+    protected:
+        DistanceFunctionMap _distanceFunctionMap;
+    
     protected:
         /**
         *   @brief Constructor.
         */
         NaiveFracturer();
+
+        /**
+		*   Split up a volumentric object into fragments (CPU version).
+		*   @param[in] grid Volumetric space we want to split into fragments
+		*   @param[in] seed  Seeds used to generate fragments
+		*/
+        void buildCPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer, FractureParameters* fractParameters);
+
+        /**
+		*   Split up a volumentric object into fragments (CPU version).
+		*   @param[in] grid Volumetric space we want to split into fragments
+		*   @param[in] seed  Seeds used to generate fragments
+		*/
+        void buildGPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer, FractureParameters* fractParameters);
 
     public:
     	/**
@@ -32,16 +51,6 @@ namespace fracturer {
         *   @param[in]    seeds Voronoi seeds used to generate the model
         */
         static void removeIsolatedRegions(RegularGrid& grid, const std::vector<glm::uvec4>& seeds);
-
-        /**
-        *   You must invoke init() method before using NaiveFracturer.
-        */
-        void init();
-
-        /**
-        *   Release resources. You must invoke destroy() before OpenGL context is destroyed.
-        */
-        void destroy();
 
         /**
         *   Split up a volumentric object into fragments.
@@ -60,8 +69,5 @@ namespace fracturer {
 
         DistanceFunction      _dfunc;           //!< Inner distance metric
         GLuint                _spaceTexture;    //<! Texture used to sample space buffer in shader
-        //opengl::BufferObject  _spaceBuffer;     //<! Voxel space storage buffer object
-        //opengl::BufferObject  _seedsBuffer;     //<! Seeds storage buffer object
-        //opengl::ShaderProgram _program;         //<! Naive algorithm shaders program
     };
 }
