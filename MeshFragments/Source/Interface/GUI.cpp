@@ -145,7 +145,7 @@ void GUI::showFractureSettings()
 		this->leaveSpace(3); ImGui::Text("Save Result"); ImGui::Separator(); this->leaveSpace(2);
 		if (ImGui::Button("Export Fragments"))
 		{
-			_scene->rebuildGrid();
+			_scene->exportGrid();
 		}
 	}
 

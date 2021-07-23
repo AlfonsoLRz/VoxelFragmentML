@@ -95,16 +95,6 @@ public:
 	void generateBVH(bool buildVisualization = false);
 
 	/**
-	*	@return True if both groups collide at least in a triangle. 
-	*/
-	bool hasCollided(Group3D* group);
-
-	/**
-	*	@brief Checks if the given ray collides with the generated BVH. 
-	*/
-	bool hit(const RayGPUData& ray, float& distance, GLuint& modelCompID);
-
-	/**
 	*	@brief Loads all those components who belong to this group, applying the model matrix linked to such group.
 	*/
 	virtual bool load(const mat4& modelMatrix = mat4(1.0f));

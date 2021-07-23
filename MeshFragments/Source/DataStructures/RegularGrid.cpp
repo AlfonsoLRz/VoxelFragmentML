@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "RegularGrid.h"
 
+#include "Graphics/Core/OpenGLUtilities.h"
 #include "Graphics/Core/ShaderList.h"
+#include "tinyply/tinyply.h"
 
 /// Public methods
 
@@ -20,6 +22,72 @@ RegularGrid::RegularGrid(uvec3 subdivisions) : _numDivs(subdivisions)
 
 RegularGrid::~RegularGrid()
 {
+}
+
+void RegularGrid::exportGrid()
+{
+	std::unordered_map<uint16_t, std::vector<uvec3>> cubeMap;
+	unsigned cellIndex;
+
+	for (int x = 0; x < _numDivs.x; ++x)
+	{
+		for (int y = 0; y < _numDivs.y; ++y)
+		{
+			for (int z = 0; z < _numDivs.z; ++z)
+			{
+				cellIndex = this->getPositionIndex(x, y, z, _numDivs);
+
+				if (_grid[cellIndex] == VOXEL_EMPTY) continue;
+				
+				//if (cubeMap.find(_grid[cellIndex]) == cubeMap.end())
+				//{
+				cubeMap[_grid[cellIndex]].push_back(uvec3(x, y, z));
+			}
+		}
+	}
+
+	// Cube geometry & topology
+	Model3D::ModelComponent* modelComp = Primitives::getCubeModelComponent();
+	
+	for (auto& pair: cubeMap)
+	{
+		std::filebuf fileBufferBinary;
+		fileBufferBinary.open("Fragments/" + std::to_string(pair.first) + ".ply", std::ios::out | std::ios::binary);
+
+		std::ostream outstreamBinary(&fileBufferBinary);
+		if (outstreamBinary.fail()) throw std::runtime_error("Failed to open " + modelComp->_name + ".ply");
+
+		tinyply::PlyFile plyFile;
+		std::vector<vec3> position, normal, rgb;
+		std::vector<uvec3> triangleMesh;
+		vec3 rgbIndex = ColorUtilities::HSVtoRGB(ColorUtilities::getHueValue(pair.first), .99f, .99f);
+		
+		for (uvec3& point: pair.second)
+		{
+			unsigned startIndex = position.size();
+			
+			for (Model3D::VertexGPUData& vertex: modelComp->_geometry)
+			{
+				position.push_back(vertex._position * _cellSize + _aabb.min() + _cellSize * vec3(point.x, point.y, point.z));
+				normal.push_back(vertex._normal);
+				rgb.push_back(rgbIndex);
+			}
+
+			for (int i = 0; i < modelComp->_triangleMesh.size(); i += 3)
+			{
+				triangleMesh.push_back(uvec3(modelComp->_triangleMesh[i], modelComp->_triangleMesh[i + 1], modelComp->_triangleMesh[i + 2]) + startIndex);
+			}
+		}
+
+		plyFile.add_properties_to_element("vertex", { "x", "y", "z" }, tinyply::Type::FLOAT32, position.size(), reinterpret_cast<uint8_t*>(position.data()), tinyply::Type::INVALID, 0);
+		plyFile.add_properties_to_element("vertex", { "nx", "ny", "nz" }, tinyply::Type::FLOAT32, normal.size(), reinterpret_cast<uint8_t*>(normal.data()), tinyply::Type::INVALID, 0);
+		plyFile.add_properties_to_element("vertex", { "r", "g", "b" }, tinyply::Type::FLOAT32, rgb.size(), reinterpret_cast<uint8_t*>(rgb.data()), tinyply::Type::INVALID, 0);
+		plyFile.add_properties_to_element("face", { "vertex_index" }, tinyply::Type::UINT32, triangleMesh.size(), reinterpret_cast<uint8_t*>(triangleMesh.data()), tinyply::Type::UINT8, 3);
+
+		plyFile.write(outstreamBinary, true);
+	}
+
+	delete modelComp;
 }
 
 void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, unsigned index, int numSamples)

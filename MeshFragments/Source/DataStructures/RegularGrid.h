@@ -70,6 +70,11 @@ public:
     virtual ~RegularGrid();
 
 	/**
+	*	@brief Exports fragments into several models in a PLY file. 
+	*/
+	void exportGrid();
+
+	/**
 	*	@brief  
 	*/
 	void fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, unsigned index, int numSamples);

@@ -35,6 +35,11 @@ public:
 	static std::vector<GLuint> getCubeWireframeIndices(const unsigned startIndex);
 
 	/**
+	*	@return Model component with triangle mesh geometry & topology. 
+	*/
+	static Model3D::ModelComponent* getCubeModelComponent();
+
+	/**
 	*	@return VAO with geometry and topology of a cube.
 	*/
 	static VAO* getCubeVAO();

@@ -32,6 +32,11 @@ CADScene::~CADScene()
 	delete _meshGrid;
 }
 
+void CADScene::exportGrid()
+{
+	_meshGrid->exportGrid();
+}
+
 void CADScene::fractureGrid()
 {
 	this->fractureModel();

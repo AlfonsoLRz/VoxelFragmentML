@@ -163,6 +163,11 @@ public:
 	virtual ~CADScene();
 
 	/**
+	*	@brief
+	*/
+	void exportGrid();
+
+	/**
 	*	@brief Fractures voxelized model. 
 	*/
 	void fractureGrid();

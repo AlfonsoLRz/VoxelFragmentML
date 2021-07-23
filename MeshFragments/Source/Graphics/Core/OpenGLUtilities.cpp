@@ -67,6 +67,53 @@ std::vector<GLuint> Primitives::getCubeWireframeIndices(const unsigned startInde
 	return wireframe;
 }
 
+Model3D::ModelComponent* Primitives::getCubeModelComponent()
+{
+	const vec3 minValues(.0f), maxValues(1.0f);
+
+	const std::vector<vec3> points = getCubePoints(minValues, maxValues);
+	const std::vector<vec3> normals
+	{
+		glm::normalize(vec3(.0f, -1.0f, .0f)),
+		glm::normalize(vec3(.0f, 1.0f, .0f)),
+		glm::normalize(vec3(.0f, .0f, 1.0f)),
+		glm::normalize(vec3(1.0f, .0f, .0f)),
+		glm::normalize(vec3(.0f, .0f, -1.0f)),
+		glm::normalize(vec3(-1.0f, .0f, .0f))
+	};
+	const std::vector<GLuint> triangleMesh
+	{
+		0, 2, 1, 1, 2, 3,
+		4, 5, 6, 5, 7, 6,
+		8, 9, 10, 9, 11, 10, 
+		12, 13, 15, 12, 15, 14, 
+		16, 18, 17, 17, 18, 19,
+		20, 22, 21, 21, 22, 23,
+	};
+
+	// Build vertex data
+	Model3D::ModelComponent* cubeModel = new Model3D::ModelComponent(nullptr);
+	std::vector<Model3D::VertexGPUData> vertices;
+
+	for (int i = 0; i < 6; ++i)
+	{
+		for (int j = i * 4; j < i * 4 + 4; ++j)
+		{
+			Model3D::VertexGPUData vertex;
+			vertex._normal = normals[i];
+			vertex._position = points[j];
+			vertex._textCoord = vec2(.0f);
+
+			vertices.push_back(vertex);
+		}
+	}
+
+	cubeModel->_geometry = vertices;
+	cubeModel->_triangleMesh = triangleMesh;
+
+	return cubeModel;
+}
+
 VAO* Primitives::getCubeVAO()
 {
 	const vec3 minValues(-0.5f), maxValues(0.5f);
