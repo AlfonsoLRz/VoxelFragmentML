@@ -40,7 +40,7 @@ namespace fracturer {
 	{
     }
 
-    void FloodFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer, FractureParameters* fractParameters) {
+    void FloodFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters) {
         grid.homogenize();
 
         // Set seeds
@@ -89,7 +89,8 @@ namespace fracturer {
         }
 
         uint16_t* resultPointer = ComputeShader::readData(gridSSBO, uint16_t());
-        resultBuffer = std::vector<uint16_t>(resultPointer, resultPointer + numCells);
+        std::vector<uint16_t> resultBuffer = std::vector<uint16_t>(resultPointer, resultPointer + numCells);
+        grid.swap(resultBuffer);
 
         GLuint deleteBuffers[] = { stack1SSBO, stack2SSBO, gridSSBO, neighborSSBO, stackSize };
         glDeleteBuffers(sizeof(deleteBuffers) / sizeof(GLuint), deleteBuffers);

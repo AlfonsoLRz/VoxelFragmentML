@@ -61,11 +61,11 @@ void AABBSet::load(std::vector<AABB>& aabbs)
 	_numAABBs = aabbs.size();
 }
 
-void AABBSet::setColorIndex(std::vector<uint16_t>& colorBuffer)
+void AABBSet::setColorIndex(uint16_t* colorBuffer, unsigned size)
 {
 	std::vector<float> colorIndex;
 
-	for (int idx = 0; idx < colorBuffer.size(); ++idx)
+	for (int idx = 0; idx < size; ++idx)
 	{
 		if (colorBuffer[idx] != VOXEL_EMPTY)
 		{

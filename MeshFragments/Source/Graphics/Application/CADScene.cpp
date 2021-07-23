@@ -59,7 +59,6 @@ void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
 
 void CADScene::fractureModel()
 {
-	std::vector<uint16_t> resultBuffer;
 	auto seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numSeeds);
 	fracturer::DistanceFunction dfunc = static_cast<fracturer::DistanceFunction>(_fractParameters._distanceFunction);
 
@@ -72,11 +71,18 @@ void CADScene::fractureModel()
 		fracturer = fracturer::FloodFracturer::getInstance();
 
 	fracturer->setDistanceFunction(dfunc);
-	fracturer->build(*_meshGrid, seeds, resultBuffer, &_fractParameters);
+	fracturer->build(*_meshGrid, seeds,  &_fractParameters);
 
 	std::cout << ChronoUtilities::getDuration() << std::endl;
 
-	_aabbRenderer->setColorIndex(resultBuffer);
+	if (_fractParameters._removeIsolatedRegions)
+	{
+		std::vector<AABB> aabbs;
+		_meshGrid->getAABBs(aabbs);
+		_aabbRenderer->load(aabbs);
+	}
+
+	_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
 }
 
 bool CADScene::isExtensionReadable(const std::string& filename)

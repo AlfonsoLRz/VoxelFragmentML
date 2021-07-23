@@ -32,7 +32,7 @@ namespace fracturer {
         *   @param[in] grid Volumetric space we want to split into fragments.
         *   @param[in] seed  Seeds used to generate fragments.
         */
-        virtual void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer, FractureParameters* fractParameters) = 0;
+        virtual void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters) = 0;
 
         /**
         *   Set distance funcion.

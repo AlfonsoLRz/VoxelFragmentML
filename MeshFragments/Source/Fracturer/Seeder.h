@@ -18,7 +18,7 @@ namespace fracturer {
             explicit SeederSearchError(const std::string& msg) : std::runtime_error(msg) {  }
         };
 
-        static const int MAX_TRIES = 10000;     //!< Maximun number of tries on seed search.
+        static const int MAX_TRIES = 1000000;     //!< Maximun number of tries on seed search.
 
         /**
         *   Merge seeds randomly until there are no extra seeds.

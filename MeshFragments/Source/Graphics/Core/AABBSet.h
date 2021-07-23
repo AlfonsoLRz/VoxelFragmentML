@@ -63,6 +63,6 @@ public:
 	/**
 	*	@brief Setup VAO to integrate colors of each voxel.
 	*/
-	void setColorIndex(std::vector<uint16_t>& colorBuffer);
+	void setColorIndex(uint16_t* colorBuffer, unsigned siz);
 };
 

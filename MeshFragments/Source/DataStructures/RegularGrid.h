@@ -80,6 +80,11 @@ public:
 	void fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numSamples);
 
 	/**
+	*	@return Bounding box of the regular grid. 
+	*/
+	AABB getAABB() { return _aabb; }
+
+	/**
 	*	@brief Retrieves grid AABBs for rendering purposes. 
 	*/
 	void getAABBs(std::vector<AABB>& aabb);

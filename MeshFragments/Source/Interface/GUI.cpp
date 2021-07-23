@@ -116,7 +116,7 @@ void GUI::showControls()
 
 void GUI::showFractureSettings()
 {
-	if (ImGui::Begin("Fracture Settings", &_showRenderingSettings))
+	if (ImGui::Begin("Fracture Settings", &_showFractureSettings))
 	{
 		this->leaveSpace(1);
 		

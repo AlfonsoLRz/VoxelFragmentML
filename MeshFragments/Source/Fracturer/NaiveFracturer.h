@@ -13,7 +13,7 @@ namespace fracturer {
     class NaiveFracturer : public Singleton<NaiveFracturer>, public Fracturer
 	{
         friend class Singleton<NaiveFracturer>;
-        typedef std::function<float(const vec3& pos1, const vec3& pos2)> DistFunction;
+        typedef std::function<float(const uvec3& pos1, const uvec4& pos2)> DistFunction;
         typedef std::unordered_map<uint16_t, DistFunction> DistanceFunctionMap;
 
     protected:
@@ -30,34 +30,37 @@ namespace fracturer {
 		*   @param[in] grid Volumetric space we want to split into fragments
 		*   @param[in] seed  Seeds used to generate fragments
 		*/
-        void buildCPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer, FractureParameters* fractParameters);
+        void buildCPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters);
 
         /**
 		*   Split up a volumentric object into fragments (CPU version).
 		*   @param[in] grid Volumetric space we want to split into fragments
 		*   @param[in] seed  Seeds used to generate fragments
 		*/
-        void buildGPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer, FractureParameters* fractParameters);
+        void buildGPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters);
+
+    	/*
+    	*  Removes fragments isolated with respect to the fragment where a seed was originally placed.
+    	*/
+        void removeIsolatedRegionsCPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds);
+
+        /*
+		*  Removes fragments isolated with respect to the fragment where a seed was originally placed (GPU version).
+		*/
+        void removeIsolatedRegionsGPU(const GLuint gridSSBO, RegularGrid& grid, const std::vector<glm::uvec4>& seeds);
 
     public:
     	/**
     	*   @brief Destructor. 
     	*/
         ~NaiveFracturer() {};
-    	
-        /**
-        *   Remove isolated regions.
-        *   @param[inout] grid Space where we want to remove isolated regions
-        *   @param[in]    seeds Voronoi seeds used to generate the model
-        */
-        static void removeIsolatedRegions(RegularGrid& grid, const std::vector<glm::uvec4>& seeds);
 
         /**
         *   Split up a volumentric object into fragments.
         *   @param[in] grid Volumetric space we want to split into fragments
         *   @param[in] seed  Seeds used to generate fragments
         */
-        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, std::vector<uint16_t>& resultBuffer, FractureParameters* fractParameters);
+        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters);
 
         /**
         *   Set distance funcion.

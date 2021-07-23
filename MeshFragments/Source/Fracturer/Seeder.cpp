@@ -51,6 +51,7 @@ namespace fracturer {
         std::set<glm::uvec3, decltype(comparator)> seeds(comparator);
         // Current try number
         unsigned int attempt = 0;
+        uvec3 numDivs = grid.getNumSubdivisions() - uvec3(2);
 
         // Bruteforce seed searcg
         while (seeds.size() != nseeds) {
@@ -60,9 +61,9 @@ namespace fracturer {
                     std::to_string(MAX_TRIES) + ")");
 
             // Generate random seed
-            int x = rand() % grid.getNumSubdivisions().x;
-            int y = rand() % grid.getNumSubdivisions().y;
-            int z = rand() % grid.getNumSubdivisions().z;
+            int x = rand() % numDivs.x + 1;
+            int y = rand() % numDivs.y + 1;
+            int z = rand() % numDivs.z + 1;
             glm::uvec3 voxel(x, y, z);
 
             // Is occupied the voxel?
