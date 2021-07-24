@@ -88,7 +88,7 @@ vec3 Triangle3D::getCenterOfMass() const
 vec3 Triangle3D::getRandomPoint() const
 {
 	vec3 u = _b - _a, v = _c - _a;
-	vec2 randomFactors = vec2(RandomUtilities::getUniformRandomValue(), RandomUtilities::getUniformRandomValue());
+	vec2 randomFactors = vec2(RandomUtilities::getUniformRandom(.0f, 1.0f), RandomUtilities::getUniformRandom(.0f, 1.0f));
 
 	if (randomFactors.x + randomFactors.y >= 1.0f)
 	{

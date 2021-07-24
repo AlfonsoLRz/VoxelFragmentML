@@ -5,46 +5,172 @@
 /**
 *	@file RandomUtilities.h
 *	@authors Alfonso López Ruiz (alr00048@red.ujaen.es)
-*	@date 01/02/2021
+*	@date 17/04/2021
 */
 
-typedef std::mt19937_64							RandomNumberGenerator;
-typedef std::uniform_real_distribution<double>	DoubleUniformDistribution;
+typedef std::mt19937							RandomNumberGenerator;
+typedef std::uniform_real_distribution<float>	DoubleUniformDistribution;
 
 /**
-*	@brief Utilities which help us to retrieve random values.
+*	@brief Set of utilities to retrieve random values.
 *	@author Alfonso López Ruiz.
 */
 namespace RandomUtilities
 {
-	//!< Private members
-	namespace
-	{
-		RandomNumberGenerator		_randomNumberGenerator;
-		DoubleUniformDistribution	_uniformDistribution;
-	}
+	/**
+	*	@brief Initializes the seed of the current distribution. 
+	*/
+	void initSeed(int seed);
+	
+	/**
+	*	@return Random of length up to distanceSquared.
+	*/
+	vec3 getRandomToSphere(float radius, float distanceSquared);
 
 	/**
 	*	@return New random value retrieved from a random uniform distribution.
 	*/
-	double getUniformRandomValue();
+	float getUniformRandom();
 
 	/**
-	*	@brief Initializes the uniform distribution so that it gets a new seed and range.
+	*	@return New random value retrieved from a random uniform distribution. Note that this value is not in [0, 1].
 	*/
-	void initializeUniformDistribution(const float min, const float max);
-}
+	float getUniformRandom(float min, float max);
 
-inline double RandomUtilities::getUniformRandomValue()
-{
-	return _uniformDistribution(_randomNumberGenerator);
-}
+	/**
+	*	@brief Generates a random color in [0, 1] by using getUniformRandom function for each channel.
+	*/
+	vec3 getUniformRandomColor();
 
-inline void RandomUtilities::initializeUniformDistribution(const float min, const float max)
-{
-	uint64_t			timeSeed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-	std::seed_seq		seedSeq{ uint32_t(timeSeed & 0xffffffff), uint32_t(timeSeed >> 32) };
+	/**
+	*	@brief Generates a random color by using getUniformRandom function for each channel.
+	*/
+	vec3 getUniformRandomColor(float min, float max);
+
+	/**
+	*	@return Random hemisphere vector aligned to Z axis.
+	*/
+	vec3 getUniformRandomCosineDirection();
+
+	/**
+	*	@return Random point in unit sphere.
+	*/
+	vec3 getUniformRandomInHemisphere(const vec3& normal);
+
+	/**
+	*	@return Random single integer value.
+	*/
+	int getUniformRandomInt(int min, int max);
+
+	/**
+	*	@return Random single integer value biased towards the middle value.
+	*/
+	int getBiasedRandomInt(int min, int max, int divs);
 	
-	_uniformDistribution = std::uniform_real_distribution<double>(min, max);
-	_randomNumberGenerator.seed(seedSeq);
+	/**
+	*	@return Random point in unit disk.
+	*/
+	vec3 getUniformRandomInUnitDisk();
+
+	/**
+	*	@return Random point in unit sphere.
+	*/
+	vec3 getUniformRandomInUnitSphere();
+}
+
+inline void RandomUtilities::initSeed(int seed)
+{
+	static RandomNumberGenerator generator ( seed );
+}
+
+inline vec3 RandomUtilities::getRandomToSphere(float radius, float distanceSquared)
+{
+	const float r1 = getUniformRandom();
+	const float r2 = getUniformRandom();
+	const float z = 1 + r2 * (sqrt(1.0f - radius * radius / distanceSquared) - 1.0f);
+	const float phi = 2.0f * glm::pi<float>() * r1;
+	const float x = std::cos(phi) * sqrt(1 - z * z);
+	const float y = std::sin(phi) * sqrt(1 - z * z);
+
+	return vec3(x, y, z);
+}
+
+inline float RandomUtilities::getUniformRandom()
+{
+	static RandomNumberGenerator generator;
+	static DoubleUniformDistribution distribution(.0f, 1.0f);
+
+	return distribution(generator);
+}
+
+inline float RandomUtilities::getUniformRandom(float min, float max)
+{
+	return min + (max - min) * getUniformRandom();
+}
+
+inline vec3 RandomUtilities::getUniformRandomColor()
+{
+	return vec3(RandomUtilities::getUniformRandom(), RandomUtilities::getUniformRandom(), RandomUtilities::getUniformRandom());
+}
+inline vec3 RandomUtilities::getUniformRandomColor(float min, float max)
+{
+	return vec3(RandomUtilities::getUniformRandom(min, max), RandomUtilities::getUniformRandom(min, max), RandomUtilities::getUniformRandom(min, max));
+}
+
+inline vec3 RandomUtilities::getUniformRandomCosineDirection()
+{
+	const float r1 = RandomUtilities::getUniformRandom(), r2 = RandomUtilities::getUniformRandom();
+	const float z = sqrt(1 - r2);
+	const float phi = 2.0f * glm::pi<float>() * r1;
+	const float x = std::cos(phi) * sqrt(r2);
+	const float y = std::sin(phi) * sqrt(r2);
+
+	return vec3(x, y, z);
+}
+
+inline vec3 RandomUtilities::getUniformRandomInHemisphere(const vec3& normal)
+{
+	vec3 unitSphere = getUniformRandomInUnitSphere();
+
+	return unitSphere * -1.0f * ((glm::dot(unitSphere, normal) > .0f) * 2.0f - 1.0f);
+}
+
+inline int RandomUtilities::getUniformRandomInt(int min, int max)
+{
+	return static_cast<int>(getUniformRandom(min, max));
+}
+
+inline int RandomUtilities::getBiasedRandomInt(int min, int max, int divs)
+{
+	int number = 0;
+	max /= divs;
+	
+	for (int i = 0; i < divs; i++) {
+		number += rand() % max;
+	}
+
+	return number;
+}
+
+inline vec3 RandomUtilities::getUniformRandomInUnitDisk()
+{
+	while (true)
+	{
+		vec3 point = vec3(getUniformRandom(-1.0f, 1.0f), getUniformRandom(-1.0f, 1.0f), .0f);
+		if (glm::length2(point) >= 1) continue;
+
+		return point;
+	}
+}
+
+inline vec3 RandomUtilities::getUniformRandomInUnitSphere()
+{
+	vec3 point;
+	while (true)
+	{
+		point = vec3(getUniformRandom(-1.0f, 1.0f), getUniformRandom(-1.0f, 1.0f), getUniformRandom(-1.0f, 1.0f));
+		if (glm::length2(point) >= 1) continue;
+
+		return point;
+	}
 }

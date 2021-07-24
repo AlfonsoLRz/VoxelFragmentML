@@ -64,8 +64,29 @@ void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
 
 void CADScene::fractureModel()
 {
-	auto seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numSeeds);
+	// Configure seed
+	srand(_fractParameters._seed);
+	RandomUtilities::initSeed(_fractParameters._seed);
+
 	fracturer::DistanceFunction dfunc = static_cast<fracturer::DistanceFunction>(_fractParameters._distanceFunction);
+	
+	std::vector<uvec4> seeds;
+	if (_fractParameters._biasSeeds == 0)
+	{
+		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numSeeds);
+
+		if (_fractParameters._numExtraSeeds > 0)
+		{
+			fracturer::DistanceFunction mergeDFunc = static_cast<fracturer::DistanceFunction>(_fractParameters._mergeSeedsDistanceFunction);
+			auto extraSeeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numExtraSeeds);
+			fracturer::Seeder::mergeSeeds(seeds, extraSeeds, mergeDFunc);
+		}
+	}
+	else
+	{
+		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._biasSeeds);
+		seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, _fractParameters._numSeeds - _fractParameters._biasSeeds, _fractParameters._spreading);
+	}
 
 	ChronoUtilities::initChrono();
 	
@@ -181,6 +202,7 @@ void CADScene::loadModels()
 		// Mesh 1
 		_mesh = new CADModel(MESH_1_PATH, MESH_1_PATH.substr(0, MESH_1_PATH.find_last_of("/") + 1), true);
 		_mesh->load();
+		_mesh->getModelCompent(0)->_enabled = false;
 
 		Group3D* group = new Group3D();
 		group->addComponent(_mesh);

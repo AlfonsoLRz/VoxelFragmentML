@@ -22,28 +22,34 @@ public:
 	inline static const char* Distance_STR[DISTANCE_FUNCTIONS] = { "Euclidean", "Manhattan", "Chebyshev" };
 
 public:
+	int		_biasSeeds;
 	int		_fractureAlgorithm;
 	int		_distanceFunction;
 	ivec3	_gridSubdivisions;
 	bool	_launchGPU;
+	int		_mergeSeedsDistanceFunction;
 	int		_numSeeds;
 	int		_numExtraSeeds;
 	bool	_removeIsolatedRegions;
-	bool	_useExtraSeeds;
+	int		_seed;
+	int		_spreading;
 
 public:
 	/**
 	*	@brief Default constructor.
 	*/
 	FractureParameters() :
+		_biasSeeds(1),
 		_fractureAlgorithm(NAIVE),
 		_distanceFunction(MANHATTAN),
 		_gridSubdivisions(126, 81, 61),
 		_launchGPU(true),
+		_mergeSeedsDistanceFunction(MANHATTAN),
 		_numSeeds(64),
 		_numExtraSeeds(200),
 		_removeIsolatedRegions(true),
-		_useExtraSeeds(false)
+		_seed(80),
+		_spreading(5)
 	{
 	}
 };

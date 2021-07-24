@@ -135,12 +135,15 @@ void GUI::showFractureSettings()
 		ImGui::Combo("Base Algorithm", &_fractureParameters->_fractureAlgorithm, FractureParameters::Fracture_STR, IM_ARRAYSIZE(FractureParameters::Fracture_STR));
 		ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
 		ImGui::SliderInt("Num. seeds", &_fractureParameters->_numSeeds, 2, 1000);
-		ImGui::Checkbox("Extra Seeds", &_fractureParameters->_useExtraSeeds); ImGui::SameLine(0, 20);
-		ImGui::SliderInt("Seeds", &_fractureParameters->_numExtraSeeds, 0, 1000); 
+		ImGui::SliderInt("Num. Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, 1000);
+		ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
 		ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
+		ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6);
+		ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_spreading, 2, 10);
 
 		this->leaveSpace(3); ImGui::Text("Execution Settings"); ImGui::Separator(); this->leaveSpace(2);
-		ImGui::Checkbox("Use GPU", &_fractureParameters->_launchGPU);
+		ImGui::Checkbox("Use GPU", &_fractureParameters->_launchGPU); ImGui::SameLine(0, 20);
+		ImGui::InputInt("Seed", &_fractureParameters->_seed, 1);
 
 		this->leaveSpace(3); ImGui::Text("Save Result"); ImGui::Separator(); this->leaveSpace(2);
 		if (ImGui::Button("Export Fragments"))
@@ -350,6 +353,8 @@ void GUI::render()
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	ImGuizmo::BeginFrame();
+
+	//ImGui::ShowDemoWindow(&show_demo_window);
 
 	this->createMenu();
 

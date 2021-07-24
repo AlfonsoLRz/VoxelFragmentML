@@ -20,6 +20,11 @@ namespace fracturer {
 
         static const int MAX_TRIES = 1000000;     //!< Maximun number of tries on seed search.
 
+    	/**
+    	*   @brief Creates seeds near the current ones. 
+    	*/
+        static std::vector<glm::uvec4> nearSeeds(const RegularGrid& grid, const std::vector<glm::uvec4>& frags, unsigned numSeeds, unsigned spreading);
+    	
         /**
         *   Merge seeds randomly until there are no extra seeds.
         *   Merge criteria is minimun distance.

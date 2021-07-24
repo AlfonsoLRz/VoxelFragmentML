@@ -128,12 +128,11 @@ void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, cons
 
 void RegularGrid::fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numSamples)
 {
-	RandomUtilities::initializeUniformDistribution(.0f, 1.0f);
 	noiseBuffer.resize(numSamples);
 
 	for (int sampleIdx = 0; sampleIdx < numSamples; ++sampleIdx)
 	{
-		noiseBuffer[sampleIdx] = RandomUtilities::getUniformRandomValue();
+		noiseBuffer[sampleIdx] = RandomUtilities::getUniformRandom(.0f, 1.0f);
 	}
 }
 

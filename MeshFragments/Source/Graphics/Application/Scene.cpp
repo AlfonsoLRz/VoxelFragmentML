@@ -218,7 +218,7 @@ void Scene::drawAsTriangles4Normal(const mat4& mModel, RenderingParameters* rend
 		matrix[RendEnum::VIEW_PROJ_MATRIX] = activeCamera->getViewProjMatrix();
 
 		shader->use();
-		this->drawSceneAsTriangles4Normal(shader, RendEnum::TRIANGLE_MESH_POSITION_SHADER, &matrix, rendParams);
+		this->drawSceneAsTriangles4Normal(shader, RendEnum::TRIANGLE_MESH_NORMAL_SHADER, &matrix, rendParams);
 
 		multiInstanceShader->use();
 		this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_NORMAL_SHADER, &matrix, rendParams);
