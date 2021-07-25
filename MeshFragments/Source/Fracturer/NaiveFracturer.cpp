@@ -9,16 +9,16 @@ namespace fracturer {
 	
     NaiveFracturer::NaiveFracturer() : _dfunc(EUCLIDEAN_DISTANCE), _spaceTexture(0)
     {
-        _distanceFunctionMap[FractureParameters::DistanceFunction::EUCLIDEAN] = [](const uvec3& pos1, const uvec4& pos2) -> float {
+        _distanceFunctionMap[FractureParameters::DistanceFunction::EUCLIDEAN] = [](const ivec3& pos1, const ivec4& pos2) -> float {
             float x = pos1.x - pos2.x, y = pos1.y - pos2.y, z = pos1.z - pos2.z;
             return sqrt(x * x + y * y + z * z);
         };
 
-        _distanceFunctionMap[FractureParameters::DistanceFunction::MANHATTAN] = [](const uvec3& pos1, const uvec4& pos2) -> float {
+        _distanceFunctionMap[FractureParameters::DistanceFunction::MANHATTAN] = [](const ivec3& pos1, const ivec4& pos2) -> float {
             return glm::abs(pos1.x - pos2.x) + glm::abs(pos1.y - pos2.y) + glm::abs(pos1.z - pos2.z);
         };
 
-        _distanceFunctionMap[FractureParameters::DistanceFunction::CHEBYSHEV] = [](const uvec3& pos1, const uvec4& pos2) -> float {
+        _distanceFunctionMap[FractureParameters::DistanceFunction::CHEBYSHEV] = [](const ivec3& pos1, const ivec4& pos2) -> float {
             return std::max(glm::abs(pos1.x - pos2.x), std::max(glm::abs(pos1.y - pos2.y), glm::abs(pos1.z - pos2.z)));
         };
     }
@@ -31,7 +31,7 @@ namespace fracturer {
         DistFunction distanceFunction = _distanceFunctionMap[fractParameters->_distanceFunction];
 
     	// Iteration data
-        vec3 cellPoint;
+        ivec3 cellPoint;
         float distance, minDistance;
         GLuint seed, cellIndex;
 
@@ -41,7 +41,7 @@ namespace fracturer {
             {
                 for (int z = 0; z < numDivs.z; ++z)
                 {
-                    cellPoint = uvec3(x, y, z);
+                    cellPoint = ivec3(x, y, z);
                     cellIndex = RegularGrid::getPositionIndex(x, y, z, numDivs);
                     minDistance = FLT_MAX;
 

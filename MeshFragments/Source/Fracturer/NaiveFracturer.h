@@ -13,7 +13,7 @@ namespace fracturer {
     class NaiveFracturer : public Singleton<NaiveFracturer>, public Fracturer
 	{
         friend class Singleton<NaiveFracturer>;
-        typedef std::function<float(const uvec3& pos1, const uvec4& pos2)> DistFunction;
+        typedef std::function<float(const ivec3& pos1, const ivec4& pos2)> DistFunction;
         typedef std::unordered_map<uint16_t, DistFunction> DistanceFunctionMap;
 
     protected:
