@@ -17,7 +17,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::MESH_1_PATH = "Assets/Models/Teapot/teapot";
+const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01";
 
 // [Public methods]
 
@@ -74,18 +74,21 @@ void CADScene::fractureModel()
 	if (_fractParameters._biasSeeds == 0)
 	{
 		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numSeeds);
-
-		if (_fractParameters._numExtraSeeds > 0)
-		{
-			fracturer::DistanceFunction mergeDFunc = static_cast<fracturer::DistanceFunction>(_fractParameters._mergeSeedsDistanceFunction);
-			auto extraSeeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numExtraSeeds);
-			fracturer::Seeder::mergeSeeds(seeds, extraSeeds, mergeDFunc);
-		}
 	}
 	else
 	{
 		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._biasSeeds);
 		seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, _fractParameters._numSeeds - _fractParameters._biasSeeds, _fractParameters._spreading);
+	}
+
+	if (_fractParameters._numExtraSeeds > 0)
+	{
+		fracturer::DistanceFunction mergeDFunc = static_cast<fracturer::DistanceFunction>(_fractParameters._mergeSeedsDistanceFunction);
+		auto extraSeeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numExtraSeeds);
+		extraSeeds.insert(extraSeeds.begin(), seeds.begin(), seeds.end());
+
+		fracturer::Seeder::mergeSeeds(seeds, extraSeeds, mergeDFunc);
+		seeds = extraSeeds;
 	}
 
 	ChronoUtilities::initChrono();
