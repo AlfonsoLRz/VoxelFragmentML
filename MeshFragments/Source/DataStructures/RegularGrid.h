@@ -100,6 +100,11 @@ public:
 	void insertPoint(const vec3& position, unsigned index);
 
 	/**
+	*	@brief Queries cluster for each triangle of the given mesh.
+	*/
+	void queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx);
+
+	/**
 	*	@brief Substitutes current grid with new values. 
 	*/
 	void swap(const std::vector<uint16_t>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }

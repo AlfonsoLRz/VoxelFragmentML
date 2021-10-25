@@ -133,6 +133,7 @@ void Scene::drawAsTriangles(const mat4& mModel, RenderingParameters* rendParams)
 void Scene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParameters* rendParams)
 {
 	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::TRIANGLE_MESH_SHADER);
+	RenderingShader* clusteringShader = ShaderList::getInstance()->getRenderingShader(RendEnum::CLUSTER_SHADER);
 	RenderingShader* multiInstanceShader = ShaderList::getInstance()->getRenderingShader(RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER);
 	
 	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
@@ -178,6 +179,14 @@ void Scene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParamet
 			multiInstanceShader->applyActiveSubroutines();
 
 			this->drawSceneAsTriangles(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER, &matrix, rendParams);
+
+			clusteringShader->use();
+			clusteringShader->setUniform("materialScattering", rendParams->_materialScattering);
+			_lights[i]->applyLight(clusteringShader, matrix[RendEnum::VIEW_MATRIX]);
+			_lights[i]->applyShadowMapTexture(clusteringShader);
+			clusteringShader->applyActiveSubroutines();
+
+			this->drawSceneAsTriangles(clusteringShader, RendEnum::CLUSTER_SHADER, &matrix, rendParams);
 		}
 	}
 

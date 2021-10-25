@@ -320,7 +320,8 @@ void Group3D::aggregateSSBOData(VolatileGPUData*& volatileGPUData)
 		numTriangles += modelComp->_topology.size();
 	}
 
-	std::cout << numTriangles << std::endl;
+	std::cout << "Number of Vertices: " << numVertices << std::endl;
+	std::cout << "Number of Triangles: " << numTriangles << std::endl;
 
 	// Second step: gather geometry and topology
 	unsigned currentGeometry = 0, currentTopology = 0;

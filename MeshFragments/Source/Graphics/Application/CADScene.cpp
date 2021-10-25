@@ -17,7 +17,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01";
+const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01_v2";
 
 // [Public methods]
 
@@ -45,14 +45,17 @@ void CADScene::fractureGrid()
 void CADScene::rebuildGrid()
 {
 	std::vector<AABB> aabbs;
+	std::vector<float> clusterIdx;
 
 	delete _meshGrid;
 	_meshGrid = new RegularGrid(_sceneGroup[0]->getAABB(), _fractParameters._gridSubdivisions);
-	_meshGrid->fill(_mesh->getModelCompent(0)->_geometry, _mesh->getModelCompent(0)->_topology, 1, 1000);
+	_meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, 1, 1000);
+	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx);
 	_meshGrid->getAABBs(aabbs);
 
 	_aabbRenderer->load(aabbs);
 	_aabbRenderer->homogenize();
+	_mesh->getModelComponent(0)->setClusterIdx(clusterIdx);
 }
 
 void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
@@ -71,6 +74,8 @@ void CADScene::fractureModel()
 	fracturer::DistanceFunction dfunc = static_cast<fracturer::DistanceFunction>(_fractParameters._distanceFunction);
 	
 	std::vector<uvec4> seeds;
+	std::vector<float> clusterIdx;
+
 	if (_fractParameters._biasSeeds == 0)
 	{
 		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numSeeds);
@@ -112,6 +117,8 @@ void CADScene::fractureModel()
 	}
 
 	_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
+	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx);
+	_mesh->getModelComponent(0)->setClusterIdx(clusterIdx, false);
 }
 
 bool CADScene::isExtensionReadable(const std::string& filename)
@@ -205,7 +212,7 @@ void CADScene::loadModels()
 		// Mesh 1
 		_mesh = new CADModel(MESH_1_PATH, MESH_1_PATH.substr(0, MESH_1_PATH.find_last_of("/") + 1), true);
 		_mesh->load();
-		_mesh->getModelCompent(0)->_enabled = false;
+		_mesh->getModelComponent(0)->_enabled = true;
 
 		Group3D* group = new Group3D();
 		group->addComponent(_mesh);
@@ -424,14 +431,28 @@ void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShade
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_SHADER)
 	{
-		for (Group3D* group : _sceneGroup)
+		if (!rendParams->_renderVoxelizedMesh)
 		{
-			group->drawAsTriangles(shader, shaderType, *matrix);
+			//for (Group3D* group : _sceneGroup)
+			//{
+			//	group->drawAsTriangles(shader, shaderType, *matrix);
+			//}
+		}
+	}
+	else if (shaderType == RendEnum::CLUSTER_SHADER)
+	{
+		if (!rendParams->_renderVoxelizedMesh)
+		{
+			for (Group3D* group : _sceneGroup)
+			{
+				group->drawAsTriangles(shader, shaderType, *matrix);
+			}
 		}
 	}
 	else
 	{
-		_aabbRenderer->drawAsTriangles(shader, shaderType, *matrix);
+		if (rendParams->_renderVoxelizedMesh)
+			_aabbRenderer->drawAsTriangles(shader, shaderType, *matrix);
 	}
 }
 
@@ -439,12 +460,16 @@ void CADScene::drawSceneAsTriangles4Normal(RenderingShader* shader, RendEnum::Re
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_NORMAL_SHADER)
 	{
-		for (Group3D* group : _sceneGroup)
-			group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		if (!rendParams->_renderVoxelizedMesh)
+		{
+			for (Group3D* group : _sceneGroup)
+				group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		}
 	}
 	else
 	{
-		_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		if (rendParams->_renderVoxelizedMesh)
+			_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
 	}
 }
 
@@ -452,11 +477,15 @@ void CADScene::drawSceneAsTriangles4Position(RenderingShader* shader, RendEnum::
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_POSITION_SHADER || shaderType == RendEnum::SHADOWS_SHADER)
 	{
-		for (Group3D* group : _sceneGroup)
-			group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		if (!rendParams->_renderVoxelizedMesh)
+		{
+			for (Group3D* group : _sceneGroup)
+				group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		}
 	}
 	else
 	{
-		_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		if (rendParams->_renderVoxelizedMesh)
+			_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
 	}
 }

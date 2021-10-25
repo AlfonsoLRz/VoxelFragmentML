@@ -186,6 +186,10 @@ void GUI::showRenderingSettings()
 
 					ImGui::NewLine();
 					ImGui::SameLine(30, 0);
+					ImGui::Checkbox("Voxelized", &_renderingParams->_renderVoxelizedMesh);
+
+					ImGui::NewLine();
+					ImGui::SameLine(30, 0);
 					ImGui::Checkbox("Screen Space Ambient Occlusion", &_renderingParams->_ambientOcclusion);
 
 					const char* visualizationTitles[] = { "Points", "Lines", "Triangles", "All" };

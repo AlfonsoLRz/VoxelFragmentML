@@ -1024,5 +1024,14 @@
     <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
+    <None Include="Assets\Shaders\Triangles\clusterShader-frag.glsl">
+      <Filter>Archivos de recursos\Shaders\Triangles</Filter>
+    </None>
+    <None Include="Assets\Shaders\Triangles\clusterShader-vert.glsl">
+      <Filter>Archivos de recursos\Shaders\Triangles</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
   </ItemGroup>
 </Project>

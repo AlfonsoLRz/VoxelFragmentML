@@ -4,6 +4,7 @@
 // [Static members initialization]
 
 std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
+		{RendEnum::ASSIGN_FACE_CLUSTER, "Assets/Shaders/Compute/Fracturer/assignFaceCluster"},
 		{RendEnum::BIT_MASK_RADIX_SORT, "Assets/Shaders/Compute/RadixSort/bitMask-radixSort"},
 		{RendEnum::BUILD_CLUSTER_BUFFER, "Assets/Shaders/Compute/BVHGeneration/buildClusterBuffer"},
 		{RendEnum::BUILD_REGULAR_GRID, "Assets/Shaders/Compute/Fracturer/buildRegularGrid"},
@@ -36,6 +37,7 @@ std::unordered_map<uint8_t, std::string> ShaderList::REND_SHADER_SOURCE {
 		{RendEnum::BLUR_SHADER, "Assets/Shaders/Filters/blur"},
 		{RendEnum::BLUR_SSAO_SHADER, "Assets/Shaders/2D/blurSSAOShader"},
 		{RendEnum::BVH_SHADER, "Assets/Shaders/Lines/bvh"},
+		{RendEnum::CLUSTER_SHADER, "Assets/Shaders/Triangles/clusterShader"},
 		{RendEnum::DEBUG_QUAD_SHADER, "Assets/Shaders/Triangles/debugQuad"},
 		{RendEnum::MULTI_INSTANCE_SHADOWS_SHADER, "Assets/Shaders/Triangles/multiInstanceShadowsShader"},
 		{RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_POSITION_SHADER, "Assets/Shaders/Triangles/multiInstanceTriangleMeshPosition"},

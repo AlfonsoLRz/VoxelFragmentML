@@ -53,6 +53,7 @@ public:
 	// What to see		
 	float							_bvhNodesPercentage;					//!< Percentage of BVH nodes to be rendered (lower percentage means smaller nodes will be rendered)
 	int								_pointCloudType;						//!< ID of the point cloud type which must be rendered
+	bool							_renderVoxelizedMesh;					//!< Renders mesh as a voxelized model
 	bool							_showBVH;								//!< Render BVH data structure
 	bool							_showTriangleMesh;						//!< Render original scene
 
@@ -85,6 +86,7 @@ public:
 
 		_bvhNodesPercentage(1.0f),
 		_pointCloudType(PointCloudType::UNIFORM),
+		_renderVoxelizedMesh(true),
 		_showBVH(false),
 		_showTriangleMesh(true)
 	{

@@ -357,6 +357,7 @@ void Model3D::setShaderUniforms(ShaderProgram* shader, const RendEnum::RendShade
 	{
 	case RendEnum::TRIANGLE_MESH_SHADER:
 	case RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER:
+	case RendEnum::CLUSTER_SHADER:
 		shader->setUniform("mModelView", matrix[RendEnum::VIEW_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
 		shader->setUniform("mModelViewProj", matrix[RendEnum::VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
 		shader->setUniform("mShadow", matrix[RendEnum::BIAS_VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
@@ -567,4 +568,13 @@ void Model3D::ModelComponent::releaseMemory()
 	std::vector<GLuint>().swap(_pointCloud);
 	std::vector<GLuint>().swap(_wireframe);
 	std::vector<GLuint>().swap(_triangleMesh);
+}
+
+void Model3D::ModelComponent::setClusterIdx(const std::vector<float>& clusterIdx, bool createVBO)
+{
+	if (_vao)
+	{
+		if (createVBO) _vao->defineVBO(RendEnum::VBO_CLUSTER_ID, float(), GL_FLOAT);
+		_vao->setVBOData(RendEnum::VBO_CLUSTER_ID, clusterIdx);
+	}
 }

@@ -31,7 +31,8 @@ struct RendEnum
 		VBO_OFFSET,
 		VBO_SCALE,
 		VBO_ROTATION,
-		VBO_INDEX
+		VBO_INDEX,
+		VBO_CLUSTER_ID,
 	};
 
 	/**
@@ -42,7 +43,7 @@ struct RendEnum
 	/**
 	*	@return Number of VBO different types.
 	*/
-	const static GLsizei numVBOTypes() { return VBO_INDEX + 1; }
+	const static GLsizei numVBOTypes() { return VBO_CLUSTER_ID + 1; }
 
 	/// [Shaders]
 
@@ -69,6 +70,7 @@ struct RendEnum
 
 		// Data structures
 		BVH_SHADER,
+		CLUSTER_SHADER,
 
 		// SSAO
 		BLUR_SSAO_SHADER,
@@ -113,6 +115,7 @@ struct RendEnum
 		PLANAR_SURFACE_TOPOLOGY,
 
 		// FRACTURER
+		ASSIGN_FACE_CLUSTER,
 		BUILD_REGULAR_GRID,
 		FLOOD_FRACTURER,
 		NAIVE_FRACTURER,

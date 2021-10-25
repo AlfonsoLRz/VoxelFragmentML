@@ -278,6 +278,7 @@
     <None Include="Assets\Shaders\Compute\BVHGeneration\endLoopComputations-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Collision\computeBVHCollision-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Collision\computeMeshBVHCollision-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
@@ -324,6 +325,8 @@
     <None Include="Assets\Shaders\Points\pointCloud-vert.glsl" />
     <None Include="Assets\Shaders\Points\pointCloudHeight-frag.glsl" />
     <None Include="Assets\Shaders\Points\pointCloudHeight-vert.glsl" />
+    <None Include="Assets\Shaders\Triangles\clusterShader-frag.glsl" />
+    <None Include="Assets\Shaders\Triangles\clusterShader-vert.glsl" />
     <None Include="Assets\Shaders\Triangles\debugQuad-frag.glsl" />
     <None Include="Assets\Shaders\Triangles\debugQuad-vert.glsl" />
     <None Include="Assets\Shaders\Triangles\multiInstanceShadowsShader-frag.glsl" />

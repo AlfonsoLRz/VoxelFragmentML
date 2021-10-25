@@ -398,7 +398,7 @@ public:
 	/**
 	*	@return Model component located at the specified index.
 	*/
-	ModelComponent* getModelCompent(unsigned index) { return _modelComp[index]; }
+	ModelComponent* getModelComponent(unsigned index) { return _modelComp[index]; }
 
 	/**
 	*	@return Model transformation matrix.
@@ -503,4 +503,9 @@ public:
 	*	@brief Assigns a name to the model component, so it can be identified in the GUI.
 	*/
 	void setName(const std::string& name) { _name = name; }
+
+	/**
+	*	@brief Initializes cluster VBO if the VAO is already created.
+	*/
+	void setClusterIdx(const std::vector<float>& clusterIdx, bool createVBO = true);
 };

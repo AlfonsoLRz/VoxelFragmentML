@@ -136,7 +136,6 @@ void RegularGrid::fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numS
 	}
 }
 
-
 void RegularGrid::getAABBs(std::vector<AABB>& aabb)
 {
 	vec3 max, min;
@@ -165,6 +164,38 @@ void RegularGrid::insertPoint(const vec3& position, unsigned index)
 
 	_grid[this->getPositionIndex(gridIndex.x, gridIndex.y, gridIndex.z)] = index;
 }
+
+void RegularGrid::queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx)
+{
+	ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::ASSIGN_FACE_CLUSTER);
+
+	// Input data
+	uvec3 numDivs = this->getNumSubdivisions();
+	unsigned numThreads = vertices.size();
+	unsigned numGroups = ComputeShader::getNumGroups(numThreads);
+
+	// Input data
+	const GLuint vertexSSBO = ComputeShader::setReadBuffer(vertices, GL_STATIC_DRAW);
+	const GLuint faceSSBO = ComputeShader::setReadBuffer(faces, GL_DYNAMIC_DRAW);
+	const GLuint gridSSBO = ComputeShader::setReadBuffer(_grid, GL_STATIC_DRAW);
+	const GLuint clusterSSBO = ComputeShader::setWriteBuffer(float(), vertices.size(), GL_DYNAMIC_DRAW);
+
+	shader->bindBuffers(std::vector<GLuint>{ vertexSSBO, faceSSBO, gridSSBO, clusterSSBO });
+	shader->use();
+	shader->setUniform("aabbMin", _aabb.min());
+	shader->setUniform("cellSize", _cellSize);
+	shader->setUniform("gridDims", numDivs);
+	shader->setUniform("numVertices", GLuint(vertices.size()));
+	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+	float* clusterData = ComputeShader::readData(clusterSSBO, float());
+	clusterIdx = std::vector<float>(clusterData, clusterData + vertices.size());
+
+	GLuint buffers[] = { vertexSSBO, faceSSBO, gridSSBO, clusterSSBO };
+	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+}
+
+// [Protected methods]
 
 uint16_t* RegularGrid::data()
 {
