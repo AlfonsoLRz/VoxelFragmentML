@@ -30,6 +30,8 @@ uniform mat4 mModelView;
 uniform mat4 mModelViewProj;
 uniform mat4 mShadow;
 
+// Plane clipping
+uniform vec4 planeCoefficients;
 
 // Vertex related
 out vec3 position;
@@ -134,6 +136,8 @@ void main()
 	shadowCoord = mShadow * transformationMatrix * vec4(vPosition, 1.0f);
 	textCoord = vTextCoord;
 	colorIndex = vColorIndex;
+
+	gl_ClipDistance[0] = dot(planeCoefficients, transformationMatrix * vec4(vPosition, 1.0));
 
 	const mat3 TBN = displacementUniform();
 	lightUniform(TBN);

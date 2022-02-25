@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Geometry/3D/AABB.h"
+#include "Graphics/Core/Group3D.h"
 #include "Graphics/Core/Image.h"
 #include "Graphics/Core/Model3D.h"
 #include "Graphics/Core/Texture.h"
@@ -77,7 +78,7 @@ public:
 	/**
 	*	@brief  
 	*/
-	void fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, unsigned index, int numSamples);
+	void fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, unsigned index, int numSamples, Group3D::StaticGPUData* sceneData);
 
 	/**
 	*	@brief

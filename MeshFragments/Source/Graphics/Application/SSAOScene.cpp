@@ -65,7 +65,7 @@ void SSAOScene::loadModels()
 	{
 		group->load();
 		group->registerScene();	
-	/*	_sceneGPUData.push_back(group->generateBVH(true));*/
+
 	}
 }
 

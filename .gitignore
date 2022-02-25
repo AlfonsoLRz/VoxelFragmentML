@@ -3,6 +3,8 @@
 *.bin
 *.ply
 *.mtl
+*.png
+*.zip
 
 # Prerequisites
 *.d

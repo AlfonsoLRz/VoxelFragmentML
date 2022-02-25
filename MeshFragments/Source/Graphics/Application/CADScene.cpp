@@ -17,7 +17,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01_v2";
+const std::string CADScene::MESH_1_PATH = "Assets/Models/TreeGrowing/Model";
 
 // [Public methods]
 
@@ -49,7 +49,7 @@ void CADScene::rebuildGrid()
 
 	delete _meshGrid;
 	_meshGrid = new RegularGrid(_sceneGroup[0]->getAABB(), _fractParameters._gridSubdivisions);
-	_meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, 1, 1000);
+	_meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, 1, 1000, _sceneGPUData[0]);
 	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx);
 	_meshGrid->getAABBs(aabbs);
 
@@ -217,7 +217,7 @@ void CADScene::loadModels()
 		Group3D* group = new Group3D();
 		group->addComponent(_mesh);
 		group->registerScene();
-		group->generateBVH(true);
+		group->generateBVH(_sceneGPUData, true);
 		_sceneGroup.push_back(group);
 
 		// Build octree and retrieve AABBs
@@ -451,6 +451,11 @@ void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShade
 	}
 	else
 	{
+		if (rendParams->_planeClipping)
+		{
+			shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
+		}
+
 		if (rendParams->_renderVoxelizedMesh)
 			_aabbRenderer->drawAsTriangles(shader, shaderType, *matrix);
 	}

@@ -52,6 +52,8 @@ public:
 
 	// What to see		
 	float							_bvhNodesPercentage;					//!< Percentage of BVH nodes to be rendered (lower percentage means smaller nodes will be rendered)
+	bool							_planeClipping;							//!< 
+	vec4							_planeCoefficients;						//!< 
 	int								_pointCloudType;						//!< ID of the point cloud type which must be rendered
 	bool							_renderVoxelizedMesh;					//!< Renders mesh as a voxelized model
 	bool							_showBVH;								//!< Render BVH data structure
@@ -85,6 +87,8 @@ public:
 		_renderSemanticConcept(false),
 
 		_bvhNodesPercentage(1.0f),
+		_planeClipping(false),
+		_planeCoefficients(.0f),
 		_pointCloudType(PointCloudType::UNIFORM),
 		_renderVoxelizedMesh(true),
 		_showBVH(false),

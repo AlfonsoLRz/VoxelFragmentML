@@ -140,6 +140,7 @@ void GUI::showFractureSettings()
 		ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
 		ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6);
 		ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_spreading, 2, 10);
+		ImGui::Checkbox("Fill Shape", &_fractureParameters->_fillShape);
 
 		this->leaveSpace(3); ImGui::Text("Execution Settings"); ImGui::Separator(); this->leaveSpace(2);
 		ImGui::Checkbox("Use GPU", &_fractureParameters->_launchGPU); ImGui::SameLine(0, 20);
@@ -196,6 +197,11 @@ void GUI::showRenderingSettings()
 					ImGui::NewLine();
 					ImGui::SameLine(30, 0);
 					ImGui::Combo("Visualization", &_renderingParams->_visualizationMode, visualizationTitles, IM_ARRAYSIZE(visualizationTitles));
+
+					ImGui::NewLine();
+					ImGui::SameLine(30, 0);
+					ImGui::Checkbox("Plane Clipping", &_renderingParams->_planeClipping);
+					ImGui::SameLine(0, 20); ImGui::SliderFloat4("Coefficients", &_renderingParams->_planeCoefficients[0], -10.0f, 10.0f);
 				}
 
 				ImGui::EndTabItem();

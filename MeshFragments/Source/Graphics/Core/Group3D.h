@@ -92,7 +92,7 @@ public:
 	/**
 	*	@brief Builds the BVH from scratch once the group is loaded.
 	*/
-	void generateBVH(bool buildVisualization = false);
+	void generateBVH(std::vector<StaticGPUData*>& sceneData, bool buildVisualization = false);
 
 	/**
 	*	@brief Loads all those components who belong to this group, applying the model matrix linked to such group.

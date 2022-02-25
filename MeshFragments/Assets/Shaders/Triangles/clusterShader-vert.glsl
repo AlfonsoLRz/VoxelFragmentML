@@ -30,7 +30,6 @@ uniform mat4 mModelView;
 uniform mat4 mModelViewProj;
 uniform mat4 mShadow;
 
-
 // Vertex related
 out vec3 position;
 out vec3 normal;

@@ -1033,5 +1033,8 @@
     <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
+    <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Collision</Filter>
+    </None>
   </ItemGroup>
 </Project>

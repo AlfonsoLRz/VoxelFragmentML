@@ -40,7 +40,7 @@ void Group3D::addComponent(Model3D* object)
 	_objects.push_back(object);
 }
 
-void Group3D::generateBVH(bool buildVisualization)
+void Group3D::generateBVH(std::vector<StaticGPUData*>& sceneData, bool buildVisualization)
 {
 	VolatileGPUData* volatileGPUData;
 	this->aggregateSSBOData(volatileGPUData);
@@ -157,6 +157,7 @@ void Group3D::generateBVH(bool buildVisualization)
 			endLoopCompShader->execute(1, 1, 1, 1, 1, 1);
 
 			arraySize = endLoopCompShader->readData(arraySizeCount, GLuint())[0];
+			sceneData.push_back(staticData);
 		}
 
 		BVHCluster* clusterData = ComputeShader::readData(staticData->_clusterSSBO, BVHCluster());

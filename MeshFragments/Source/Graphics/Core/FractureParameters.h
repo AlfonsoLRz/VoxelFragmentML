@@ -23,6 +23,7 @@ public:
 
 public:
 	int		_biasSeeds;
+	bool	_fillShape;
 	int		_fractureAlgorithm;
 	int		_distanceFunction;
 	ivec3	_gridSubdivisions;
@@ -40,6 +41,7 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(1),
+		_fillShape(true),
 		_fractureAlgorithm(NAIVE),
 		_distanceFunction(MANHATTAN),
 		_gridSubdivisions(126, 81, 61),

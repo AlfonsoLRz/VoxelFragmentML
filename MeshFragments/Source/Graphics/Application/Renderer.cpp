@@ -28,6 +28,7 @@ void Renderer::prepareOpenGL(const uint16_t width, const uint16_t height)
 	glEnable(GL_DEPTH_TEST);							// Depth is taking into account when drawing and only points with LESS depth are taken into account
 	glDepthFunc(GL_LESS);
 
+	glEnable(GL_CLIP_PLANE0);
 	glEnable(GL_BLEND);									// Multipass rendering
 
 	glEnable(GL_MULTISAMPLE);							// Antialiasing
