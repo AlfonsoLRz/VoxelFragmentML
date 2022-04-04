@@ -38,7 +38,7 @@ namespace fracturer {
         *   Set distance funcion.
         *   @param[in] dfunc Distance function.
         */
-        virtual void setDistanceFunction(DistanceFunction dfunc) = 0;
+        virtual bool setDistanceFunction(DistanceFunction dfunc) = 0;
     };
 
 }

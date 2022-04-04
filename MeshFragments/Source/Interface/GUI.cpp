@@ -2,6 +2,7 @@
 #include "GUI.h"
 
 #include "Graphics/Application/Renderer.h"
+#include "imfiledialog/ImGuiFileDialog.h"
 #include "Interface/Fonts/font_awesome.hpp"
 #include "Interface/Fonts/lato.hpp"
 #include "Interface/Fonts/IconsFontAwesome5.h"
@@ -9,7 +10,8 @@
 /// [Protected methods]
 
 GUI::GUI() :
-	_showRenderingSettings(false), _showSceneSettings(false), _showScreenshotSettings(false), _showAboutUs(false), _showControls(false), _showFractureSettings(false)
+	_showRenderingSettings(false), _showSceneSettings(false), _showScreenshotSettings(false), _showAboutUs(false), _showControls(false), _showFractureSettings(false), _showFileDialog(false),
+	_fractureText("")
 {
 	_renderer			= Renderer::getInstance();	
 	_renderingParams	= Renderer::getInstance()->getRenderingParameters();
@@ -27,6 +29,7 @@ void GUI::createMenu()
 	if (_showFractureSettings)		showFractureSettings();
 	if (_showAboutUs)				showAboutUsWindow();
 	if (_showControls)				showControls();
+	if (_showFileDialog)			showFileDialog();
 
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -46,10 +49,10 @@ void GUI::createMenu()
 			ImGui::EndMenu();
 		}
 
-		ImGui::SameLine(io.DisplaySize.x - 125, 0);
-		this->renderHelpMarker("Avoids some movements to also modify the camera parameters");
+		ImGui::SameLine(io.DisplaySize.x - 300, 0);
+		ImGui::Text(_fractureText.c_str());
 		
-		ImGui::SameLine(0, 20);
+		ImGui::SameLine(io.DisplaySize.x - 105, 0);
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		ImGui::EndMainMenuBar();
 	}
@@ -114,6 +117,27 @@ void GUI::showControls()
 	ImGui::End();
 }
 
+void GUI::showFileDialog()
+{
+	ImGuiFileDialog::Instance()->OpenDialog("Choose Point Cloud", "Choose File", ".obj", ".");
+
+	// display
+	if (ImGuiFileDialog::Instance()->Display("Choose Point Cloud"))
+	{
+		// Action if OK
+		if (ImGuiFileDialog::Instance()->IsOk())
+		{
+			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+			_modelFilePath = filePathName.substr(0, filePathName.find_last_of("."));
+			_scene->loadModel(_modelFilePath);
+		}
+
+		// Close
+		ImGuiFileDialog::Instance()->Close();
+		_showFileDialog = false;
+	}
+}
+
 void GUI::showFractureSettings()
 {
 	if (ImGui::Begin("Fracture Settings", &_showFractureSettings))
@@ -122,7 +146,14 @@ void GUI::showFractureSettings()
 		
 		if (ImGui::Button("Launch Algorithm"))
 		{
-			_scene->fractureGrid();
+			_fractureText = _scene->fractureGrid();
+		}
+
+		ImGui::SameLine(0, 20);
+
+		if (ImGui::Button("Select Model"))
+		{
+			_showFileDialog = true;
 		}
 		
 		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);	

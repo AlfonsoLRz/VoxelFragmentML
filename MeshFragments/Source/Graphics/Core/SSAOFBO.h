@@ -24,7 +24,7 @@ protected:
 	GLuint					_depthTexture[3];			//!< Identifier on GPU of depth texture for main FBO
 
 	GLuint					_multisampledFBO;			//!<
-	GLuint					_mColorBuffer;			//!<
+	GLuint					_mColorBuffer;				//!<
 	GLuint					_mDepthBuffer;				//!< Multisampling buffers
 
 	GLuint					_ssaoFramebufferID;			//!< 
@@ -66,7 +66,7 @@ public:
 	/**
 	*	@brief 
 	*/
-	bool bindMultisamplingFBO();
+	bool bindMultisamplingFBO(RenderingParameters* rendParams);
 
 	/**
 	*	@brief

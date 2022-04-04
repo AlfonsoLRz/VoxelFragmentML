@@ -66,7 +66,7 @@ namespace fracturer {
         *   Set distance funcion.
         *   @param[in] dfunc Distance function.
         */
-        void setDistanceFunction(DistanceFunction dfunc);
+        bool setDistanceFunction(DistanceFunction dfunc);
 
     private:
 

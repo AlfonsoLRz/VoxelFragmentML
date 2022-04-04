@@ -33,7 +33,7 @@ void SSAOScene::render(const mat4& mModel, RenderingParameters* rendParams)
 
 	if (rendParams->_ambientOcclusion && this->needToApplyAmbientOcclusion(rendParams))
 	{
-		_ssaoFBO->bindMultisamplingFBO();
+		_ssaoFBO->bindMultisamplingFBO(rendParams);
 		this->renderScene(mModel, rendParams);
 		_ssaoFBO->writeGBuffer(0);
 
@@ -47,7 +47,7 @@ void SSAOScene::render(const mat4& mModel, RenderingParameters* rendParams)
 		this->drawSSAOScene();
 
 		this->bindDefaultFramebuffer(rendParams);
-		this->composeScene();
+		this->composeScene(rendParams);
 	}
 	else
 	{

@@ -244,6 +244,12 @@
     <Filter Include="Archivos de recursos\Shaders\Compute\Fracturer">
       <UniqueIdentifier>{a65b06a4-71d7-4b07-be85-9859e643d62a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Archivos de encabezado\ImportedLibraries\imfiledialog">
+      <UniqueIdentifier>{b5f7a10c-9768-436c-a9b8-2d5f0b9e6e35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de origen\ImportedLibraries\imfiledialog">
+      <UniqueIdentifier>{4d570c99-1146-4b05-811c-ce3f34260f46}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Geometry\2D\Vector2.h">
@@ -543,6 +549,15 @@
     <ClInclude Include="Source\Graphics\Core\FractureParameters.h">
       <Filter>Archivos de encabezado\Graphics\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\imfiledialog\dirent\dirent.h">
+      <Filter>Archivos de encabezado\ImportedLibraries\imfiledialog</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\imfiledialog\ImGuiFileDialog.h">
+      <Filter>Archivos de encabezado\ImportedLibraries\imfiledialog</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\imfiledialog\ImGuiFileDialogConfig.h">
+      <Filter>Archivos de encabezado\ImportedLibraries\imfiledialog</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -793,6 +808,9 @@
     </ClCompile>
     <ClCompile Include="Source\Fracturer\Seeder.cpp">
       <Filter>Archivos de origen\Fracturer</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\imfiledialog\ImGuiFileDialog.cpp">
+      <Filter>Archivos de origen\ImportedLibraries\imfiledialog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

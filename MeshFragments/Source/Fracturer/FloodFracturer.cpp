@@ -96,12 +96,14 @@ namespace fracturer {
         glDeleteBuffers(sizeof(deleteBuffers) / sizeof(GLuint), deleteBuffers);
     }
 
-    void FloodFracturer::setDistanceFunction(DistanceFunction dfunc)
+    bool FloodFracturer::setDistanceFunction(DistanceFunction dfunc)
 	{
         // EUCLIDEAN_DISTANCE is forbid
         if (dfunc == EUCLIDEAN_DISTANCE)
-            throw std::invalid_argument("Flood method is not compatible with euclidean metric. Try with naive method.");
+            //throw std::invalid_argument("Flood method is not compatible with euclidean metric. Try with naive method.");
+            return false;
 
         _dfunc = dfunc;
+        return true;
     }
 }

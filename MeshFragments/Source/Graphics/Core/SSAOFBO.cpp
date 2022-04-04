@@ -138,7 +138,7 @@ bool SSAOFBO::bindGBufferFBO(const unsigned index)
 	return true;
 }
 
-bool SSAOFBO::bindMultisamplingFBO()
+bool SSAOFBO::bindMultisamplingFBO(RenderingParameters* rendParams)
 {
 	if (!_success)
 	{
@@ -146,6 +146,7 @@ bool SSAOFBO::bindMultisamplingFBO()
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, _multisampledFBO);
+	glClearColor(rendParams->_backgroundColor.x, rendParams->_backgroundColor.y, rendParams->_backgroundColor.z, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	return true;

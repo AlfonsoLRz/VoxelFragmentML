@@ -62,7 +62,7 @@ protected:
 	/**
 	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm. 
 	*/
-	void fractureModel();
+	std::string fractureModel();
 	
 	/**
 	*	@brief True if the file is a known model file, such as obj.
@@ -170,7 +170,12 @@ public:
 	/**
 	*	@brief Fractures voxelized model. 
 	*/
-	void fractureGrid();
+	std::string fractureGrid();
+
+	/**
+	*	@brief Loads a new model for fractures.
+	*/
+	void loadModel(const std::string& path);
 
 	/**
 	*	@brief Rebuilds the whole grid to adapt it to a different number of subdivisions. 

@@ -223,8 +223,9 @@ namespace fracturer {
         }
     }
 
-    void NaiveFracturer::setDistanceFunction(DistanceFunction dfunc)
+    bool NaiveFracturer::setDistanceFunction(DistanceFunction dfunc)
 	{
         _dfunc = dfunc;
+        return true;
     }
 }

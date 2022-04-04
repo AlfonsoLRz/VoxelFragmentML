@@ -6,6 +6,7 @@
 
 in vec2 textCoord;
 
+uniform vec3 backgroundColor;
 uniform sampler2D texAlbedo;
 uniform sampler2D texSSAO;
 
@@ -28,6 +29,7 @@ void main(void)
 
     result /= NEIGHBORHOOD_SIZE;
 
-	fColor = vec4(texture(texAlbedo, textCoord).rgb * result, 1.0f);
+    vec4 colorRGBA = texture(texAlbedo, textCoord);
+	fColor = vec4(colorRGBA.rgb * result, float(distance(backgroundColor, colorRGBA.rgb) > .01f));
     //fColor = vec4(vec3(texture(texSSAO, textCoord).rgb), 1.0f);
 }

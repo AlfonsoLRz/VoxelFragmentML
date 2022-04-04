@@ -37,9 +37,13 @@ protected:
 	bool							_showAboutUs;						//!< About us window
 	bool							_showControls;						//!< Shows application controls
 	bool							_showFractureSettings;
+	bool							_showFileDialog;					//!< Shows a file dialog that allows opening a point cloud in .ply format
 	bool							_showRenderingSettings;				//!< Displays a window which allows the user to modify the rendering parameters
 	bool							_showSceneSettings;					//!< Displays a window with all the model components and their variables
 	bool							_showScreenshotSettings;			//!< Shows a window which allows to take an screenshot at any size
+
+	std::string						_fractureText;						//!<
+	std::string						_modelFilePath;						//!<
 
 protected:
 	/**
@@ -81,6 +85,11 @@ protected:
 	*	@brief Displays a table with the application controls (mouse, keyboard, etc).
 	*/
 	void showControls();
+
+	/**
+	*	@brief Displays a file dialog to open a new point cloud (.ply).
+	*/
+	void showFileDialog();
 
 	/**
 	*	@brief Shows settings for fracturing the currently displayed models. 

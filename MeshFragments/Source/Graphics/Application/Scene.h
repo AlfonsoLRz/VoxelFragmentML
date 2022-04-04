@@ -150,7 +150,7 @@ protected:
 	/**
 	*	@brief Draws both the SSAO texture and RGB scene together.
 	*/
-	void composeScene();
+	void composeScene(RenderingParameters* rendParams);
 
 	/**
 	*	@brief Builds the SSAO texture.

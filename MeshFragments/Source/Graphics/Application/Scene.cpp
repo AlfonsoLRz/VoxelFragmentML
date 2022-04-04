@@ -23,8 +23,8 @@ Scene::~Scene()
 void Scene::load()
 {
 	this->loadLights();
-	this->loadModels();
 	this->loadCameras();
+	this->loadModels();
 }
 
 void Scene::modifyNextFramebufferID(const GLuint fboID)
@@ -46,7 +46,7 @@ void Scene::render(const mat4& mModel, RenderingParameters* rendParams)
 
 	if (rendParams->_ambientOcclusion)
 	{
-		_ssaoFBO->bindMultisamplingFBO();
+		_ssaoFBO->bindMultisamplingFBO(rendParams);
 		this->drawAsTriangles(mModel, rendParams);
 		_ssaoFBO->writeGBuffer(0);
 
@@ -60,7 +60,7 @@ void Scene::render(const mat4& mModel, RenderingParameters* rendParams)
 		this->drawSSAOScene();
 
 		this->bindDefaultFramebuffer(rendParams);
-		this->composeScene();
+		this->composeScene(rendParams);
 	}
 	else
 	{
@@ -314,14 +314,15 @@ void Scene::drawSceneAsTriangles4Position(RenderingShader* shader, RendEnum::Ren
 void Scene::bindDefaultFramebuffer(RenderingParameters* rendParams)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, _nextFramebufferID);
-	glClearColor(rendParams->_backgroundColor.x, rendParams->_backgroundColor.y, rendParams->_backgroundColor.z, 1.0f);
+	glClearColor(rendParams->_backgroundColor.x, rendParams->_backgroundColor.y, rendParams->_backgroundColor.z, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Scene::composeScene()
+void Scene::composeScene(RenderingParameters* rendParams)
 {
 	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::BLUR_SSAO_SHADER);
 	shader->use();
+	shader->setUniform("backgroundColor", rendParams->_backgroundColor);
 
 	_ssaoFBO->bindSSAOTexture(shader);
 

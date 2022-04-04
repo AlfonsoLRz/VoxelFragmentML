@@ -17,7 +17,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::MESH_1_PATH = "Assets/Models/TreeGrowing/Model";
+const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01";
 
 // [Public methods]
 
@@ -37,9 +37,46 @@ void CADScene::exportGrid()
 	_meshGrid->exportGrid();
 }
 
-void CADScene::fractureGrid()
+std::string CADScene::fractureGrid()
 {
-	this->fractureModel();
+	return this->fractureModel();
+}
+
+void CADScene::loadModel(const std::string& path)
+{
+	// Delete resources
+	{
+		delete _aabbRenderer;
+		_aabbRenderer = nullptr;
+
+		delete _meshGrid;
+		_meshGrid = nullptr;
+
+		for (Group3D* group : _sceneGroup) delete group;
+		_sceneGroup.clear();
+	}
+
+	{
+		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), true);
+		_mesh->load();
+		_mesh->getModelComponent(0)->_enabled = true;
+
+		Group3D* group = new Group3D();
+		group->addComponent(_mesh);
+		group->registerScene();
+		group->generateBVH(_sceneGPUData, true);
+		_sceneGroup.push_back(group);
+
+		// Build octree and retrieve AABBs
+		_aabbRenderer = new AABBSet();
+		_aabbRenderer->load();
+		_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
+
+		this->rebuildGrid();
+		this->fractureModel();
+	}
+
+	this->loadDefaultCamera(_cameraManager->getActiveCamera());
 }
 
 void CADScene::rebuildGrid()
@@ -65,7 +102,7 @@ void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
 
 // [Protected methods]
 
-void CADScene::fractureModel()
+std::string CADScene::fractureModel()
 {
 	// Configure seed
 	srand(_fractParameters._seed);
@@ -104,7 +141,7 @@ void CADScene::fractureModel()
 	else
 		fracturer = fracturer::FloodFracturer::getInstance();
 
-	fracturer->setDistanceFunction(dfunc);
+	if (!fracturer->setDistanceFunction(dfunc)) return "Invalid distance function";
 	fracturer->build(*_meshGrid, seeds,  &_fractParameters);
 
 	std::cout << ChronoUtilities::getDuration() << std::endl;
@@ -119,6 +156,8 @@ void CADScene::fractureModel()
 	_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
 	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx);
 	_mesh->getModelComponent(0)->setClusterIdx(clusterIdx, false);
+
+	return "";
 }
 
 bool CADScene::isExtensionReadable(const std::string& filename)
@@ -208,26 +247,7 @@ void CADScene::loadLights()
 
 void CADScene::loadModels()
 {
-	{
-		// Mesh 1
-		_mesh = new CADModel(MESH_1_PATH, MESH_1_PATH.substr(0, MESH_1_PATH.find_last_of("/") + 1), true);
-		_mesh->load();
-		_mesh->getModelComponent(0)->_enabled = true;
-
-		Group3D* group = new Group3D();
-		group->addComponent(_mesh);
-		group->registerScene();
-		group->generateBVH(_sceneGPUData, true);
-		_sceneGroup.push_back(group);
-
-		// Build octree and retrieve AABBs
-		_aabbRenderer = new AABBSet();
-		_aabbRenderer->load();
-		_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
-		
-		this->rebuildGrid();
-		this->fractureModel();
-	}
+	this->loadModel(MESH_1_PATH);
 }
 
 bool CADScene::readCameraFromSettings(Camera* camera)
