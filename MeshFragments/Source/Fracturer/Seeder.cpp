@@ -3,6 +3,19 @@
 
 namespace fracturer
 {
+    Halton_sampler  Seeder::_haltonSampler;
+    Halton_enum     Seeder::_haltonEnum (1, 1);
+
+    fracturer::Seeder::RandomInitUniformMap Seeder::_randomInitFunction = {
+        { FractureParameters::STD_UNIFORM, [](int size) -> void {}},
+        { FractureParameters::HALTON, [](int size) -> void { Seeder::_haltonSampler.init_faure(); Seeder::_haltonEnum = Halton_enum(size, 1); }}				// Enumerate samples per pixel for the given resolution,
+    };
+
+    fracturer::Seeder::RandomUniformMap Seeder::_randomFunction = {
+        { FractureParameters::STD_UNIFORM, [](int min, int max, int index, int coord) -> int { return RandomUtilities::getUniformRandomInt(min, max); }},
+        { FractureParameters::HALTON, [](int min, int max, int index, int coord) -> int { return int(Seeder::_haltonSampler.sample(coord, index) * max); }},
+    };
+
     std::vector<glm::uvec4> Seeder::nearSeeds(const RegularGrid& grid, const std::vector<glm::uvec4>& frags, unsigned numSeeds, unsigned spreading)
 	{
         // Custom glm::uvec3 comparator
@@ -99,7 +112,7 @@ namespace fracturer
         }
     }
 
-    std::vector<glm::uvec4> Seeder::uniform(const RegularGrid& grid, unsigned int nseeds) {
+    std::vector<glm::uvec4> Seeder::uniform(const RegularGrid& grid, unsigned int nseeds, int randomSeedFunction) {
         // Custom glm::uvec3 comparator
         auto comparator = [](const glm::uvec3& lhs, const glm::uvec3& rhs) {
             if      (lhs.x != rhs.x) return lhs.x < rhs.x;
@@ -110,20 +123,21 @@ namespace fracturer
         // Set where to store seeds
         std::set<glm::uvec3, decltype(comparator)> seeds(comparator);
         // Current try number
-        unsigned int attempt = 0;
         uvec3 numDivs = grid.getNumSubdivisions() - uvec3(2);
+        unsigned int attempt = 0, maxDim = glm::max(numDivs.x, glm::max(numDivs.y, numDivs.z));
+
+        _randomInitFunction[randomSeedFunction](maxDim);
 
         // Bruteforce seed search
         while (seeds.size() != nseeds) {
             // Check attempt number
             if (attempt == MAX_TRIES)
-                throw SeederSearchError("Max number of tries surpassed (" +
-                    std::to_string(MAX_TRIES) + ")");
+                throw SeederSearchError("Max number of tries surpassed (" + std::to_string(MAX_TRIES) + ")");
 
             // Generate random seed
-            int x = rand() % numDivs.x + 1;
-            int y = rand() % numDivs.y + 1;
-            int z = rand() % numDivs.z + 1;
+            int x = _randomFunction[randomSeedFunction](0, numDivs.x + 1, attempt, 0);
+            int y = _randomFunction[randomSeedFunction](0, numDivs.y + 1, attempt, 1);
+            int z = _randomFunction[randomSeedFunction](0, numDivs.z + 1, attempt, 2);
             glm::uvec3 voxel(x, y, z);
 
             // Is occupied the voxel?

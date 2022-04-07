@@ -558,6 +558,12 @@
     <ClInclude Include="Libraries\imfiledialog\ImGuiFileDialogConfig.h">
       <Filter>Archivos de encabezado\ImportedLibraries\imfiledialog</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Utilities\HaltonEnum.h">
+      <Filter>Archivos de encabezado\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Utilities\HaltonSampler.h">
+      <Filter>Archivos de encabezado\Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">

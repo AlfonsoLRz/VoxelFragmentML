@@ -10,6 +10,9 @@ layout(location = 5) in vec3 vScale;
 uniform mat4 mModelView;
 uniform mat4 mModelViewProj;
 
+// Plane clipping
+uniform vec4 planeCoefficients;
+
 out vec3 normal;
 out vec2 textCoord;
 
@@ -23,5 +26,6 @@ void main()
 	normal = vec3(mModelView * transformationMatrix * vec4(vNormal, 0.0f));
 	textCoord = vTextCoord;
 
+	gl_ClipDistance[0] = dot(planeCoefficients, transformationMatrix * vec4(vPosition, 1.0));
 	gl_Position = mModelViewProj * transformationMatrix * vec4(vPosition, 1.0f);
 }

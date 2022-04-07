@@ -1,9 +1,9 @@
 #pragma once
 
-#include "stdafx.h"
-
 #include "DataStructures/RegularGrid.h"
 #include "Fracturer.h"
+#include "Utilities/HaltonEnum.h"
+#include "Utilities/HaltonSampler.h"
 
 namespace fracturer {
 
@@ -18,8 +18,24 @@ namespace fracturer {
             explicit SeederSearchError(const std::string& msg) : std::runtime_error(msg) {  }
         };
 
-        static const int MAX_TRIES = 1000000;     //!< Maximun number of tries on seed search.
+    public:
+        typedef std::function<void(int size)> RandomInitFunction;
+        typedef std::unordered_map<uint16_t, RandomInitFunction> RandomInitUniformMap;
 
+        typedef std::function<int(int min, int max, int index, int coord)> RandomFunction;
+        typedef std::unordered_map<uint16_t, RandomFunction> RandomUniformMap;
+
+        static Halton_sampler       _haltonSampler;
+        static Halton_enum          _haltonEnum;
+
+        static RandomInitUniformMap _randomInitFunction;
+        static RandomUniformMap     _randomFunction;
+
+    protected:
+
+        static const int            MAX_TRIES = 1000000;     //!< Maximun number of tries on seed search.
+
+    public:
     	/**
     	*   @brief Creates seeds near the current ones. 
     	*/
@@ -40,6 +56,6 @@ namespace fracturer {
         *   Warning! every seeds has: x, y, z, colorIndex. Min colorIndex is 2
         *   becouse in Flood algorithm colorIndex 1 is reserved for 'free' voxel.
         */
-        static std::vector<glm::uvec4> uniform(const RegularGrid& grid, unsigned int nseeds);
+        static std::vector<glm::uvec4> uniform(const RegularGrid& grid, unsigned int nseeds, int randomSeedFunction);
     };
 }

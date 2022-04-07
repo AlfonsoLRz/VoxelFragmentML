@@ -115,18 +115,18 @@ std::string CADScene::fractureModel()
 
 	if (_fractParameters._biasSeeds == 0)
 	{
-		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numSeeds);
+		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numSeeds, _fractParameters._seedingRandom);
 	}
 	else
 	{
-		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._biasSeeds);
+		seeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._biasSeeds, _fractParameters._seedingRandom);
 		seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, _fractParameters._numSeeds - _fractParameters._biasSeeds, _fractParameters._spreading);
 	}
 
 	if (_fractParameters._numExtraSeeds > 0)
 	{
 		fracturer::DistanceFunction mergeDFunc = static_cast<fracturer::DistanceFunction>(_fractParameters._mergeSeedsDistanceFunction);
-		auto extraSeeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numExtraSeeds);
+		auto extraSeeds = fracturer::Seeder::uniform(*_meshGrid, _fractParameters._numExtraSeeds, _fractParameters._seedingRandom);
 		extraSeeds.insert(extraSeeds.begin(), seeds.begin(), seeds.end());
 
 		fracturer::Seeder::mergeSeeds(seeds, extraSeeds, mergeDFunc);
@@ -493,6 +493,11 @@ void CADScene::drawSceneAsTriangles4Normal(RenderingShader* shader, RendEnum::Re
 	}
 	else
 	{
+		if (rendParams->_planeClipping)
+		{
+			shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
+		}
+
 		if (rendParams->_renderVoxelizedMesh)
 			_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
 	}
@@ -510,6 +515,11 @@ void CADScene::drawSceneAsTriangles4Position(RenderingShader* shader, RendEnum::
 	}
 	else
 	{
+		if (rendParams->_planeClipping)
+		{
+			shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
+		}
+
 		if (rendParams->_renderVoxelizedMesh)
 			_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
 	}

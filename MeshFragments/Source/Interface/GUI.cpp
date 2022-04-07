@@ -149,7 +149,7 @@ void GUI::showFractureSettings()
 			_fractureText = _scene->fractureGrid();
 		}
 
-		ImGui::SameLine(0, 20);
+		ImGui::SameLine(0, 10);
 
 		if (ImGui::Button("Select Model"))
 		{
@@ -162,11 +162,12 @@ void GUI::showFractureSettings()
 		{
 			_scene->rebuildGrid();
 		}
-		
+
 		ImGui::Combo("Base Algorithm", &_fractureParameters->_fractureAlgorithm, FractureParameters::Fracture_STR, IM_ARRAYSIZE(FractureParameters::Fracture_STR));
 		ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
 		ImGui::SliderInt("Num. seeds", &_fractureParameters->_numSeeds, 2, 1000);
 		ImGui::SliderInt("Num. Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, 1000);
+		ImGui::Combo("Seed Random Distribution", &_fractureParameters->_seedingRandom, FractureParameters::Random_STR, IM_ARRAYSIZE(FractureParameters::Random_STR));
 		ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
 		ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
 		ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6);

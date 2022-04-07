@@ -118,6 +118,8 @@
     <ClInclude Include="Source\PrecompiledHeaders\stdafx.h" />
     <ClInclude Include="Source\Utilities\ChronoUtilities.h" />
     <ClInclude Include="Source\Utilities\FileManagement.h" />
+    <ClInclude Include="Source\Utilities\HaltonEnum.h" />
+    <ClInclude Include="Source\Utilities\HaltonSampler.h" />
     <ClInclude Include="Source\Utilities\Histogram.h" />
     <ClInclude Include="Source\Utilities\RandomUtilities.h" />
     <ClInclude Include="Source\Utilities\Singleton.h" />

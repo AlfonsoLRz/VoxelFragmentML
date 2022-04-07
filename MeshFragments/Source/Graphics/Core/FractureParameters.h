@@ -21,6 +21,9 @@ public:
 	enum DistanceFunction : uint8_t { EUCLIDEAN, MANHATTAN, CHEBYSHEV, DISTANCE_FUNCTIONS };
 	inline static const char* Distance_STR[DISTANCE_FUNCTIONS] = { "Euclidean", "Manhattan", "Chebyshev" };
 
+	enum RandomUniformType { STD_UNIFORM, HALTON, NUM_RANDOM_FUNCTIONS };
+	inline static const char* Random_STR[NUM_RANDOM_FUNCTIONS] = { "STD Uniform", "Halton" };
+
 public:
 	int		_biasSeeds;
 	bool	_fillShape;
@@ -33,6 +36,7 @@ public:
 	int		_numExtraSeeds;
 	bool	_removeIsolatedRegions;
 	int		_seed;
+	int		_seedingRandom;
 	int		_spreading;
 
 public:
@@ -51,6 +55,7 @@ public:
 		_numExtraSeeds(200),
 		_removeIsolatedRegions(true),
 		_seed(80),
+		_seedingRandom(STD_UNIFORM),
 		_spreading(5)
 	{
 	}
