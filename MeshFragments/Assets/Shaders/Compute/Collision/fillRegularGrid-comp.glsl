@@ -13,7 +13,6 @@ layout (std430, binding = 1) buffer VertexBuffer	{ VertexGPUData				vertexData[]
 layout (std430, binding = 2) buffer FaceBuffer		{ FaceGPUData				faceData[]; };
 layout (std430, binding = 3) buffer MeshDataBuffer	{ MeshGPUData				meshData[]; };
 layout (std430, binding = 4) buffer GridBuffer		{ uint16_t					grid[]; };
-layout (std430, binding = 5) buffer TestBuffer		{ vec4						testData[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
@@ -131,8 +130,6 @@ void main()
 	vec3 rayDirection[6] = { vec3(.0f, 1.0f, .0f), vec3(.0f, -1.0f, .0f), vec3(1.0f, .0f, .0f), vec3(-1.0f, .0f, .0f), vec3(.0f, .0f, 1.0f), vec3(.0f, .0f, -1.0f) };
 	RayGPUData ray;
 	ray.origin = voxelPosition;
-
-	testData[index] = vec4(voxelPosition, 1.0f);
 
 	for (int idx = 0; idx < 6; ++idx)
 	{

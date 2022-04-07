@@ -111,7 +111,6 @@ void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, cons
 	const GLuint faceSSBO	= ComputeShader::setReadBuffer(faces, GL_DYNAMIC_DRAW);
 	const GLuint noiseSSBO	= ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
 	const GLuint gridSSBO	= ComputeShader::setReadBuffer(&_grid[0], numCells, GL_DYNAMIC_DRAW);
-	const GLuint testSSBO = ComputeShader::setWriteBuffer(vec4(), numCells, GL_DYNAMIC_DRAW);
 
 	boundaryShader->bindBuffers(std::vector<GLuint>{ vertexSSBO, faceSSBO, noiseSSBO, gridSSBO });
 	boundaryShader->use();
@@ -125,7 +124,7 @@ void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, cons
 	// Fill grid once the boundaries are established
 	fillShader->use();
 	fillShader->bindBuffers(std::vector<GLuint>{
-		sceneData->_clusterSSBO, sceneData->_groupGeometrySSBO, sceneData->_groupTopologySSBO, sceneData->_groupMeshSSBO, gridSSBO, testSSBO
+		sceneData->_clusterSSBO, sceneData->_groupGeometrySSBO, sceneData->_groupTopologySSBO, sceneData->_groupMeshSSBO, gridSSBO
 	});
 	fillShader->setUniform("aabbMin", _aabb.min());
 	fillShader->setUniform("cellSize", _cellSize);
@@ -137,8 +136,8 @@ void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, cons
 	uint16_t* gridData = ComputeShader::readData(gridSSBO, uint16_t());
 	_grid = std::vector<uint16_t>(gridData, gridData + numCells);
 
-	vec4* testData = ComputeShader::readData(testSSBO, vec4());
-	std::vector<vec4> testBuffer = std::vector<vec4>(testData, testData + numCells);
+	//vec4* testData = ComputeShader::readData(testSSBO, vec4());
+	//std::vector<vec4> testBuffer = std::vector<vec4>(testData, testData + numCells);
 
 	GLuint buffers[] = { vertexSSBO, faceSSBO, noiseSSBO, gridSSBO };
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
