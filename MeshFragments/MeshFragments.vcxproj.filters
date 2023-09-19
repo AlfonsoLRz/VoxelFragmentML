@@ -564,6 +564,9 @@
     <ClInclude Include="Source\Utilities\HaltonSampler.h">
       <Filter>Archivos de encabezado\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\MarchingCubes.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -818,6 +821,9 @@
     <ClCompile Include="Libraries\imfiledialog\ImGuiFileDialog.cpp">
       <Filter>Archivos de origen\ImportedLibraries\imfiledialog</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\Core\MarchingCubes.cpp">
+      <Filter>Archivos de origen\Graphics\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shaders\Lines\wireframe-frag.glsl">
@@ -1059,6 +1065,9 @@
     </None>
     <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Collision</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -72,18 +72,6 @@ protected:
 	*/
 	virtual void renderUniformPointCloud(const mat4& mModel, RenderingParameters* rendParams);
 
-	// --------------- Other secondary structures ----------------------
-	
-	/**
-	*	@brief Renders BVH tree built by room group.
-	*/
-	void renderBVH(const mat4& model, RenderingParameters* rendParams);
-
-	/**
-	*	@brief Renders the scene normals through a geometry shader.
-	*/
-	void renderVertexNormals(const mat4& model, RenderingParameters* rendParams);
-
 	// -------------- Draw scene -------------
 
 	/**

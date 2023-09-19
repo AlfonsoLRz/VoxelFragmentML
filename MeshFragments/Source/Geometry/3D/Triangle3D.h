@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Geometry/3D/Edge3D.h"
+#include "Graphics/Core/Model3D.h"
 #include "Utilities/RandomUtilities.h"
 
 /**
@@ -22,6 +23,17 @@ public:
 
 protected:
 	vec3 _a, _b, _c;						//!< Points in counterclockwise direction in an ideal situation (no guaranteed as the user is who specifies these values)
+
+protected:
+	/**
+	*	@return Index of origin point concerning longest edge within the triangle.
+	*/
+	unsigned longestEdgeOrigin();
+
+	/**
+	*	@brief Subdivides a triangle recursively while an area exceeds a threshold.
+	*/
+	void subdivide(std::vector<Model3D::VertexGPUData>& vertices, std::vector<Model3D::FaceGPUData>& faces, Model3D::FaceGPUData& face, float maxArea, unsigned iteration);
 
 public:
 	/**
@@ -128,5 +140,10 @@ public:
 	*	@brief Modifies all the points.
 	*/
 	void set(const vec3& va, const vec3& vb, const vec3& vc);
+
+	/**
+	*	@brief Subdivides the triangle into smaller polygons whether their area exceeds the given threshold.
+	*/
+	void subdivide(std::vector<Model3D::VertexGPUData>& vertices, std::vector<Model3D::FaceGPUData>& faces, Model3D::FaceGPUData& face, float maxArea);
 };
 

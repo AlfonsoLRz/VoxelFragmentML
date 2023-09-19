@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Geometry/3D/Triangle3D.h"
 #include "Graphics/Core/Model3D.h"
 #include "objloader/OBJ_Loader.h"
 
@@ -51,11 +52,6 @@ protected:
 	void generateGeometryTopology(Model3D::ModelComponent* modelComp, const mat4& modelMatrix);
 
 	/**
-	*	@brief Searchs the class in keyMap of a model whose name is given by modelName.
-	*/
-	std::string getKeyValue(std::map<std::string, std::string>& keyMap, std::string& modelName, std::string& defaultClass);
-
-	/**
 	*	@brief Fills the content of model component with binary file data.
 	*/
 	bool loadModelFromBinaryFile();
@@ -71,11 +67,6 @@ protected:
 	bool readBinary(const std::string& filename, const std::vector<Model3D::ModelComponent*>& modelComp);
 
 	/**
-	*	@brief Loads all the pair class-value in a file.
-	*/
-	void readClassFile(const std::string& filename, std::map<std::string, std::string>& keyMap, std::string& defaultClass);
-
-	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
 	*	@return Success of writing process.
 	*/
@@ -88,6 +79,11 @@ public:
 	*	@param useBinary Use of previously written binary files.
 	*/
 	CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary);
+
+	/**
+	*	@brief Model 3D constructor for a triangle mesh.
+	*/
+	CADModel(const std::vector<Triangle3D>& triangles, const mat4& modelMatrix = mat4(1.0f));
 
 	/**
 	*	@brief Deleted copy constructor.
@@ -111,5 +107,10 @@ public:
 	*	@param model Model to copy attributes.
 	*/
 	CADModel& operator=(const CADModel& model) = delete;
+
+	/**
+	*	@brief Subdivides mesh with the specified maximum area.
+	*/
+	void subdivide(float maxArea);
 };
 

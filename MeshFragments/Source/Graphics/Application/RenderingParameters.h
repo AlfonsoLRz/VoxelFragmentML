@@ -40,23 +40,18 @@ public:
 	vec3							_scenePointCloudColor;					//!< Color of point cloud which shows all the vertices
 
 	// Wireframe
-	vec3							_bvhWireframeColor;						//!< Color of BVH structure
-	float							_normalLength;							//!< Rendering length of vertex normals
 	bool							_showVertexNormal;						//!< Normals rendered through a geometry shader
 	vec3							_wireframeColor;						//!< Color of lines in wireframe rendering
 
 	// Triangle mesh
 	bool							_ambientOcclusion;						//!< Boolean value to enable/disable occlusion
-	bool							_renderSemanticConcept;					//!< Boolean value to indicate if rendering semantic concepts is needed
-	int								_semanticRenderingConcept;				//!< ASPRS / Custom semantic concepts (selector)
 
 	// What to see		
-	float							_bvhNodesPercentage;					//!< Percentage of BVH nodes to be rendered (lower percentage means smaller nodes will be rendered)
 	bool							_planeClipping;							//!< 
 	vec4							_planeCoefficients;						//!< 
 	int								_pointCloudType;						//!< ID of the point cloud type which must be rendered
-	bool							_renderVoxelizedMesh;					//!< Renders mesh as a voxelized model
-	bool							_showBVH;								//!< Render BVH data structure
+	bool							_showFragmentsMarchingCubes;			//!<
+	bool							_showVoxelizedMesh;						//!< Renders mesh as a voxelized model
 	bool							_showTriangleMesh;						//!< Render original scene
 
 public:
@@ -78,20 +73,16 @@ public:
 		_scenePointSize(2.0f),
 		_scenePointCloudColor(1.0f, .0f, .0f),
 
-		_bvhWireframeColor(1.0f, 1.0f, .0f),
-		_normalLength(1.0f),
 		_showVertexNormal(false),
 		_wireframeColor(0.0f),
 
 		_ambientOcclusion(true),
-		_renderSemanticConcept(false),
 
-		_bvhNodesPercentage(1.0f),
 		_planeClipping(false),
 		_planeCoefficients(.0f),
 		_pointCloudType(PointCloudType::UNIFORM),
-		_renderVoxelizedMesh(true),
-		_showBVH(false),
+		_showFragmentsMarchingCubes(false),
+		_showVoxelizedMesh(true),
 		_showTriangleMesh(true)
 	{
 	}

@@ -17,7 +17,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01";
+const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01_v3";
 
 // [Public methods]
 
@@ -54,6 +54,9 @@ void CADScene::loadModel(const std::string& path)
 
 		for (Group3D* group : _sceneGroup) delete group;
 		_sceneGroup.clear();
+
+		for (Model3D* fractureMesh : _fractureMeshes) delete fractureMesh;
+		_fractureMeshes.clear();
 	}
 
 	{
@@ -86,13 +89,25 @@ void CADScene::rebuildGrid()
 
 	delete _meshGrid;
 	_meshGrid = new RegularGrid(_sceneGroup[0]->getAABB(), _fractParameters._gridSubdivisions);
-	_meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, 1, 1000, _sceneGPUData[0]);
+	_meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, _fractParameters._fillShape, 1000, _sceneGPUData[0]);
 	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx);
 	_meshGrid->getAABBs(aabbs);
 
 	_aabbRenderer->load(aabbs);
 	_aabbRenderer->homogenize();
 	_mesh->getModelComponent(0)->setClusterIdx(clusterIdx);
+}
+
+void CADScene::recalculateGridSize(ivec3& voxelDimensions, uint8_t lastIndex)
+{
+	float scale[3];
+	AABB aabb = _sceneGroup[0]->getAABB();
+
+	for (int i = 0; i < 3; ++i)
+		scale[i] = aabb.extent()[i] / aabb.extent()[lastIndex];
+
+	for (int i = 0; i < 3; ++i)
+		voxelDimensions[i] = voxelDimensions[lastIndex] * scale[i];
 }
 
 void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
@@ -143,6 +158,9 @@ std::string CADScene::fractureModel()
 
 	if (!fracturer->setDistanceFunction(dfunc)) return "Invalid distance function";
 	fracturer->build(*_meshGrid, seeds,  &_fractParameters);
+	_meshGrid->erode(static_cast<FractureParameters::ErosionType>(
+		_fractParameters._erosionConvolution), _fractParameters._erosionSize, _fractParameters._erosionIterations, 
+		_fractParameters._erosionProbability, _fractParameters._erosionThreshold);
 
 	std::cout << ChronoUtilities::getDuration() << std::endl;
 
@@ -153,16 +171,13 @@ std::string CADScene::fractureModel()
 		_aabbRenderer->load(aabbs);
 	}
 
+	if (_fractParameters._computeMCFragments) _fractureMeshes = _meshGrid->toTriangleMesh();
+
 	_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
 	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx);
 	_mesh->getModelComponent(0)->setClusterIdx(clusterIdx, false);
 
 	return "";
-}
-
-bool CADScene::isExtensionReadable(const std::string& filename)
-{
-	return filename.find(CADModel::OBJ_EXTENSION) != std::string::npos;
 }
 
 void CADScene::loadDefaultCamera(Camera* camera)
@@ -439,45 +454,121 @@ bool CADScene::readLightsFromSettings()
 
 // [Rendering]
 
+void CADScene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParameters* rendParams)
+{
+	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::TRIANGLE_MESH_SHADER);
+	RenderingShader* clusteringShader = ShaderList::getInstance()->getRenderingShader(RendEnum::CLUSTER_SHADER);
+	RenderingShader* multiInstanceShader = ShaderList::getInstance()->getRenderingShader(RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER);
+
+	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
+	const mat4 bias = glm::translate(mat4(1.0f), vec3(0.5f)) * glm::scale(mat4(1.0f), vec3(0.5f));						// Proj: [-1, 1] => with bias: [0, 1]
+
+	{
+		matrix[RendEnum::MODEL_MATRIX] = mModel;
+		matrix[RendEnum::VIEW_MATRIX] = camera->getViewMatrix();
+		matrix[RendEnum::VIEW_PROJ_MATRIX] = camera->getViewProjMatrix();
+
+		glDepthFunc(GL_LEQUAL);
+	}
+
+	{
+		for (unsigned int i = 0; i < _lights.size(); ++i)																// Multipass rendering
+		{
+			if (i == 0)
+			{
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			}
+			else
+			{
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+			}
+
+			if (_lights[i]->shouldCastShadows())
+			{
+				matrix[RendEnum::BIAS_VIEW_PROJ_MATRIX] = bias * _lights[i]->getCamera()->getViewProjMatrix();
+			}
+
+			if (rendParams->_showVoxelizedMesh)
+			{
+				multiInstanceShader->use();
+				multiInstanceShader->setUniform("materialScattering", rendParams->_materialScattering);
+				_lights[i]->applyLight(multiInstanceShader, matrix[RendEnum::VIEW_MATRIX]);
+				_lights[i]->applyShadowMapTexture(multiInstanceShader);
+				multiInstanceShader->applyActiveSubroutines();
+
+				this->drawSceneAsTriangles(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER, &matrix, rendParams);
+			}
+			else
+			{
+				if (rendParams->_showTriangleMesh or rendParams->_showFragmentsMarchingCubes)
+				{
+					shader->use();
+					shader->setUniform("materialScattering", rendParams->_materialScattering);
+					_lights[i]->applyLight(shader, matrix[RendEnum::VIEW_MATRIX]);
+					_lights[i]->applyShadowMapTexture(shader);
+					shader->applyActiveSubroutines();
+
+					this->drawSceneAsTriangles(shader, RendEnum::TRIANGLE_MESH_SHADER, &matrix, rendParams);
+				}
+				else
+				{
+					clusteringShader->use();
+					clusteringShader->setUniform("materialScattering", rendParams->_materialScattering);
+					_lights[i]->applyLight(clusteringShader, matrix[RendEnum::VIEW_MATRIX]);
+					_lights[i]->applyShadowMapTexture(clusteringShader);
+					clusteringShader->applyActiveSubroutines();
+
+					this->drawSceneAsTriangles(clusteringShader, RendEnum::CLUSTER_SHADER, &matrix, rendParams);
+				}
+			}
+		}
+	}
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);					// Back to initial state
+	glDepthFunc(GL_LESS);
+}
+
 void CADScene::drawSceneAsPoints(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
 }
 
 void CADScene::drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
+	for (Group3D* group : _sceneGroup)
+		group->drawAsLines(shader, shaderType, *matrix);
 }
 
 void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_SHADER)
 	{
-		if (!rendParams->_renderVoxelizedMesh)
-		{
-			//for (Group3D* group : _sceneGroup)
-			//{
-			//	group->drawAsTriangles(shader, shaderType, *matrix);
-			//}
-		}
-	}
-	else if (shaderType == RendEnum::CLUSTER_SHADER)
-	{
-		if (!rendParams->_renderVoxelizedMesh)
+		if (rendParams->_showTriangleMesh)
 		{
 			for (Group3D* group : _sceneGroup)
 			{
 				group->drawAsTriangles(shader, shaderType, *matrix);
 			}
 		}
+		else if (rendParams->_showFragmentsMarchingCubes)
+		{
+			for (Model3D* fractureMesh : _fractureMeshes)
+				fractureMesh->drawAsTriangles(shader, shaderType, *matrix);
+		}
+	}
+	else if (shaderType == RendEnum::CLUSTER_SHADER)
+	{
+		if (!rendParams->_showFragmentsMarchingCubes)
+		{
+			for (Group3D* group : _sceneGroup)
+				group->drawAsTriangles(shader, shaderType, *matrix);
+		}
 	}
 	else
 	{
 		if (rendParams->_planeClipping)
-		{
 			shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
-		}
 
-		if (rendParams->_renderVoxelizedMesh)
-			_aabbRenderer->drawAsTriangles(shader, shaderType, *matrix);
+		_aabbRenderer->drawAsTriangles(shader, shaderType, *matrix);
 	}
 }
 
@@ -485,21 +576,31 @@ void CADScene::drawSceneAsTriangles4Normal(RenderingShader* shader, RendEnum::Re
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_NORMAL_SHADER)
 	{
-		if (!rendParams->_renderVoxelizedMesh)
+		if (!rendParams->_showVoxelizedMesh)
 		{
-			for (Group3D* group : _sceneGroup)
-				group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+			if (rendParams->_showTriangleMesh or !rendParams->_showFragmentsMarchingCubes)
+			{
+				for (Group3D* group : _sceneGroup)
+					group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+			}
+			else if (rendParams->_showFragmentsMarchingCubes)
+			{
+				for (Model3D* fractureMesh : _fractureMeshes)
+					fractureMesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+			}
 		}
 	}
 	else
 	{
-		if (rendParams->_planeClipping)
+		if (rendParams->_showVoxelizedMesh)
 		{
-			shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
-		}
+			if (rendParams->_planeClipping)
+			{
+				shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
+			}
 
-		if (rendParams->_renderVoxelizedMesh)
 			_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		}
 	}
 }
 
@@ -507,20 +608,30 @@ void CADScene::drawSceneAsTriangles4Position(RenderingShader* shader, RendEnum::
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_POSITION_SHADER || shaderType == RendEnum::SHADOWS_SHADER)
 	{
-		if (!rendParams->_renderVoxelizedMesh)
+		if (!rendParams->_showVoxelizedMesh)
 		{
-			for (Group3D* group : _sceneGroup)
-				group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+			if (rendParams->_showTriangleMesh or !rendParams->_showFragmentsMarchingCubes)
+			{
+				for (Group3D* group : _sceneGroup)
+					group->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+			}
+			else if (rendParams->_showFragmentsMarchingCubes)
+			{
+				for (Model3D* fractureMesh : _fractureMeshes)
+					fractureMesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+			}
 		}
 	}
 	else
 	{
-		if (rendParams->_planeClipping)
+		if (rendParams->_showVoxelizedMesh)
 		{
-			shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
-		}
+			if (rendParams->_planeClipping)
+			{
+				shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
+			}
 
-		if (rendParams->_renderVoxelizedMesh)
 			_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		}
 	}
 }

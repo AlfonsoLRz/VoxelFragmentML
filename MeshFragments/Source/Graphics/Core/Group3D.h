@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Geometry/3D/AABB.h"
 #include "Graphics/Core/Model3D.h"
 #include "Graphics/Core/TriangleSet.h"
-#include "tinyply/tinyply.h"
 
 /**
 *	@file Group3D.h
@@ -164,14 +164,6 @@ public:
 	*	@param matrix Vector of matrices which can be applied in the rendering process.
 	*/
 	virtual void drawAsTriangles4Shadows(RenderingShader* shader, const RendEnum::RendShaderTypes shaderType, std::vector<mat4>& matrix);
-
-	/**
-	*	@brief Renders the current selected BVH level as a set of cubes.
-	*	@param shader Shader which will draw the model.
-	*	@param shaderType Index of shader at the list, so we can identify what type of uniform variables must be declared.
-	*	@param matrix Vector of matrices which can be applied in the rendering process.
-	*/
-	virtual void drawBVH(RenderingShader* shader, const RendEnum::RendShaderTypes shaderType, std::vector<mat4>& matrix);
 
 public:
 	/**

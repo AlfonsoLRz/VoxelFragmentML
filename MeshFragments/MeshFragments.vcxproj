@@ -96,6 +96,7 @@
     <ClInclude Include="Source\Graphics\Core\PlanarSurface.h" />
     <ClInclude Include="Source\Graphics\Core\PointLight.h" />
     <ClInclude Include="Source\Graphics\Core\RangedAttenuation.h" />
+    <ClInclude Include="Source\Graphics\Core\MarchingCubes.h" />
     <ClInclude Include="Source\Graphics\Core\RenderingShader.h" />
     <ClInclude Include="Source\Graphics\Core\RimLight.h" />
     <ClInclude Include="Source\Graphics\Core\ShaderList.h" />
@@ -254,6 +255,7 @@
     <ClCompile Include="Source\Graphics\Core\PlanarSurface.cpp" />
     <ClCompile Include="Source\Graphics\Core\PointLight.cpp" />
     <ClCompile Include="Source\Graphics\Core\RangedAttenuation.cpp" />
+    <ClCompile Include="Source\Graphics\Core\MarchingCubes.cpp" />
     <ClCompile Include="Source\Graphics\Core\RenderingShader.cpp" />
     <ClCompile Include="Source\Graphics\Core\RimLight.cpp" />
     <ClCompile Include="Source\Graphics\Core\ShaderList.cpp" />
@@ -293,6 +295,7 @@
     <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl" />

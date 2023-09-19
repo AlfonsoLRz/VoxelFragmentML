@@ -24,8 +24,18 @@ public:
 	enum RandomUniformType { STD_UNIFORM, HALTON, NUM_RANDOM_FUNCTIONS };
 	inline static const char* Random_STR[NUM_RANDOM_FUNCTIONS] = { "STD Uniform", "Halton" };
 
+	enum ErosionType { SQUARE, ELLIPSE, CROSS, NUM_EROSION_CONVOLUTIONS };
+	inline static const char* Erosion_STR[NUM_EROSION_CONVOLUTIONS] = { "Square", "Ellipse", "Cross" };
+
 public:
 	int		_biasSeeds;
+	bool	_computeMCFragments;
+	bool	_erode;
+	int		_erosionConvolution;
+	int		_erosionIterations;
+	float	_erosionProbability;
+	int		_erosionSize;
+	float	_erosionThreshold;
 	bool	_fillShape;
 	int		_fractureAlgorithm;
 	int		_distanceFunction;
@@ -45,7 +55,14 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(1),
-		_fillShape(true),
+		_computeMCFragments(false),
+		_erode(true),
+		_erosionConvolution(ELLIPSE),
+		_erosionProbability(.5f),
+		_erosionIterations(3),
+		_erosionSize(3),
+		_erosionThreshold(0.5f),
+		_fillShape(false),
 		_fractureAlgorithm(NAIVE),
 		_distanceFunction(MANHATTAN),
 		_gridSubdivisions(126, 81, 61),

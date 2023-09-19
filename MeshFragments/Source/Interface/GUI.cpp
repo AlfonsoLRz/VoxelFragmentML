@@ -157,26 +157,58 @@ void GUI::showFractureSettings()
 		}
 		
 		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);	
-		ImGui::SliderInt3("Grid Subdivisions", &_fractureParameters->_gridSubdivisions[0], 1, 500); ImGui::SameLine(0, 20);
+		
+		static uvec3 gridSubdivisions = _fractureParameters->_gridSubdivisions;
+		static unsigned changedIndex = 0;
+		if (ImGui::SliderInt3("Grid Subdivisions", &_fractureParameters->_gridSubdivisions[0], 1, 500))
+		{
+			for (int i = 0; i < 3; ++i)
+				if (_fractureParameters->_gridSubdivisions[i] != gridSubdivisions[i]) changedIndex = i;
+			gridSubdivisions = _fractureParameters->_gridSubdivisions;
+		}
+		ImGui::SameLine(0, 20);
 		if (ImGui::Button("Rebuild Grid"))
 		{
 			_scene->rebuildGrid();
 		}
+		ImGui::SameLine(0, 20);
+		if (ImGui::Button("Recalculate"))
+		{
+			_scene->recalculateGridSize(_fractureParameters->_gridSubdivisions, changedIndex);
+			gridSubdivisions = _fractureParameters->_gridSubdivisions;
+		}
 
-		ImGui::Combo("Base Algorithm", &_fractureParameters->_fractureAlgorithm, FractureParameters::Fracture_STR, IM_ARRAYSIZE(FractureParameters::Fracture_STR));
-		ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
-		ImGui::SliderInt("Num. seeds", &_fractureParameters->_numSeeds, 2, 1000);
-		ImGui::SliderInt("Num. Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, 1000);
-		ImGui::Combo("Seed Random Distribution", &_fractureParameters->_seedingRandom, FractureParameters::Random_STR, IM_ARRAYSIZE(FractureParameters::Random_STR));
-		ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
-		ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
-		ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6);
-		ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_spreading, 2, 10);
-		ImGui::Checkbox("Fill Shape", &_fractureParameters->_fillShape);
+		ImGui::PushItemWidth(150.0f);
+		{
+			ImGui::Combo("Base Algorithm", &_fractureParameters->_fractureAlgorithm, FractureParameters::Fracture_STR, IM_ARRAYSIZE(FractureParameters::Fracture_STR)); ImGui::SameLine(0, 20);
+			ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
+			ImGui::SliderInt("Num. seeds", &_fractureParameters->_numSeeds, 2, 1000); ImGui::SameLine(0, 20);
+			ImGui::SliderInt("Num. Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, 1000); ImGui::SameLine(0, 20);
+			ImGui::Combo("Seed Random Distribution", &_fractureParameters->_seedingRandom, FractureParameters::Random_STR, IM_ARRAYSIZE(FractureParameters::Random_STR));
+			ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR)); ImGui::SameLine(0, 20);
+			ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions); 
+			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6); ImGui::SameLine(0, 20);
+			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_spreading, 2, 10);
+			ImGui::Checkbox("Fill Shape", &_fractureParameters->_fillShape);
+			ImGui::SameLine(0, 20); ImGui::Checkbox("Compute Fragment Meshes (Marching cubes)", &_fractureParameters->_computeMCFragments);
+		}
+		ImGui::PopItemWidth();
 
 		this->leaveSpace(3); ImGui::Text("Execution Settings"); ImGui::Separator(); this->leaveSpace(2);
 		ImGui::Checkbox("Use GPU", &_fractureParameters->_launchGPU); ImGui::SameLine(0, 20);
 		ImGui::InputInt("Seed", &_fractureParameters->_seed, 1);
+
+		this->leaveSpace(3); ImGui::Text("Erosion Settings"); ImGui::Separator(); this->leaveSpace(2);
+		ImGui::PushItemWidth(120.0f); 
+		{
+			ImGui::Checkbox("Erode", &_fractureParameters->_erode);
+			ImGui::Combo("Erosion Convolution", &_fractureParameters->_erosionConvolution, FractureParameters::Erosion_STR, IM_ARRAYSIZE(FractureParameters::Erosion_STR));
+			ImGui::SameLine(0, 20);  ImGui::SliderInt("Size", &_fractureParameters->_erosionSize, 3, 13);
+			ImGui::SameLine(0, 20);  ImGui::SliderInt("Iterations", &_fractureParameters->_erosionIterations, 1, 10);
+			ImGui::SliderFloat("Erosion Probability", &_fractureParameters->_erosionProbability, 0.0f, 1.0f);
+			ImGui::SameLine(0, 20); ImGui::SliderFloat("Erosion Threshold", &_fractureParameters->_erosionThreshold, 0.0f, 1.0f);
+		}
+		ImGui::PopItemWidth();
 
 		this->leaveSpace(3); ImGui::Text("Save Result"); ImGui::Separator(); this->leaveSpace(2);
 		if (ImGui::Button("Export Fragments"))
@@ -196,7 +228,7 @@ void GUI::showRenderingSettings()
 
 		this->leaveSpace(3);
 
-		if (ImGui::BeginTabBar("LiDARTabBar"))
+		if (ImGui::BeginTabBar("Rendering Tab Bar"))
 		{
 			if (ImGui::BeginTabItem("General settings"))
 			{
@@ -212,49 +244,20 @@ void GUI::showRenderingSettings()
 				ImGui::Separator();
 				ImGui::Text(ICON_FA_TREE "Scenario");
 
-				ImGui::Checkbox("Render scenario", &_renderingParams->_showTriangleMesh);
-
 				{
 					ImGui::Spacing();
 
-					ImGui::NewLine();
-					ImGui::SameLine(30, 0);
-					ImGui::Checkbox("Voxelized", &_renderingParams->_renderVoxelizedMesh);
-
-					ImGui::NewLine();
-					ImGui::SameLine(30, 0);
+					ImGui::Checkbox("Voxelized", &_renderingParams->_showVoxelizedMesh);
+					ImGui::Checkbox("Render Original Mesh", &_renderingParams->_showTriangleMesh);
+					ImGui::Checkbox("Marching Cube Fragments", &_renderingParams->_showFragmentsMarchingCubes);
 					ImGui::Checkbox("Screen Space Ambient Occlusion", &_renderingParams->_ambientOcclusion);
 
 					const char* visualizationTitles[] = { "Points", "Lines", "Triangles", "All" };
-					ImGui::NewLine();
-					ImGui::SameLine(30, 0);
 					ImGui::Combo("Visualization", &_renderingParams->_visualizationMode, visualizationTitles, IM_ARRAYSIZE(visualizationTitles));
 
-					ImGui::NewLine();
-					ImGui::SameLine(30, 0);
 					ImGui::Checkbox("Plane Clipping", &_renderingParams->_planeClipping);
 					ImGui::SameLine(0, 20); ImGui::SliderFloat4("Coefficients", &_renderingParams->_planeCoefficients[0], -10.0f, 10.0f);
 				}
-
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("Data Structures"))
-			{
-				this->leaveSpace(1);
-
-				ImGui::Checkbox("Render BVH", &_renderingParams->_showBVH);
-
-				{
-					this->leaveSpace(1);
-					ImGui::NewLine(); ImGui::SameLine(0, 22);
-					ImGui::ColorEdit3("BVH color", &_renderingParams->_bvhWireframeColor[0]);
-					ImGui::NewLine(); ImGui::SameLine(0, 22);
-					ImGui::SliderFloat("BVH nodes", &_renderingParams->_bvhNodesPercentage, 0.0f, 1.0f);
-					this->leaveSpace(2);
-				}
-
-				this->leaveSpace(1);
 
 				ImGui::EndTabItem();
 			}
@@ -274,8 +277,6 @@ void GUI::showRenderingSettings()
 				this->leaveSpace(1);
 
 				ImGui::ColorEdit3("Wireframe Color", &_renderingParams->_wireframeColor[0]);
-				ImGui::Checkbox("Render Scene Normals", &_renderingParams->_showVertexNormal);
-				ImGui::SameLine(0, 20); ImGui::PushItemWidth(150.0f);  ImGui::SliderFloat("Normal Length", &_renderingParams->_normalLength, .1f, 10.0f); ImGui::PopItemWidth();
 
 				ImGui::EndTabItem();
 			}

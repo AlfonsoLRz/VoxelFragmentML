@@ -53,21 +53,17 @@ protected:
 	const static std::string MESH_1_PATH;					//!< Location of the first mesh in the file system
 
 protected:
-	AABBSet*			_aabbRenderer;							//!< Buffer of voxels
-	FractureParameters	_fractParameters;						//!< 
-	CADModel*			_mesh;									//!< Jar mesh
-	RegularGrid*		_meshGrid;								//!< Mesh regular grid
+	AABBSet*				_aabbRenderer;							//!< Buffer of voxels
+	FractureParameters		_fractParameters;						//!< 
+	std::vector<Model3D*>	_fractureMeshes;
+	CADModel*				_mesh;									//!< Jar mesh
+	RegularGrid*			_meshGrid;								//!< Mesh regular grid
 
 protected:
 	/**
 	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm. 
 	*/
 	std::string fractureModel();
-	
-	/**
-	*	@brief True if the file is a known model file, such as obj.
-	*/
-	bool isExtensionReadable(const std::string& filename);
 
 	/**
 	*	@brief Loads a camera with code-defined values.
@@ -105,6 +101,13 @@ protected:
 	bool readLightsFromSettings();
 
 	// ------------- Rendering ----------------
+
+	/**
+	*	@brief Renders the scene as a set of triangles.
+	*	@param mModel Additional model matrix to be applied over the initial model matrix.
+	*	@param rendParams Rendering parameters to be taken into account.
+	*/
+	virtual void drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParameters* rendParams);
 
 	/**
 	*	@brief Decides which objects are going to be rendered as points.
@@ -181,6 +184,11 @@ public:
 	*	@brief Rebuilds the whole grid to adapt it to a different number of subdivisions. 
 	*/
 	void rebuildGrid();
+
+	/**
+	*	@brief Recalculates grid size according to the scene aabb and the last modified voxel dimension.
+	*/
+	void recalculateGridSize(ivec3& voxelDimensions, uint8_t lastIndex);
 
 	/**
 	*	@brief Draws the scene as the rendering parameters specifies.

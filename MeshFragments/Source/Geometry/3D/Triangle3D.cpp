@@ -121,3 +121,44 @@ void Triangle3D::set(const vec3& va, const vec3& vb, const vec3& vc)
 	_b = vb;
 	_c = vc;
 }
+
+void Triangle3D::subdivide(std::vector<Model3D::VertexGPUData>& vertices, std::vector<Model3D::FaceGPUData>& faces, Model3D::FaceGPUData& face, float maxArea)
+{
+	this->subdivide(vertices, faces, face, maxArea, 2);
+}
+
+unsigned Triangle3D::longestEdgeOrigin()
+{
+	float l1 = glm::length(_c - _a), l2 = glm::length(_b - _a), l3 = glm::length(_c - _b);
+
+	if (l1 > l2 && l1 > l3) return 2;
+	if (l2 > l3 && l2 > l1) return 0;
+	return 1;
+}
+
+void Triangle3D::subdivide(std::vector<Model3D::VertexGPUData>& vertices, std::vector<Model3D::FaceGPUData>& faces, Model3D::FaceGPUData& face, float maxArea, unsigned iteration)
+{
+	Triangle3D triangle(vertices[face._vertices.x]._position, vertices[face._vertices.y]._position, vertices[face._vertices.z]._position);
+	if (triangle.area() <= maxArea)
+	{
+		faces.push_back(face);
+		return;
+	}
+
+	// Retrieve longest edge
+	iteration = triangle.longestEdgeOrigin();
+
+	// Calculate midpoint
+	Model3D::VertexGPUData newVertex = vertices[face._vertices.x];
+	newVertex._position = (vertices[face._vertices[iteration % 3]]._position + vertices[face._vertices[(iteration + 1) % 3]]._position) / 2.0f;
+	newVertex._normal = glm::normalize((vertices[face._vertices[iteration % 3]]._normal + vertices[face._vertices[(iteration + 1) % 3]]._normal) / 2.0f);
+	newVertex._textCoord = (vertices[face._vertices[iteration % 3]]._textCoord + vertices[face._vertices[(iteration + 1) % 3]]._textCoord) / 2.0f;
+	vertices.push_back(newVertex);
+
+	Model3D::FaceGPUData face1 = face, face2 = face;
+	face1._vertices = uvec3(vertices.size() - 1, face._vertices[(iteration + 1) % 3], face._vertices[(iteration + 2) % 3]);
+	face2._vertices = uvec3(vertices.size() - 1, face._vertices[iteration % 3], face._vertices[(iteration + 2) % 3]);
+
+	this->subdivide(vertices, faces, face1, maxArea, iteration + 1);
+	this->subdivide(vertices, faces, face2, maxArea, iteration + 1);
+}

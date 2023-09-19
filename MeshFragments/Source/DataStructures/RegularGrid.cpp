@@ -1,8 +1,11 @@
 #include "stdafx.h"
 #include "RegularGrid.h"
 
+#include "Geometry/3D/Triangle3D.h"
+#include "Graphics/Core/CADModel.h"
 #include "Graphics/Core/OpenGLUtilities.h"
 #include "Graphics/Core/ShaderList.h"
+#include "Graphics/Core/MarchingCubes.h"
 #include "tinyply/tinyply.h"
 
 /// Public methods
@@ -15,13 +18,89 @@ RegularGrid::RegularGrid(const AABB& aabb, uvec3 subdivisions) :
 	this->buildGrid();
 }
 
-RegularGrid::RegularGrid(uvec3 subdivisions) : _numDivs(subdivisions)
+RegularGrid::RegularGrid(uvec3 subdivisions) : _cellSize(.0f), _numDivs(subdivisions)
 {
 	
 }
 
 RegularGrid::~RegularGrid()
 {
+}
+
+void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint8_t numIterations, float erosionProbability, float erosionThreshold)
+{
+	ComputeShader* erodeShader = ShaderList::getInstance()->getComputeShader(RendEnum::ERODE_GRID);
+
+	if (!(convolutionSize % 2))
+		++convolutionSize;
+
+	uint32_t maskSize = convolutionSize * convolutionSize * convolutionSize, convolutionCenter = std::floor(convolutionSize / 2.0f), activations = 0;
+	float* erosionMask = (float*) calloc(maskSize, sizeof(float));
+
+	if (fractureParams == FractureParameters::SQUARE)
+	{
+		std::fill(erosionMask, erosionMask + maskSize, 1);
+		activations = maskSize;
+	}
+	else if (fractureParams == FractureParameters::CROSS)
+	{
+		for (int x = 0; x < convolutionSize; ++x)
+			erosionMask[x * convolutionSize * convolutionSize + convolutionCenter * convolutionSize + convolutionCenter] = 1.0f;
+		for (int y = 0; y < convolutionSize; ++y)
+			erosionMask[convolutionCenter * convolutionSize * convolutionSize + y * convolutionSize + convolutionCenter] = 1.0f;
+		for (int z = 0; z < convolutionSize; ++z)
+			erosionMask[convolutionCenter * convolutionSize * convolutionSize + convolutionCenter * convolutionSize + z] = 1.0f;
+		activations = 1.0f / 3.0f * maskSize;
+	}
+	else if (fractureParams == FractureParameters::ELLIPSE)
+	{
+		for (int x = 0; x < convolutionSize; ++x)
+			for (int y = 0; y < convolutionSize; ++y)
+				for (int z = 0; z < convolutionSize; ++z)
+				{
+					if (glm::distance(vec3(x, y, z), vec3(convolutionCenter)) < convolutionCenter + glm::epsilon<float>())
+					{
+						erosionMask[x * convolutionSize * convolutionSize + y * convolutionSize + z] = 1.0f;
+						++activations;
+					}
+				}
+	}
+
+	// Noise
+	std::vector<float> noiseBuffer;
+	this->fillNoiseBuffer(noiseBuffer, 1e6);
+
+	// Input data
+	uvec3 numDivs = this->getNumSubdivisions();
+	unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
+	unsigned numGroups = ComputeShader::getNumGroups(numCells);
+	const GLuint gridSSBO = ComputeShader::setReadBuffer(&_grid[0], numCells, GL_DYNAMIC_DRAW);
+	const GLuint maskSSBO = ComputeShader::setReadBuffer(&erosionMask[0], maskSize, GL_STATIC_DRAW);
+	const GLuint noiseSSBO = ComputeShader::setReadBuffer(&noiseBuffer[0], noiseBuffer.size(), GL_STATIC_DRAW);
+
+	for (int idx = 0; idx < numIterations; ++idx)
+	{
+		erodeShader->bindBuffers(std::vector<GLuint>{ gridSSBO, maskSSBO, noiseSSBO });
+		erodeShader->use();
+		erodeShader->setUniform("numActivations", activations);
+		erodeShader->setUniform("gridDims", numDivs);
+		erodeShader->setUniform("maskSize", convolutionSize);
+		erodeShader->setUniform("maskSize2", unsigned(std::floor(convolutionSize / 2.0f)));
+		erodeShader->setUniform("numCells", numCells);
+		erodeShader->setUniform("noiseBufferSize", static_cast<unsigned>(noiseBuffer.size()));
+		erodeShader->setUniform("erosionProbability", erosionProbability);
+		erodeShader->setUniform("erosionThreshold", erosionThreshold);
+		erodeShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+	}
+
+	uint16_t* gridData = ComputeShader::readData(gridSSBO, uint16_t());
+	_grid = std::vector<uint16_t>(gridData, gridData + numCells);
+
+	//vec4* testData = ComputeShader::readData(testSSBO, vec4());
+	//std::vector<vec4> testBuffer = std::vector<vec4>(testData, testData + numCells);
+
+	GLuint buffers[] = { gridSSBO, maskSSBO, noiseSSBO };
+	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 }
 
 void RegularGrid::exportGrid()
@@ -90,7 +169,7 @@ void RegularGrid::exportGrid()
 	delete modelComp;
 }
 
-void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, unsigned index, int numSamples, Group3D::StaticGPUData* sceneData)
+void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, bool fill, int numSamples, Group3D::StaticGPUData* sceneData)
 {
 	ComputeShader* boundaryShader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_REGULAR_GRID);
 	ComputeShader* fillShader = ShaderList::getInstance()->getComputeShader(RendEnum::FILL_REGULAR_GRID);
@@ -122,16 +201,19 @@ void RegularGrid::fill(const std::vector<Model3D::VertexGPUData>& vertices, cons
 	boundaryShader->execute(numGroups1, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 	// Fill grid once the boundaries are established
-	fillShader->use();
-	fillShader->bindBuffers(std::vector<GLuint>{
-		sceneData->_clusterSSBO, sceneData->_groupGeometrySSBO, sceneData->_groupTopologySSBO, sceneData->_groupMeshSSBO, gridSSBO
-	});
-	fillShader->setUniform("aabbMin", _aabb.min());
-	fillShader->setUniform("cellSize", _cellSize);
-	fillShader->setUniform("gridDims", numDivs);
-	fillShader->setUniform("numClusters", sceneData->_numClusters);
-	fillShader->setUniform("numVoxels", numCells);
-	fillShader->execute(numGroups2, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+	if (fill)
+	{
+		fillShader->use();
+		fillShader->bindBuffers(std::vector<GLuint>{
+			sceneData->_clusterSSBO, sceneData->_groupGeometrySSBO, sceneData->_groupTopologySSBO, sceneData->_groupMeshSSBO, gridSSBO
+		});
+		fillShader->setUniform("aabbMin", _aabb.min());
+		fillShader->setUniform("cellSize", _cellSize);
+		fillShader->setUniform("gridDims", numDivs);
+		fillShader->setUniform("numClusters", sceneData->_numClusters);
+		fillShader->setUniform("numVoxels", numCells);
+		fillShader->execute(numGroups2, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+	}
 
 	uint16_t* gridData = ComputeShader::readData(gridSSBO, uint16_t());
 	_grid = std::vector<uint16_t>(gridData, gridData + numCells);
@@ -210,6 +292,57 @@ void RegularGrid::queryCluster(const std::vector<Model3D::VertexGPUData>& vertic
 
 	GLuint buffers[] = { vertexSSBO, faceSSBO, gridSSBO, clusterSSBO };
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+}
+
+std::vector<Model3D*> RegularGrid::toTriangleMesh()
+{
+	std::vector<Model3D*> meshes;
+	std::unordered_set<uint16_t> values;
+	unsigned index;
+
+	for (unsigned int x = 0; x < _numDivs.x; ++x)
+		for (unsigned int y = 0; y < _numDivs.y; ++y)
+			for (unsigned int z = 0; z < _numDivs.z; ++z)
+			{
+				index = this->getPositionIndex(x, y, z);
+				if (_grid[index] != VOXEL_FREE)
+					values.insert(_grid[index]);
+			}
+
+	std::vector<std::vector<std::vector<float>>> grid = std::vector<std::vector<std::vector<float>>>(_numDivs.x + 1, std::vector<std::vector<float>>(_numDivs.y + 1, std::vector<float>(_numDivs.z + 1, 0)));
+	for (auto& value : values)
+	{
+		for (unsigned int x = 0; x < _numDivs.x + 1; ++x)
+			for (unsigned int y = 0; y < _numDivs.y + 1; ++y)
+				for (unsigned int z = 0; z < _numDivs.z + 1; ++z)
+					grid[x][y][z] = 0;
+
+		for (unsigned int x = 0; x < _numDivs.x; ++x)
+			for (unsigned int y = 0; y < _numDivs.y; ++y)
+				for (unsigned int z = 0; z < _numDivs.z; ++z)
+				{
+					index = this->getPositionIndex(x, y, z);
+					if (_grid[index] == value)
+					{
+						for (unsigned int x_i = x; x_i < x + 2; ++x_i)
+							for (unsigned int y_i = y; y_i < y + 2; ++y_i)
+								for (unsigned int z_i = z; z_i < z + 2; ++z_i)
+									grid[x_i][y_i][z_i] = 0.1f;
+					}
+				}
+
+		MarchingCubes mCubes;
+		std::vector<Triangle3D> triangles;
+
+		mCubes.triangulateField(grid, _numDivs + uvec3(1), 0.05f, triangles);
+
+		vec3 scale = (vec3(_numDivs) / vec3(2.0f)) / _aabb.extent();
+		vec3 center = _aabb.center();
+
+		meshes.push_back(new CADModel(triangles, glm::translate(glm::mat4(1.0f), center) * glm::scale(glm::mat4(1.0f), 1.0f / scale) * glm::translate(glm::mat4(1.0f), vec3(_numDivs) / 2.0f)));
+	}
+
+	return meshes;
 }
 
 // [Protected methods]

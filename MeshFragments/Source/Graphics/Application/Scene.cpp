@@ -51,10 +51,10 @@ void Scene::render(const mat4& mModel, RenderingParameters* rendParams)
 		_ssaoFBO->writeGBuffer(0);
 
 		_ssaoFBO->bindGBufferFBO(1);
-		if (rendParams->_showTriangleMesh) this->drawAsTriangles4Position(mModel, rendParams);
+		this->drawAsTriangles4Position(mModel, rendParams);
 
 		_ssaoFBO->bindGBufferFBO(2);
-		if (rendParams->_showTriangleMesh) this->drawAsTriangles4Normal(mModel, rendParams);
+		this->drawAsTriangles4Normal(mModel, rendParams);
 
 		_ssaoFBO->bindSSAOFBO();
 		this->drawSSAOScene();
@@ -171,22 +171,6 @@ void Scene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParamet
 			shader->applyActiveSubroutines();
 
 			this->drawSceneAsTriangles(shader, RendEnum::TRIANGLE_MESH_SHADER, &matrix, rendParams);
-
-			multiInstanceShader->use();
-			multiInstanceShader->setUniform("materialScattering", rendParams->_materialScattering);
-			_lights[i]->applyLight(multiInstanceShader, matrix[RendEnum::VIEW_MATRIX]);
-			_lights[i]->applyShadowMapTexture(multiInstanceShader);
-			multiInstanceShader->applyActiveSubroutines();
-
-			this->drawSceneAsTriangles(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER, &matrix, rendParams);
-
-			clusteringShader->use();
-			clusteringShader->setUniform("materialScattering", rendParams->_materialScattering);
-			_lights[i]->applyLight(clusteringShader, matrix[RendEnum::VIEW_MATRIX]);
-			_lights[i]->applyShadowMapTexture(clusteringShader);
-			clusteringShader->applyActiveSubroutines();
-
-			this->drawSceneAsTriangles(clusteringShader, RendEnum::CLUSTER_SHADER, &matrix, rendParams);
 		}
 	}
 

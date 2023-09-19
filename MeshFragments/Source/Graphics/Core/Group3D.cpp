@@ -285,22 +285,6 @@ void Group3D::drawAsTriangles4Shadows(RenderingShader* shader, const RendEnum::R
 	this->unsetModelMatrix(matrix);
 }
 
-void Group3D::drawBVH(RenderingShader* shader, const RendEnum::RendShaderTypes shaderType, std::vector<mat4>& matrix)
-{
-	RenderingParameters* rendParams = Renderer::getInstance()->getRenderingParameters();
-	this->setModelMatrix(matrix);
-
-	for (int vaoIdx = 0; vaoIdx < _bvhVAO.size(); ++vaoIdx)
-	{
-		this->setShaderUniforms(shader, shaderType, matrix);
-		shader->setUniform("vColor", rendParams->_bvhWireframeColor);
-
-		_bvhVAO[vaoIdx]->drawObject(RendEnum::IBOTypes::IBO_WIREFRAME, GL_LINES, rendParams->_bvhNodesPercentage * _staticGPUData[vaoIdx]->_numClusters * BVH_NODE_INDICES);		// 12 lines x 3 indices
-	}
-
-	this->unsetModelMatrix(matrix);
-}
-
 /// [Protected methods]
 
 void Group3D::aggregateSSBOData(VolatileGPUData*& volatileGPUData)

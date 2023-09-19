@@ -25,6 +25,22 @@ CADModel::CADModel(const std::string& filename, const std::string& textureFolder
 	_useBinary = useBinary;
 }
 
+CADModel::CADModel(const std::vector<Triangle3D>& triangles, const mat4& modelMatrix) :
+	Model3D(modelMatrix, 1), _useBinary(false)
+{
+	for (const Triangle3D& triangle : triangles)
+	{
+		vec3 normal = triangle.normal();
+		for (int i = 0; i < 3; ++i)
+		{
+			_modelComp[0]->_geometry.push_back(Model3D::VertexGPUData{ triangle.getPoint(i), .0f, normal });
+			_modelComp[0]->_triangleMesh.push_back(_modelComp[0]->_geometry.size() - 1);
+		}
+	}
+
+	Model3D::setVAOData();
+}
+
 CADModel::~CADModel()
 {
 }
@@ -50,10 +66,51 @@ bool CADModel::load(const mat4& modelMatrix)
 			this->writeToBinary();
 		}
 
-		return (_loaded = true);
+		this->subdivide(0.0001f);
+		for (ModelComponent* modelComponent : _modelComp)
+		{
+			modelComponent->buildTriangleMeshTopology();
+			modelComponent->buildPointCloudTopology();
+			modelComponent->buildWireframeTopology();
+		}
+		this->setVAOData();
+
+		return _loaded = true;
 	}
 
 	return false;
+}
+
+void CADModel::subdivide(float maxArea)
+{
+	bool applyChanges = false;
+
+	#pragma omp parallel for
+	for (int modelCompIdx = 0; modelCompIdx < _modelComp.size(); ++modelCompIdx)
+	{
+		bool applyChangesComp = false;
+		Model3D::ModelComponent* modelComp = _modelComp[modelCompIdx];
+		unsigned numFaces = modelComp->_topology.size();
+
+		for (int faceIdx = 0; faceIdx < numFaces; ++faceIdx)
+		{
+			Triangle3D triangle(modelComp->_geometry[modelComp->_topology[faceIdx]._vertices.x]._position,
+				modelComp->_geometry[modelComp->_topology[faceIdx]._vertices.y]._position,
+				modelComp->_geometry[modelComp->_topology[faceIdx]._vertices.z]._position);
+
+			if (triangle.area() > maxArea)
+			{
+				// Subdivide
+				triangle.subdivide(modelComp->_geometry, modelComp->_topology, modelComp->_topology[faceIdx], maxArea);
+				applyChangesComp = true;
+				modelComp->_topology.erase(modelComp->_topology.begin() + faceIdx);
+				--faceIdx;
+			}
+		}
+
+		#pragma omp critical
+		applyChanges &= applyChangesComp;
+	}
 }
 
 /// [Protected methods]
@@ -246,33 +303,6 @@ void CADModel::generateGeometryTopology(Model3D::ModelComponent* modelComp, cons
 	//modelComp->buildWireframeTopology();
 }
 
-std::string CADModel::getKeyValue(std::map<std::string, std::string>& keyMap, std::string& modelName, std::string& defaultClass)
-{
-	auto itFirst = keyMap.begin();
-	unsigned maxMatches = 0, lastMatches;
-	std::string currentClass = defaultClass;
-
-	while (itFirst != keyMap.end())
-	{
-		auto itString = std::string(modelName).find(itFirst->first);
-
-		if (itString != std::string::npos)
-		{
-			lastMatches = itFirst->first.size();
-
-			if (lastMatches >= maxMatches)
-			{
-				maxMatches = lastMatches;
-				currentClass = itFirst->second;
-			}
-		}
-
-		++itFirst;
-	}
-
-	return currentClass;
-}
-
 bool CADModel::loadModelFromBinaryFile()
 {
 	bool success;
@@ -284,8 +314,6 @@ bool CADModel::loadModelFromBinaryFile()
 			modelComp->_material = this->createMaterial(modelComp);
 			modelComp->setName(modelComp->_modelDescription._modelName);
 		}
-
-		this->setVAOData();
 	}
 
 	return success;
@@ -322,8 +350,6 @@ bool CADModel::loadModelFromOBJ(const mat4& modelMatrix)
 				++modelCompIdx;
 			}
 		}
-
-		this->setVAOData();
 	}
 
 	return success;
@@ -373,79 +399,6 @@ bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D
 	fin.close();
 
 	return true;
-}
-
-void CADModel::readClassFile(const std::string& filename, std::map<std::string, std::string>& keyMap, std::string& defaultClass)
-{
-	const static char KEYWORD_DELIMITER = ';';
-
-	// File management
-	size_t delimiterIndex = std::string::npos;
-	std::string currentLine, classKey, keyword, leftLine;
-	std::list<std::string> keywords;
-	std::stringstream line;
-	std::ifstream inputStream;
-
-	inputStream.open(filename.c_str());
-
-	if (inputStream.fail()) return;
-
-	while (!(inputStream >> std::ws).eof())
-	{
-		classKey = keyword = leftLine = "";
-		keywords.clear();
-
-		std::getline(inputStream, currentLine);
-
-		if (currentLine.find(COMMENT_CHAR) != 0 && !currentLine.empty())		// Comment line
-		{
-			line.clear();
-			line.str(currentLine);
-			std::getline(line, classKey, '\t');
-
-			if (classKey.empty())					// In case no tab alignment was followed
-			{
-				std::getline(line, classKey, ' ');
-			}
-
-			line >> leftLine;
-
-			while (!leftLine.empty())
-			{
-				delimiterIndex = leftLine.find_first_of(KEYWORD_DELIMITER);
-
-				if (delimiterIndex != std::string::npos)
-				{
-					keyword = leftLine.substr(0, delimiterIndex);
-					leftLine = leftLine.substr(delimiterIndex + 1, leftLine.length() - delimiterIndex - 1);
-				}
-				else
-				{
-					keyword = leftLine;
-					leftLine.clear();
-				}
-
-				if (!keyword.empty())
-				{
-					keywords.push_back(keyword);
-				}
-			}
-
-			if (!classKey.empty() && keywords.empty())
-			{
-				defaultClass = classKey;
-			}
-			else
-			{
-				for (std::string& keywordString : keywords)
-				{
-					keyMap[keywordString] = classKey;
-				}
-			}
-		}
-	}
-
-	inputStream.close();
 }
 
 bool CADModel::writeToBinary()

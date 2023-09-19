@@ -376,21 +376,9 @@ void Model3D::setShaderUniforms(ShaderProgram* shader, const RendEnum::RendShade
 
 		break;
 
-	case RendEnum::POINT_CLOUD_HEIGHT_SHADER:
-		shader->setUniform("mModelViewProj", matrix[RendEnum::VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
-		shader->setUniform("pointSize", rendParams->_scenePointSize);
-
-		break;
-
 	case RendEnum::WIREFRAME_SHADER:
 		shader->setUniform("mModelViewProj", matrix[RendEnum::VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
 		shader->setUniform("vColor", rendParams->_wireframeColor);
-
-		break;
-
-	case RendEnum::BVH_SHADER:
-		shader->setUniform("mModelViewProj", matrix[RendEnum::VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
-		shader->setUniform("vColor", rendParams->_bvhWireframeColor);
 
 		break;
 
@@ -545,7 +533,7 @@ void Model3D::ModelComponent::buildWireframeTopology()
 		return false;
 	};
 
-	for (unsigned int i = 0; i < _triangleMesh.size(); i += 4)
+	for (unsigned int i = 0; i < _triangleMesh.size(); i += 3)
 	{
 		_wireframe.push_back(_triangleMesh[i]);
 		_wireframe.push_back(_triangleMesh[i + 1]);
@@ -558,6 +546,16 @@ void Model3D::ModelComponent::buildWireframeTopology()
 		_wireframe.push_back(_triangleMesh[i]);
 		_wireframe.push_back(_triangleMesh[i + 2]);
 		_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
+	}
+}
+
+void Model3D::ModelComponent::buildTriangleMeshTopology()
+{
+	_triangleMesh.clear();
+
+	for (const FaceGPUData& face : _topology)
+	{
+		_triangleMesh.insert(_triangleMesh.end(), {face._vertices.x, face._vertices.y, face._vertices.z});
 	}
 }
 

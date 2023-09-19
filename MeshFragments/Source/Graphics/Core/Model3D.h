@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Geometry/3D/TriangleMesh.h"
 #include "Graphics/Application/GraphicsAppEnumerations.h"
 #include "Graphics/Core/Camera.h"
 #include "Graphics/Core/ColorUtilities.h"
@@ -486,6 +485,11 @@ public:
 	*	@brief Builds an array with those indices which compose the wireframe topology.
 	*/
 	virtual void buildWireframeTopology();
+
+	/**
+	*	@brief Builds an array with those indices which compose the wireframe topology.
+	*/
+	virtual void buildTriangleMeshTopology();
 
 	/**
 	*	@brief Assignment operator overriding.

@@ -1,10 +1,9 @@
 #include "stdafx.h"
 #include "Image.h"
 
-/// [Public methods]
+#include "lodepng.h"
 
-Image::Image(const std::string& filename) :
-	_depth (4)				// PNG depth
+Image::Image(const std::string& filename) : _depth(4)				// PNG depth
 {
 	unsigned error = lodepng::decode(_image, _width, _height, filename.c_str());
 
@@ -18,8 +17,7 @@ Image::Image(const std::string& filename) :
 	this->flipImageVertically(_image, _width, _height, _depth);				// By default it's flipped
 }
 
-Image::Image(unsigned char* image, const uint16_t width, const uint16_t height, const uint8_t depth) :
-	_width(width), _height(height), _depth(depth)
+Image::Image(unsigned char* image, const uint16_t width, const uint16_t height, const uint8_t depth) : _width(width), _height(height), _depth(depth)
 {
 	if (image)
 	{
@@ -55,6 +53,20 @@ void Image::flipImageVertically(std::vector<unsigned char>& image, const uint16_
 	}
 
 	delete[] tempBuffer;
+}
+
+bool Image::saveImage(const std::string& filename)
+{
+	std::vector<unsigned char> result;
+	unsigned error = lodepng::encode(result, this->_image, this->_width, this->_height);
+
+	if (!error)
+	{
+		lodepng::save_file(result, filename);
+		return true;
+	}
+
+	return false;
 }
 
 void Image::flipImageVertically()

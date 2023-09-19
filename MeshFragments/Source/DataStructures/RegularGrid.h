@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Geometry/3D/AABB.h"
+#include "Graphics/Core/FractureParameters.h"
 #include "Graphics/Core/Group3D.h"
 #include "Graphics/Core/Image.h"
 #include "Graphics/Core/Model3D.h"
@@ -71,6 +72,11 @@ public:
     virtual ~RegularGrid();
 
 	/**
+	*	@brief 
+	*/
+	void erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint8_t numIterations, float erosionProbability, float erosionThreshold);
+
+	/**
 	*	@brief Exports fragments into several models in a PLY file. 
 	*/
 	void exportGrid();
@@ -78,7 +84,7 @@ public:
 	/**
 	*	@brief  
 	*/
-	void fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, unsigned index, int numSamples, Group3D::StaticGPUData* sceneData);
+	void fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, bool fill, int numSamples, Group3D::StaticGPUData* sceneData);
 
 	/**
 	*	@brief
@@ -109,6 +115,11 @@ public:
 	*	@brief Substitutes current grid with new values. 
 	*/
 	void swap(const std::vector<uint16_t>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }
+
+	/**
+	*	@brief Transforms the regular grid into a triangle mesh per value.
+	*/
+	std::vector<Model3D*> toTriangleMesh();
 
 	// ----------- External functions ----------
 

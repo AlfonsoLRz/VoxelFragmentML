@@ -76,8 +76,6 @@ bool SSAOScene::needToApplyAmbientOcclusion(RenderingParameters* rendParams)
 
 void SSAOScene::renderOtherStructures(const mat4& mModel, RenderingParameters* rendParams)
 {
-	if (rendParams->_showBVH) this->renderBVH(mModel, rendParams);
-	if (rendParams->_showVertexNormal) this->renderVertexNormals(mModel, rendParams);
 }
 
 void SSAOScene::renderUniformPointCloud(const mat4& mModel, RenderingParameters* rendParams)
@@ -132,50 +130,7 @@ void SSAOScene::renderWireframe(const mat4& mModel, RenderingParameters* rendPar
 
 void SSAOScene::renderTriangleMesh(const mat4& mModel, RenderingParameters* rendParams)
 {
-	if (rendParams->_showTriangleMesh)
-	{
-		SSAOScene::drawAsTriangles(mModel, rendParams);
-	}
-}
-
-// ---------------------------- Other structures -----------------------------
-
-void SSAOScene::renderBVH(const mat4& model, RenderingParameters* rendParams)
-{
-	Camera* activeCamera = _cameraManager->getActiveCamera(); if (!activeCamera) return;
-	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
-
-	matrix[RendEnum::MODEL_MATRIX] = model;
-	matrix[RendEnum::VIEW_MATRIX] = activeCamera->getViewMatrix();
-	matrix[RendEnum::VIEW_PROJ_MATRIX] = activeCamera->getViewProjMatrix();
-
-	// BVH rendering
-	{
-		RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::WIREFRAME_SHADER);
-		shader->use();
-		shader->applyActiveSubroutines();
-
-		for (Group3D* group: _sceneGroup) group->drawBVH(shader, RendEnum::WIREFRAME_SHADER, matrix);
-	}
-}
-
-void SSAOScene::renderVertexNormals(const mat4& model, RenderingParameters* rendParams)
-{
-	Camera* activeCamera = _cameraManager->getActiveCamera(); if (!activeCamera) return;
-	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
-
-	matrix[RendEnum::MODEL_MATRIX] = model;
-	matrix[RendEnum::VIEW_PROJ_MATRIX] = activeCamera->getViewProjMatrix();
-
-	// Face normal rendering
-	{
-		RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::VERTEX_NORMAL_SHADER);
-		shader->use();
-		shader->applyActiveSubroutines();
-		shader->setUniform("normalLength", rendParams->_normalLength);
-		
-		this->drawSceneAsPoints(shader, RendEnum::VERTEX_NORMAL_SHADER, &matrix, rendParams);
-	}
+	SSAOScene::drawAsTriangles(mModel, rendParams);
 }
 
 // ------------------------- Draw scene ------------------------------
