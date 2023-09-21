@@ -23,6 +23,12 @@ Plane::Plane(const vec3& point, const vec3& u, const vec3& v, bool arePoints)
 	_coefficients = computeInterceptFormCoeff();
 }
 
+Plane::Plane(const vec3& point, const vec3& normal): _a(point)
+{
+	_coefficients = vec4(normal, .0f);
+	_coefficients.w = -glm::dot(point, normal);
+}
+
 Plane::Plane(const Plane& plane) :
 	_a (plane._a), _b(plane._b), _c(plane._c), _u(plane._u), _v(plane._v), _coefficients(plane._coefficients)
 {

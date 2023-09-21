@@ -36,6 +36,7 @@ out vec3 normal;
 out vec2 textCoord;
 out vec4 shadowCoord;
 out vec3 clusterColor;
+out float clusterIndex;
 
 // Lighting related
 out vec3 lightPos;
@@ -128,7 +129,9 @@ void main()
 	normal = vec3(mModelView * vec4(vNormal, 0.0f));
 	shadowCoord = mShadow * vec4(vPosition, 1.0f);
 	textCoord = vTextCoord;
+
 	clusterColor = HSVtoRGB(getHueValue(uint(vClusterIndex)), .99f, .99f);
+	clusterIndex = vClusterIndex;
 
 	const mat3 TBN = displacementUniform();
 	lightUniform(TBN);

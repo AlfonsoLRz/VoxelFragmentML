@@ -5,8 +5,10 @@
 
 layout (local_size_variable) in;
 
+#include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
+
 layout (std430, binding = 0) buffer SeedBuffer	{ uvec4		seed[]; };
-layout (std430, binding = 1) buffer GridBuffer	{ uint16_t  grid[]; };
+layout (std430, binding = 1) buffer GridBuffer	{ CellGrid  grid[]; };
 
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
 #include <Assets/Shaders/Compute/Fracturer/distance.glsl>
@@ -19,7 +21,7 @@ void main()
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= gridDims.x * gridDims.y * gridDims.z) return;
 
-	if (grid[index] == VOXEL_EMPTY) 
+	if (grid[index].value == VOXEL_EMPTY) 
 	{
 		return;
 	}
@@ -35,7 +37,7 @@ void main()
 		if (distance < minDistance)
 		{
 			minDistance = distance;
-			grid[index] = uint16_t(seed[seedIdx].w);
+			grid[index].value = uint16_t(seed[seedIdx].w);
 		}
 	}
 }

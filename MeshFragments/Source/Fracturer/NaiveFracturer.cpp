@@ -27,7 +27,7 @@ namespace fracturer {
     {
         uvec3 numDivs = grid.getNumSubdivisions();
         unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
-        uint16_t* gridData = grid.data();
+        RegularGrid::CellGrid* gridData = grid.data();
         DistFunction distanceFunction = _distanceFunctionMap[fractParameters->_distanceFunction];
 
     	// Iteration data
@@ -45,7 +45,7 @@ namespace fracturer {
                     cellIndex = RegularGrid::getPositionIndex(x, y, z, numDivs);
                     minDistance = FLT_MAX;
 
-                    if (gridData[cellIndex] == VOXEL_EMPTY) continue;
+                    if (gridData[cellIndex]._value == VOXEL_EMPTY) continue;
 
                     for (int seedIdx = 0; seedIdx < seeds.size(); ++seedIdx)
                     {
@@ -54,17 +54,17 @@ namespace fracturer {
                         if (distance < minDistance)
                         {
                             minDistance = distance;
-                            gridData[cellIndex] = seeds[seedIdx].w;
+                            gridData[cellIndex]._value = seeds[seedIdx].w;
                         }
                     }
                 }
             }
     	}
 
-        if (fractParameters->_removeIsolatedRegions)
-        {
-            this->removeIsolatedRegionsCPU(grid, seeds);
-        }
+        //if (fractParameters->_removeIsolatedRegions)
+        //{
+        //    this->removeIsolatedRegionsCPU(grid, seeds);
+        //}
     }
 
 
@@ -77,7 +77,7 @@ namespace fracturer {
         uvec3 numDivs = grid.getNumSubdivisions();
         unsigned numThreads = numDivs.x * numDivs.y * numDivs.z;
         unsigned numGroups = ComputeShader::getNumGroups(numThreads);
-        uint16_t* gridData = grid.data();
+        RegularGrid::CellGrid* gridData = grid.data();
 
         const GLuint seedSSBO = ComputeShader::setReadBuffer(seeds, GL_STATIC_DRAW);
         const GLuint gridSSBO = ComputeShader::setReadBuffer(&gridData[0], numThreads, GL_DYNAMIC_DRAW);
@@ -96,8 +96,8 @@ namespace fracturer {
         }
         else
         {
-            uint16_t* resultPointer = ComputeShader::readData(gridSSBO, uint16_t());
-            std::vector<uint16_t> resultBuffer = std::vector<uint16_t>(resultPointer, resultPointer + numThreads);
+            RegularGrid::CellGrid* resultPointer = ComputeShader::readData(gridSSBO, RegularGrid::CellGrid());
+            std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numThreads);
 
             grid.swap(resultBuffer);
         }
@@ -111,13 +111,13 @@ namespace fracturer {
         uvec3 numDivs = grid.getNumSubdivisions();
         unsigned numCells = numDivs.x * numDivs.y * numDivs.z, cellIndex;
         std::list<glm::uvec4> front(seeds.begin(), seeds.end());                    // Linked list where to push/pop voxels
-        std::vector<uint16_t> newGrid(numCells);
-        std::fill(newGrid.begin(), newGrid.end(), VOXEL_EMPTY);
-        uint16_t* gridData = grid.data();
+        std::vector<RegularGrid::CellGrid> newGrid(numCells);
+        std::fill(newGrid.begin(), newGrid.end(), RegularGrid::CellGrid(VOXEL_EMPTY));
+        RegularGrid::CellGrid* gridData = grid.data();
 
-        for (glm::uvec4 seed : seeds)
+        for (const glm::uvec4& seed : seeds)
         {
-            newGrid[RegularGrid::getPositionIndex(seed.x, seed.y, seed.z, numDivs)] = seed.w;
+            newGrid[RegularGrid::getPositionIndex(seed.x, seed.y, seed.z, numDivs)]._value = seed.w;
         }
 
         // Iterate while voxel list is not empty
@@ -127,9 +127,9 @@ namespace fracturer {
             // Expand front
 			#define expand(dx, dy, dz)\
             cellIndex = RegularGrid::getPositionIndex(v.x + (dx), v.y + (dy), v.z + (dz), numDivs);\
-            if (gridData[cellIndex] == v.w && newGrid[cellIndex] == VOXEL_EMPTY) {\
+            if (gridData[cellIndex]._value == v.w && newGrid[cellIndex]._value == VOXEL_EMPTY) {\
                 front.push_back(glm::uvec4(v.x + (dx), v.y + (dy), v.z + (dz), v.w));\
-                newGrid[cellIndex] = v.w;\
+                newGrid[cellIndex]._value = v.w;\
             }
 
             // Remove from list
@@ -163,14 +163,14 @@ namespace fracturer {
 		unsigned numCells   = numDivs.x * numDivs.y * numDivs.z;
 		unsigned nullCount  = 0;
 		unsigned stackSize  = seeds.size();
-		uint16_t* gridData  = ComputeShader::readData(gridSSBO, uint16_t());;
+		RegularGrid::CellGrid* gridData  = ComputeShader::readData(gridSSBO, RegularGrid::CellGrid());
 		unsigned numNeigh   = offset.size();
 
 		// New regular grid
-        std::vector<uint16_t> newGrid(gridData, gridData + numCells);
+        std::vector<RegularGrid::CellGrid> newGrid(gridData, gridData + numCells);
 		for (glm::uvec4 seed : seeds)
 		{
-            newGrid[RegularGrid::getPositionIndex(seed.x, seed.y, seed.z, numDivs)] = seed.w;
+            newGrid[RegularGrid::getPositionIndex(seed.x, seed.y, seed.z, numDivs)]._value = seed.w;
 		}
 
 		GLuint stack1SSBO = ComputeShader::setWriteBuffer(GLuint(), numCells, GL_DYNAMIC_DRAW);
@@ -204,8 +204,8 @@ namespace fracturer {
 			std::swap(stack1SSBO, stack2SSBO);
 		}
 
-		uint16_t* resultPointer = ComputeShader::readData(newGridSSBO, uint16_t());
-		grid.swap(std::vector<uint16_t>(resultPointer, resultPointer + numCells));
+        RegularGrid::CellGrid* resultPointer = ComputeShader::readData(newGridSSBO, RegularGrid::CellGrid());
+		grid.swap(std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numCells));
 
 		GLuint deleteBuffers[] = { stack1SSBO, stack2SSBO, newGridSSBO, neighborSSBO, stackSize };
 		glDeleteBuffers(sizeof(deleteBuffers) / sizeof(GLuint), deleteBuffers);

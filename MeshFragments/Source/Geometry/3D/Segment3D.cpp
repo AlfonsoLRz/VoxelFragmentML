@@ -21,6 +21,14 @@ Segment3D::~Segment3D()
 {
 }
 
+Plane Segment3D::getPlane()
+{
+	vec3 halfedgePoint = (_orig + _dest) / 2.0f;
+	vec3 normal = glm::normalize(_direction);
+
+	return Plane(halfedgePoint, normal);
+}
+
 Segment3D& Segment3D::operator=(const Segment3D& segment)
 {
 	Edge3D::operator=(segment);

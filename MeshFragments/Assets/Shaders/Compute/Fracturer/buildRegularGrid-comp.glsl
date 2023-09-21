@@ -6,11 +6,12 @@
 layout (local_size_variable) in;
 
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
 
 layout (std430, binding = 0) buffer VertexBuffer	{ VertexGPUData		vertex[]; };
 layout (std430, binding = 1) buffer FaceBuffer		{ FaceGPUData		face[]; };
 layout (std430, binding = 2) buffer NoiseBuffer		{ float				noise[]; };
-layout (std430, binding = 3) buffer GridBuffer		{ uint16_t			grid[]; };
+layout (std430, binding = 3) buffer GridBuffer		{ CellGrid			grid[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
@@ -45,5 +46,5 @@ void main()
 
 	vec3 point		= v1 + u * randomFactors.x + v * randomFactors.y;
 	uvec3 gridIndex = getPositionIndex(point);
-	grid[getPositionIndex(gridIndex)] = VOXEL_FREE;
+	grid[getPositionIndex(gridIndex)].value = VOXEL_FREE;
 }

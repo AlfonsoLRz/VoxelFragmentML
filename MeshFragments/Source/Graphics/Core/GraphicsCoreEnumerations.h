@@ -117,17 +117,19 @@ struct RendEnum
 		// FRACTURER
 		ASSIGN_FACE_CLUSTER,
 		BUILD_REGULAR_GRID,
+		COUNT_VOXEL_TRIANGLE,
 		ERODE_GRID,
 		FILL_REGULAR_GRID,
 		FLOOD_FRACTURER,
 		NAIVE_FRACTURER,
-		REMOVE_ISOLATED_REGIONS
+		REMOVE_ISOLATED_REGIONS,
+		SELECT_VOXEL_TRIANGLE
 	};
 
 	/**
 	*	@return Number of compute shaders.
 	*/
-	const static GLsizei numComputeShaderTypes() { return REMOVE_ISOLATED_REGIONS + 1; }
+	const static GLsizei numComputeShaderTypes() { return SELECT_VOXEL_TRIANGLE + 1; }
 
 	/**
 	*	@return Number of rendering shaders.

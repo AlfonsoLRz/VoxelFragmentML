@@ -8,6 +8,7 @@
 #include "Graphics/Core/CADModel.h"
 #include "Graphics/Core/Light.h"
 #include "Graphics/Core/OpenGLUtilities.h"
+#include "Graphics/Core/Voronoi.h"
 #include "Utilities/ChronoUtilities.h"
 
 /// Initialization of static attributes
@@ -85,12 +86,13 @@ void CADScene::loadModel(const std::string& path)
 void CADScene::rebuildGrid()
 {
 	std::vector<AABB> aabbs;
-	std::vector<float> clusterIdx;
+	std::vector<float> clusterIdx (_mesh->getModelComponent(0)->_geometry.size());
 
 	delete _meshGrid;
 	_meshGrid = new RegularGrid(_sceneGroup[0]->getAABB(), _fractParameters._gridSubdivisions);
 	_meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, _fractParameters._fillShape, 1000, _sceneGPUData[0]);
-	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx);
+	//_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx, 1);
+	std::fill(clusterIdx.begin(), clusterIdx.end(), 0);
 	_meshGrid->getAABBs(aabbs);
 
 	_aabbRenderer->load(aabbs);
@@ -150,21 +152,34 @@ std::string CADScene::fractureModel()
 
 	ChronoUtilities::initChrono();
 	
-	fracturer::Fracturer* fracturer = nullptr;
-	if (_fractParameters._fractureAlgorithm == FractureParameters::NAIVE)
-		fracturer = fracturer::NaiveFracturer::getInstance();
-	else
-		fracturer = fracturer::FloodFracturer::getInstance();
+	if (!_fractParameters._useNaiveVoronoi)
+	{
+		fracturer::Fracturer* fracturer = nullptr;
+		if (_fractParameters._fractureAlgorithm == FractureParameters::NAIVE)
+			fracturer = fracturer::NaiveFracturer::getInstance();
+		else
+			fracturer = fracturer::FloodFracturer::getInstance();
 
-	if (!fracturer->setDistanceFunction(dfunc)) return "Invalid distance function";
-	fracturer->build(*_meshGrid, seeds,  &_fractParameters);
-	_meshGrid->erode(static_cast<FractureParameters::ErosionType>(
-		_fractParameters._erosionConvolution), _fractParameters._erosionSize, _fractParameters._erosionIterations, 
-		_fractParameters._erosionProbability, _fractParameters._erosionThreshold);
+		if (!fracturer->setDistanceFunction(dfunc)) return "Invalid distance function";
+		fracturer->build(*_meshGrid, seeds, &_fractParameters);
+	}
+	else
+	{
+		std::vector<vec3> seeds3;
+		for (const vec4& seed : seeds)
+			seeds3.push_back(seed + vec4(.5f));
+
+		Voronoi voronoi(seeds3);
+		_meshGrid->fill(voronoi);
+	}
+
+	if (_fractParameters._erode)
+		_meshGrid->erode(static_cast<FractureParameters::ErosionType>(
+			_fractParameters._erosionConvolution), _fractParameters._erosionSize, _fractParameters._erosionIterations,
+			_fractParameters._erosionProbability, _fractParameters._erosionThreshold);
 
 	std::cout << ChronoUtilities::getDuration() << std::endl;
 
-	if (_fractParameters._removeIsolatedRegions)
 	{
 		std::vector<AABB> aabbs;
 		_meshGrid->getAABBs(aabbs);

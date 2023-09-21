@@ -7,12 +7,13 @@ layout (local_size_variable) in;
 								
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
 
 layout (std430, binding = 0) buffer ClusterBuffer	{ BVHCluster				clusterData[]; };
 layout (std430, binding = 1) buffer VertexBuffer	{ VertexGPUData				vertexData[]; };
 layout (std430, binding = 2) buffer FaceBuffer		{ FaceGPUData				faceData[]; };
 layout (std430, binding = 3) buffer MeshDataBuffer	{ MeshGPUData				meshData[]; };
-layout (std430, binding = 4) buffer GridBuffer		{ uint16_t					grid[]; };
+layout (std430, binding = 4) buffer GridBuffer		{ CellGrid					grid[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
@@ -137,5 +138,5 @@ void main()
 		if (!collidedFace(ray)) return;
 	}
 
-	grid[index] = VOXEL_FREE;
+	grid[index].value = VOXEL_FREE;
 }

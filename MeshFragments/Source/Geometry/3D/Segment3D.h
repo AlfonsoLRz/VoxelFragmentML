@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Geometry/3D/Edge3D.h"
+#include "Geometry/3D/Plane.h"
 
 /**
 *	@file Segment3D.h
@@ -39,6 +40,11 @@ public:
 	*	@brief Destructor.
 	*/
 	virtual ~Segment3D();
+
+	/**
+	*	@return Plane traversing through halfedge point.
+	*/
+	Plane getPlane();
 
 	/**
 	*	@brief Assignment operator overriding.

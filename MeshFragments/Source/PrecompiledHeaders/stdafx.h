@@ -52,3 +52,12 @@
 // [Our own classes]
 
 #include "Geometry/General/Adapter.h"
+
+// [CGAL]
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Delaunay_triangulation_3.h>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel     K;
+typedef CGAL::Delaunay_triangulation_3<K, CGAL::Fast_location>  Delaunay;
+typedef Delaunay::Point                                         Point;

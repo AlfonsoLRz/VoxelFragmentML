@@ -12,6 +12,7 @@ in vec3 normal;
 in vec2 textCoord;
 in vec4 shadowCoord;
 flat in vec3 clusterColor;
+flat in float clusterIndex;
 
 // ------------ Lighting ------------
 in vec3 lightPos;
@@ -325,6 +326,9 @@ void noShadow(out float shadowDiffuseFactor, out float shadowSpecFactor)
 
 void main()
 {
+	if (clusterIndex < 0.0f - EPSILON)
+		discard;
+
 	const vec4 kadColor = vec4(getKad().xyz * .1f + clusterColor, 1.0f);
 	const vec4 fragKad = semiTransparentUniform(kadColor);
 	const vec4 fragKs = getKs();

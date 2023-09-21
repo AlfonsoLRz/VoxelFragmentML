@@ -5,8 +5,10 @@
 
 layout(local_size_variable) in;
 
-layout(std430, binding = 0) buffer GridBuffer		{ uint16_t	grid[]; };
-layout(std430, binding = 1) buffer NewGridBuffer	{ uint16_t	newGrid[]; };
+#include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
+
+layout(std430, binding = 0) buffer GridBuffer		{ CellGrid	grid[]; };
+layout(std430, binding = 1) buffer NewGridBuffer	{ CellGrid	newGrid[]; };
 layout(std430, binding = 2) buffer Stack01Buffer	{ uint		stack01[]; };
 layout(std430, binding = 3) buffer Stack02Buffer	{ uint		stack02[]; };
 layout(std430, binding = 4) buffer StackSize		{ uint		stackCounter; };
@@ -26,12 +28,12 @@ void main()
 
 	uint neighborOffsetIdx = index % numNeighbors;
 	uint stackIdx = uint(floor(index / numNeighbors));
-	uvec4 gridPos = uvec4(getPosition(stack01[stackIdx]), grid[stack01[stackIdx]]);
+	uvec4 gridPos = uvec4(getPosition(stack01[stackIdx]), grid[stack01[stackIdx]].value);
 
 	ivec4 neighbor = ivec4(gridPos) + neighborOffset[neighborOffsetIdx];
 	uint neighborIdx = getPositionIndex(neighbor.xyz);
 
-	if (grid[neighborIdx] == gridPos.w && newGrid[neighborIdx] == VOXEL_EMPTY)
+	if (grid[neighborIdx].value == gridPos.w && newGrid[neighborIdx].value == VOXEL_EMPTY)
 	{
 		bool isOutside = neighbor.x < 0 || neighbor.x >= gridDims.x ||
 						 neighbor.y < 0 || neighbor.y >= gridDims.y ||
@@ -39,7 +41,7 @@ void main()
 
 		if (!isOutside)
 		{
-			newGrid[neighborIdx] = uint16_t(gridPos.w);
+			newGrid[neighborIdx].value = uint16_t(gridPos.w);
 			stack02[atomicAdd(stackCounter, 1)] = neighborIdx;
 		}
 	}

@@ -6,6 +6,7 @@
 *	@date 18/07/2021
 */
 
+#include "DataStructures/RegularGrid.h"
 #include "Geometry/3D/AABB.h"
 #include "Graphics/Core/Model3D.h"
 
@@ -63,6 +64,6 @@ public:
 	/**
 	*	@brief Setup VAO to integrate colors of each voxel.
 	*/
-	void setColorIndex(uint16_t* colorBuffer, unsigned siz);
+	void setColorIndex(RegularGrid::CellGrid* colorBuffer, unsigned siz);
 };
 

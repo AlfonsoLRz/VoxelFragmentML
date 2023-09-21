@@ -567,6 +567,9 @@
     <ClInclude Include="Source\Graphics\Core\MarchingCubes.h">
       <Filter>Archivos de encabezado\Graphics\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\Voronoi.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -824,6 +827,9 @@
     <ClCompile Include="Source\Graphics\Core\MarchingCubes.cpp">
       <Filter>Archivos de origen\Graphics\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\Core\Voronoi.cpp">
+      <Filter>Archivos de origen\Graphics\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shaders\Lines\wireframe-frag.glsl">
@@ -1063,10 +1069,19 @@
     <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
-    <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl">
-      <Filter>Archivos de recursos\Shaders\Compute\Collision</Filter>
-    </None>
     <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\voxelStructs.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\countVoxelTriangle-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\selectVoxelTriangle-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>

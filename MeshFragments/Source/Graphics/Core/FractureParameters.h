@@ -48,6 +48,7 @@ public:
 	int		_seed;
 	int		_seedingRandom;
 	int		_spreading;
+	bool	_useNaiveVoronoi;
 
 public:
 	/**
@@ -73,7 +74,8 @@ public:
 		_removeIsolatedRegions(true),
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),
-		_spreading(5)
+		_spreading(5),
+		_useNaiveVoronoi(true)
 	{
 	}
 };

@@ -6,10 +6,11 @@
 layout (local_size_variable) in;
 
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
 
 layout (std430, binding = 0) buffer VertexBuffer	{ VertexGPUData		vertex[]; };
 layout (std430, binding = 1) buffer FaceBuffer		{ FaceGPUData		face[]; };
-layout (std430, binding = 2) buffer GridBuffer		{ uint16_t			grid[]; };
+layout (std430, binding = 2) buffer GridBuffer		{ CellGrid			grid[]; };
 layout (std430, binding = 3) buffer ClusterBuffer	{ float				clusterIdx[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
@@ -34,7 +35,7 @@ void main()
 	//vec3 v1	= vertex[face[index].vertices.x].position, v2 = vertex[face[index].vertices.y].position, v3 = vertex[face[index].vertices.z].position;	
 	//vec3 point = (face[index].maxPoint + face[index].minPoint) / 2.0f;
 	uvec3 gridIndex = getPositionIndex(vertex[index].position);
-	uint16_t clusterID = grid[getPositionIndex(gridIndex)];
+	uint16_t clusterID = grid[getPositionIndex(gridIndex)].value;
 
 	//clusterIdx[face[index].vertices.x] = clusterIdx[face[index].vertices.y] = clusterIdx[face[index].vertices.z] = clusterID;
 	clusterIdx[index] = clusterID;

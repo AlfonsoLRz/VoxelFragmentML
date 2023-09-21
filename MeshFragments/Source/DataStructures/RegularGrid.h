@@ -6,6 +6,7 @@
 #include "Graphics/Core/Image.h"
 #include "Graphics/Core/Model3D.h"
 #include "Graphics/Core/Texture.h"
+#include "Graphics/Core/Voronoi.h"
 
 /**
 *	@file RegularGrid.h
@@ -21,8 +22,19 @@
 */
 class RegularGrid
 {   
+public:
+	struct CellGrid
+	{
+		vec3	 _padding;
+		uint16_t _value;
+		uint16_t _boundary;
+
+		CellGrid() : _value(VOXEL_EMPTY), _boundary(0), _padding(.0f) {}
+		CellGrid(uint16_t value) : _value(value), _boundary(0), _padding(.0f) {}
+	};
+
 protected:
-	std::vector<uint16_t>	_grid;									//!< Color index of regular grid
+	std::vector<CellGrid>	_grid;									//!< Color index of regular grid
 
 	AABB					_aabb;									//!< Bounding box of the scene
 	vec3					_cellSize;								//!< Size of each grid cell
@@ -33,6 +45,11 @@ protected:
 	*	@brief Builds a 3D grid. 
 	*/
 	void buildGrid();
+	
+	/**
+	*	@return Number of different values in grid.
+	*/
+	size_t countValues(std::unordered_set<uint16_t>& values);
 	
 	/**
 	*	@return Index of grid cell to be filled.
@@ -89,6 +106,11 @@ public:
 	/**
 	*	@brief
 	*/
+	void fill(const Voronoi& voronoi);
+
+	/**
+	*	@brief
+	*/
 	void fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numSamples);
 
 	/**
@@ -114,7 +136,7 @@ public:
 	/**
 	*	@brief Substitutes current grid with new values. 
 	*/
-	void swap(const std::vector<uint16_t>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }
+	void swap(const std::vector<CellGrid>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }
 
 	/**
 	*	@brief Transforms the regular grid into a triangle mesh per value.
@@ -127,7 +149,7 @@ public:
     *   Get data pointer.
     *   @return Internal data pointer.
     */
-    uint16_t* data();
+	CellGrid* data();
 
     /**
     *   Read voxel.

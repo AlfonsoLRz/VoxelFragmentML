@@ -6,8 +6,9 @@
 layout (local_size_variable) in;
 
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
 
-layout (std430, binding = 0) buffer GridBuffer		{ uint16_t		grid[]; };
+layout (std430, binding = 0) buffer GridBuffer		{ CellGrid		grid[]; };
 layout (std430, binding = 1) buffer Convolution		{ float			convolution[]; };
 layout (std430, binding = 2) buffer NoiseBuffer		{ float			noise[]; };
 
@@ -25,7 +26,7 @@ void main()
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= numCells) return;
 
-	if (grid[index] > VOXEL_FREE && noise[index % noiseBufferSize] < erosionProbability)
+	if (grid[index].value > VOXEL_FREE && noise[index % noiseBufferSize] < erosionProbability)
 	{
 		ivec3 indices = ivec3(getPosition(index));
 		ivec3 maxBounds = indices + ivec3(maskSize2);
@@ -40,12 +41,12 @@ void main()
 			{
 				for (int z = minBoundsClamped.z; z <= maxBoundsClamped.z; ++z)
 				{
-					count += uint(uint(grid[getPositionIndex(uvec3(x, y, z))] == grid[index]) * convolution[(x - minBounds.x) * maskSize * maskSize + (y - minBounds.y) * maskSize + (z - minBounds.z)]);
+					count += uint(uint(grid[getPositionIndex(uvec3(x, y, z))].value == grid[index].value) * convolution[(x - minBounds.x) * maskSize * maskSize + (y - minBounds.y) * maskSize + (z - minBounds.z)]);
 				}
 			}
 		}
 
 		if (count < numActivations * erosionThreshold)
-			grid[index] = VOXEL_EMPTY;
+			grid[index].value = VOXEL_EMPTY;
 	}
 }

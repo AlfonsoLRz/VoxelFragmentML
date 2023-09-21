@@ -346,7 +346,7 @@ void Model3D::generateWireframe()
 
 void Model3D::setModelMatrix(std::vector<mat4>& matrix)
 {
-	matrix[RendEnum::MODEL_MATRIX] *= _modelMatrix;
+	matrix[RendEnum::MODEL_MATRIX] = _modelMatrix;
 }
 
 void Model3D::setShaderUniforms(ShaderProgram* shader, const RendEnum::RendShaderTypes shaderType, const std::vector<mat4>& matrix)
@@ -458,11 +458,14 @@ void Model3D::renderTriangles(RenderingShader* shader, const RendEnum::RendShade
 
 	if (vao && modelComp->_enabled)
 	{
+		this->setModelMatrix(matrix);
 		this->setShaderUniforms(shader, shaderType, matrix);
 
 		if (material) material->applyMaterial(shader);
 
 		vao->drawObject(RendEnum::IBO_TRIANGLE_MESH, primitive, GLuint(modelComp->_topologyIndicesLength[RendEnum::IBO_TRIANGLE_MESH]));
+
+		this->unsetModelMatrix(matrix);
 	}
 }
 

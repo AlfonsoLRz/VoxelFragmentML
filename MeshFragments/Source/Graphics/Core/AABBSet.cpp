@@ -61,15 +61,15 @@ void AABBSet::load(std::vector<AABB>& aabbs)
 	_numAABBs = aabbs.size();
 }
 
-void AABBSet::setColorIndex(uint16_t* colorBuffer, unsigned size)
+void AABBSet::setColorIndex(RegularGrid::CellGrid* colorBuffer, unsigned size)
 {
 	std::vector<float> colorIndex;
 
 	for (int idx = 0; idx < size; ++idx)
 	{
-		if (colorBuffer[idx] != VOXEL_EMPTY)
+		if (colorBuffer[idx]._value != VOXEL_EMPTY)
 		{
-			colorIndex.push_back(colorBuffer[idx]);
+			colorIndex.push_back(colorBuffer[idx]._value);
 		}
 	}
 	

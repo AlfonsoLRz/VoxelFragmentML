@@ -33,6 +33,11 @@ public:
 	Plane(const vec3& point, const vec3& u, const vec3& v, bool arePoints);
 
 	/**
+	*	@brief 
+	*/
+	Plane(const vec3& point, const vec3& normal);
+
+	/**
 	*	@brief Copy constructor.
 	*/
 	Plane(const Plane& plane);

@@ -110,6 +110,7 @@
     <ClInclude Include="Source\Graphics\Core\ImageUtilities.h" />
     <ClInclude Include="Libraries\objloader\OBJ_Loader.h" />
     <ClInclude Include="Libraries\tinyply\tinyply.h" />
+    <ClInclude Include="Source\Graphics\Core\Voronoi.h" />
     <ClInclude Include="Source\Interface\Fonts\font_awesome.hpp" />
     <ClInclude Include="Source\Interface\Fonts\IconsFontAwesome5.h" />
     <ClInclude Include="Source\Interface\Fonts\lato.hpp" />
@@ -267,6 +268,7 @@
     <ClCompile Include="Source\Graphics\Core\TriangleSet.cpp" />
     <ClCompile Include="Source\Graphics\Core\VAO.cpp" />
     <ClCompile Include="Libraries\objloader\OBJ_Loader.cpp" />
+    <ClCompile Include="Source\Graphics\Core\Voronoi.cpp" />
     <ClCompile Include="Source\Interface\Fonts\font_awesome.cpp" />
     <ClCompile Include="Source\Interface\Fonts\font_awesome_2.cpp" />
     <ClCompile Include="Source\Interface\Fonts\lato.cpp" />
@@ -294,12 +296,15 @@
     <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\countVoxelTriangle-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\selectVoxelTriangle-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\voxel.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\voxelStructs.glsl" />
     <None Include="Assets\Shaders\Compute\Generic\resetBufferIndex-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\computeFaceAABB-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\computeNormals-comp.glsl" />
@@ -440,6 +445,7 @@
       <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -459,6 +465,7 @@
       <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -480,6 +487,7 @@
       <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -503,6 +511,7 @@
       <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

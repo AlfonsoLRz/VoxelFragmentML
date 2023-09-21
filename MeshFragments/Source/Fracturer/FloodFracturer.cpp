@@ -54,7 +54,7 @@ namespace fracturer {
         unsigned numCells   = numDivs.x * numDivs.y * numDivs.z;
         unsigned nullCount  = 0;
         unsigned stackSize  = seeds.size();
-        uint16_t* gridData  = grid.data();
+        RegularGrid::CellGrid* gridData  = grid.data();
         unsigned numNeigh   = _dfunc == 1 ? GLuint(VON_NEUMANN.size()) : GLuint(MOORE.size());
 
         GLuint stack1SSBO           = ComputeShader::setWriteBuffer(GLuint(), numCells, GL_DYNAMIC_DRAW);
@@ -88,8 +88,8 @@ namespace fracturer {
 		    std::swap(stack1SSBO, stack2SSBO);
         }
 
-        uint16_t* resultPointer = ComputeShader::readData(gridSSBO, uint16_t());
-        std::vector<uint16_t> resultBuffer = std::vector<uint16_t>(resultPointer, resultPointer + numCells);
+        RegularGrid::CellGrid* resultPointer = ComputeShader::readData(gridSSBO, RegularGrid::CellGrid());
+        std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numCells);
         grid.swap(resultBuffer);
 
         GLuint deleteBuffers[] = { stack1SSBO, stack2SSBO, gridSSBO, neighborSSBO, stackSize };
