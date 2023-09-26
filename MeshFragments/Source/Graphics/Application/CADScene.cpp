@@ -152,7 +152,7 @@ std::string CADScene::fractureModel()
 
 	ChronoUtilities::initChrono();
 	
-	if (!_fractParameters._useNaiveVoronoi)
+	if (_fractParameters._fractureAlgorithm != FractureParameters::VORONOI)
 	{
 		fracturer::Fracturer* fracturer = nullptr;
 		if (_fractParameters._fractureAlgorithm == FractureParameters::NAIVE)

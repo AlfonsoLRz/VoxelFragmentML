@@ -15,8 +15,8 @@ struct FractureParameters
 {
 public:
 	// --------- Base algorithm ---------
-	enum FractureAlgorithm : uint8_t { NAIVE, FLOOD, BASE_ALGORITHMS };
-	inline static const char* Fracture_STR[BASE_ALGORITHMS] = { "Naive", "Flood" };
+	enum FractureAlgorithm : uint8_t { NAIVE, FLOOD, VORONOI, BASE_ALGORITHMS };
+	inline static const char* Fracture_STR[BASE_ALGORITHMS] = { "Naive", "Flood", "Voronoi" };
 
 	enum DistanceFunction : uint8_t { EUCLIDEAN, MANHATTAN, CHEBYSHEV, DISTANCE_FUNCTIONS };
 	inline static const char* Distance_STR[DISTANCE_FUNCTIONS] = { "Euclidean", "Manhattan", "Chebyshev" };
@@ -48,7 +48,6 @@ public:
 	int		_seed;
 	int		_seedingRandom;
 	int		_spreading;
-	bool	_useNaiveVoronoi;
 
 public:
 	/**
@@ -74,8 +73,7 @@ public:
 		_removeIsolatedRegions(true),
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),
-		_spreading(5),
-		_useNaiveVoronoi(true)
+		_spreading(5)
 	{
 	}
 };
