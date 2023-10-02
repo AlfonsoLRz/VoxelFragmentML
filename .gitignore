@@ -5,6 +5,9 @@
 *.mtl
 *.png
 *.zip
+*.jpg
+*.png
+*.tiff
 
 # Prerequisites
 *.d
