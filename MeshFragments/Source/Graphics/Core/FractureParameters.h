@@ -29,6 +29,7 @@ public:
 
 public:
 	int		_biasSeeds;
+	int		_boundarySize;
 	bool	_computeMCFragments;
 	bool	_erode;
 	int		_erosionConvolution;
@@ -44,6 +45,7 @@ public:
 	int		_mergeSeedsDistanceFunction;
 	int		_numSeeds;
 	int		_numExtraSeeds;
+	int		_pointCloudSeedingRandom;
 	bool	_removeIsolatedRegions;
 	int		_seed;
 	int		_seedingRandom;
@@ -55,8 +57,9 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(1),
+		_boundarySize(2),
 		_computeMCFragments(false),
-		_erode(true),
+		_erode(false),
 		_erosionConvolution(ELLIPSE),
 		_erosionProbability(.5f),
 		_erosionIterations(3),
@@ -65,11 +68,12 @@ public:
 		_fillShape(false),
 		_fractureAlgorithm(NAIVE),
 		_distanceFunction(MANHATTAN),
-		_gridSubdivisions(126, 81, 61),
+		_gridSubdivisions(64),
 		_launchGPU(true),
 		_mergeSeedsDistanceFunction(MANHATTAN),
 		_numSeeds(64),
 		_numExtraSeeds(200),
+		_pointCloudSeedingRandom(HALTON),
 		_removeIsolatedRegions(true),
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),

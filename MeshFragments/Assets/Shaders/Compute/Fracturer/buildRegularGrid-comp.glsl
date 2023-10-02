@@ -17,6 +17,7 @@ layout (std430, binding = 3) buffer GridBuffer		{ CellGrid			grid[]; };
 
 uniform vec3 aabbMin;
 uniform vec3 cellSize;
+uniform float maxArea;
 uniform uint numFaces;
 uniform uint numSamples;
 
@@ -37,6 +38,12 @@ void main()
 	uint faceIdx		= uint(floor(index / numSamples));
 	vec3 v1				= vertex[face[faceIdx].vertices.x].position, v2 = vertex[face[faceIdx].vertices.y].position, v3 = vertex[face[faceIdx].vertices.z].position;
 	vec3 u				= v2 - v1, v = v3 - v1;
+	float area			= length(cross(u, v)) / 2.0f;
+	uint numTriangleSamples = uint(floor((area / maxArea) * numSamples));
+
+	if (sampleIdx >= numTriangleSamples)
+		return;
+
 	vec2 randomFactors	= vec2(noise[sampleIdx * 2 + 0], noise[sampleIdx * 2 + 1]);
 
 	if (randomFactors.x + randomFactors.y >= 1.0f)

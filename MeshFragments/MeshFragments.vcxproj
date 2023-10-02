@@ -34,6 +34,7 @@
     <ClInclude Include="Libraries\imgui\imgui_internal.h" />
     <ClInclude Include="Libraries\imgui\imstb_truetype.h" />
     <ClInclude Include="Libraries\lodepng\lodepng.h" />
+    <ClInclude Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.h" />
     <ClInclude Include="Source\DataStructures\Octree.h" />
     <ClInclude Include="Source\DataStructures\RegularGrid.h" />
     <ClInclude Include="Source\Fracturer\FloodFracturer.h" />
@@ -77,6 +78,7 @@
     <ClInclude Include="Source\Graphics\Core\ComputeShader.h" />
     <ClInclude Include="Source\Graphics\Core\DirectionalLight.h" />
     <ClInclude Include="Source\Graphics\Core\DrawAABB.h" />
+    <ClInclude Include="Source\Graphics\Core\DrawPointCloud.h" />
     <ClInclude Include="Source\Graphics\Core\DrawRay3D.h" />
     <ClInclude Include="Source\Graphics\Core\FBO.h" />
     <ClInclude Include="Source\Graphics\Core\FBOScreenshot.h" />
@@ -200,6 +202,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Libraries\tinyply\tinyply.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
@@ -241,6 +247,7 @@
     <ClCompile Include="Source\Graphics\Core\ComputeShader.cpp" />
     <ClCompile Include="Source\Graphics\Core\DirectionalLight.cpp" />
     <ClCompile Include="Source\Graphics\Core\DrawAABB.cpp" />
+    <ClCompile Include="Source\Graphics\Core\DrawPointCloud.cpp" />
     <ClCompile Include="Source\Graphics\Core\DrawRay3D.cpp" />
     <ClCompile Include="Source\Graphics\Core\FBO.cpp" />
     <ClCompile Include="Source\Graphics\Core\FBOScreenshot.cpp" />
@@ -295,8 +302,10 @@
     <None Include="Assets\Shaders\Compute\Collision\computeMeshBVHCollision-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\assignPointCluster-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\countVoxelTriangle-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\detectBoundaries-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
@@ -308,6 +317,7 @@
     <None Include="Assets\Shaders\Compute\Generic\resetBufferIndex-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\computeFaceAABB-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\computeNormals-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Model\sampler-comp.glsl" />
     <None Include="Assets\Shaders\Compute\PlanarSurface\planarSurfaceFaces-comp.glsl" />
     <None Include="Assets\Shaders\Compute\RadixSort\bitMask-radixSort-comp.glsl" />
     <None Include="Assets\Shaders\Compute\BVHGeneration\buildClusterBuffer-comp.glsl" />
@@ -484,7 +494,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>
@@ -508,7 +518,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>

@@ -5,8 +5,10 @@
 #include "Fracturer/FloodFracturer.h"
 #include "Fracturer/NaiveFracturer.h"
 #include "Fracturer/Seeder.h"
+#include "Geometry/3D/PointCloud3D.h"
 #include "Graphics/Application/SSAOScene.h"
 #include "Graphics/Core/AABBSet.h"
+#include "Graphics/Core/DrawPointCloud.h"
 #include "Graphics/Core/FractureParameters.h"
 
 #define NEW_LIGHT "!"
@@ -53,11 +55,13 @@ protected:
 	const static std::string MESH_1_PATH;					//!< Location of the first mesh in the file system
 
 protected:
-	AABBSet*				_aabbRenderer;							//!< Buffer of voxels
-	FractureParameters		_fractParameters;						//!< 
-	std::vector<Model3D*>	_fractureMeshes;
-	CADModel*				_mesh;									//!< Jar mesh
-	RegularGrid*			_meshGrid;								//!< Mesh regular grid
+	AABBSet*				_aabbRenderer;					//!< Buffer of voxels
+	FractureParameters		_fractParameters;				//!< 
+	std::vector<Model3D*>	_fractureMeshes;				//!<
+	CADModel*				_mesh;							//!< Jar mesh
+	RegularGrid*			_meshGrid;						//!< Mesh regular grid
+	PointCloud3D*			_pointCloud;					//!<
+	DrawPointCloud*			_pointCloudRenderer;			//!<
 
 protected:
 	/**

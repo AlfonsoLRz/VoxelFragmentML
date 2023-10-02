@@ -13,8 +13,24 @@ namespace fracturer
 
     fracturer::Seeder::RandomUniformMap Seeder::_randomFunction = {
         { FractureParameters::STD_UNIFORM, [](int min, int max, int index, int coord) -> int { return RandomUtilities::getUniformRandomInt(min, max); }},
-        { FractureParameters::HALTON, [](int min, int max, int index, int coord) -> int { return int(Seeder::_haltonSampler.sample(coord, index) * max); }},
+        { FractureParameters::HALTON, [](int min, int max, int index, int coord) -> int { return int(Seeder::_haltonSampler.sample(coord, index) * (max - min) + min); }},
     };
+
+    fracturer::Seeder::RandomUniformMapFloat Seeder::_randomFunctionFloat = {
+        { FractureParameters::STD_UNIFORM, [](float min, float max, int index, int coord) -> float { return RandomUtilities::getUniformRandom(min, max); }},
+        { FractureParameters::HALTON, [](float min, float max, int index, int coord) -> float { return Seeder::_haltonSampler.sample(coord, index) * (max - min) + min; }},
+    };
+
+    void Seeder::getFloatNoise(unsigned int maxBufferSize, unsigned int nseeds, int randomSeedFunction, std::vector<float>& noiseBuffer)
+    {
+        _randomInitFunction[randomSeedFunction](maxBufferSize);
+
+        for (unsigned int seed = 0; seed < nseeds; seed += 2)
+        {
+            noiseBuffer.push_back(_randomFunctionFloat[randomSeedFunction](.0f, 1.0f, seed / 2, 0));
+            noiseBuffer.push_back(_randomFunctionFloat[randomSeedFunction](.0f, 1.0f, seed / 2, 1));
+        }
+    }
 
     std::vector<glm::uvec4> Seeder::nearSeeds(const RegularGrid& grid, const std::vector<glm::uvec4>& frags, unsigned numSeeds, unsigned spreading)
 	{

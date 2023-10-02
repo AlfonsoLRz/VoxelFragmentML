@@ -22,7 +22,7 @@ const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01_v3";
 
 // [Public methods]
 
-CADScene::CADScene() : _aabbRenderer(nullptr), _mesh(nullptr), _meshGrid(nullptr)
+CADScene::CADScene() : _aabbRenderer(nullptr), _mesh(nullptr), _meshGrid(nullptr), _pointCloud(nullptr)
 {
 }
 
@@ -31,11 +31,13 @@ CADScene::~CADScene()
 	delete _aabbRenderer;
 	delete _mesh;
 	delete _meshGrid;
+	delete _pointCloud;
 }
 
 void CADScene::exportGrid()
 {
-	_meshGrid->exportGrid();
+	if (_pointCloud)
+		_meshGrid->exportGrid(_pointCloud->getAABB());
 }
 
 std::string CADScene::fractureGrid()
@@ -50,6 +52,12 @@ void CADScene::loadModel(const std::string& path)
 		delete _aabbRenderer;
 		_aabbRenderer = nullptr;
 
+		delete _pointCloud;
+		_pointCloud = nullptr;
+
+		delete _pointCloudRenderer;
+		_pointCloudRenderer = nullptr;
+
 		delete _meshGrid;
 		_meshGrid = nullptr;
 
@@ -61,7 +69,7 @@ void CADScene::loadModel(const std::string& path)
 	}
 
 	{
-		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), true);
+		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), true, true);
 		_mesh->load();
 		_mesh->getModelComponent(0)->_enabled = true;
 
@@ -76,6 +84,9 @@ void CADScene::loadModel(const std::string& path)
 		_aabbRenderer->load();
 		_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
 
+		_pointCloud = _mesh->sample(100, _fractParameters._pointCloudSeedingRandom);
+		_pointCloudRenderer = new DrawPointCloud(_pointCloud);
+
 		this->rebuildGrid();
 		this->fractureModel();
 	}
@@ -89,8 +100,10 @@ void CADScene::rebuildGrid()
 	std::vector<float> clusterIdx (_mesh->getModelComponent(0)->_geometry.size());
 
 	delete _meshGrid;
+
 	_meshGrid = new RegularGrid(_sceneGroup[0]->getAABB(), _fractParameters._gridSubdivisions);
-	_meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, _fractParameters._fillShape, 1000, _sceneGPUData[0]);
+	float maxArea = _meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, _fractParameters._fillShape, 10000, _sceneGPUData[0]);
+
 	//_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx, 1);
 	std::fill(clusterIdx.begin(), clusterIdx.end(), 0);
 	_meshGrid->getAABBs(aabbs);
@@ -129,6 +142,7 @@ std::string CADScene::fractureModel()
 	
 	std::vector<uvec4> seeds;
 	std::vector<float> clusterIdx;
+	std::vector<unsigned> boundaryFaces;
 
 	if (_fractParameters._biasSeeds == 0)
 	{
@@ -173,6 +187,8 @@ std::string CADScene::fractureModel()
 		_meshGrid->fill(voronoi);
 	}
 
+	_meshGrid->detectBoundaries(_fractParameters._boundarySize);
+
 	if (_fractParameters._erode)
 		_meshGrid->erode(static_cast<FractureParameters::ErosionType>(
 			_fractParameters._erosionConvolution), _fractParameters._erosionSize, _fractParameters._erosionIterations,
@@ -189,8 +205,15 @@ std::string CADScene::fractureModel()
 	if (_fractParameters._computeMCFragments) _fractureMeshes = _meshGrid->toTriangleMesh();
 
 	_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
-	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx);
+
+	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx, boundaryFaces);
+	//for (unsigned& faceIdx : boundaryFaces)
+	//	clusterIdx[faceIdx] = 800;
 	_mesh->getModelComponent(0)->setClusterIdx(clusterIdx, false);
+
+	clusterIdx.clear();
+	_meshGrid->queryCluster(_pointCloud->getPoints(), clusterIdx);
+	_pointCloudRenderer->getModelComponent(0)->setClusterIdx(clusterIdx);
 
 	return "";
 }
@@ -545,6 +568,21 @@ void CADScene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingPara
 
 void CADScene::drawSceneAsPoints(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
+	if (_pointCloudRenderer)
+	{
+		if (rendParams->_useClusterColor)
+			shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "clusterColor");
+		else if (rendParams->_useUniformPointColor)
+			shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "uniformColor");
+		else
+			shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "textureColor");
+		shader->applyActiveSubroutines();
+
+		_pointCloudRenderer->drawAsPoints(shader, shaderType, *matrix);
+	}
+
+	//for (Group3D* group : _sceneGroup)
+	//	group->drawAsPoints(shader, shaderType, *matrix);
 }
 
 void CADScene::drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
@@ -557,7 +595,7 @@ void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShade
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_SHADER)
 	{
-		if (rendParams->_showTriangleMesh)
+		if (rendParams->_showTriangleMesh or !rendParams->_showFragmentsMarchingCubes)
 		{
 			for (Group3D* group : _sceneGroup)
 			{

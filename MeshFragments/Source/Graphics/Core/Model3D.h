@@ -243,16 +243,6 @@ protected:
 	virtual void computeTangents(ModelComponent* modelComp);
 
 	/**
-	*	@brief
-	*/
-	virtual void generatePointCloud();
-
-	/**
-	*	@brief
-	*/
-	virtual void generateWireframe();
-
-	/**
 	*	@brief Sets the model matrix of the model within the matrix buffer. 
 	*/
 	void setModelMatrix(std::vector<mat4>& matrix);
@@ -268,7 +258,7 @@ protected:
 	/**
 	*	@brief Creates the VAO with geometry & topology.
 	*/
-	virtual void setVAOData();
+	virtual void setVAOData(bool gpuGeometry = true);
 
 	/**
 	*	@brief Reverses the application of the model matrix within the matrix buffer.
@@ -499,7 +489,7 @@ public:
 	/**
 	*	@brief Clear geometry and topology arrays to free memory linked to process.
 	*/
-	virtual void releaseMemory();
+	virtual void releaseMemory(bool geometry = true, bool topology = true);
 
 	// --------------- Setters -------------------
 

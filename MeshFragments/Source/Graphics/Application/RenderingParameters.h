@@ -38,6 +38,8 @@ public:
 	// Point cloud	
 	float							_scenePointSize;						//!< Size of points in a cloud
 	vec3							_scenePointCloudColor;					//!< Color of point cloud which shows all the vertices
+	bool							_useUniformPointColor;					//!< 
+	bool							_useClusterColor;						//!<
 
 	// Wireframe
 	bool							_showVertexNormal;						//!< Normals rendered through a geometry shader
@@ -72,6 +74,8 @@ public:
 
 		_scenePointSize(2.0f),
 		_scenePointCloudColor(1.0f, .0f, .0f),
+		_useUniformPointColor(true),
+		_useClusterColor(true),
 
 		_showVertexNormal(false),
 		_wireframeColor(0.0f),

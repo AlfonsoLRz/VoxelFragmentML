@@ -89,6 +89,11 @@ public:
     virtual ~RegularGrid();
 
 	/**
+	*	@brief Detects which voxels are in the boundary of fragments.
+	*/
+	void detectBoundaries(int boundarySize);
+
+	/**
 	*	@brief 
 	*/
 	void erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint8_t numIterations, float erosionProbability, float erosionThreshold);
@@ -96,12 +101,12 @@ public:
 	/**
 	*	@brief Exports fragments into several models in a PLY file. 
 	*/
-	void exportGrid();
+	void exportGrid(const AABB& aabb);
 
 	/**
 	*	@brief  
 	*/
-	void fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, bool fill, int numSamples, Group3D::StaticGPUData* sceneData);
+	float fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, bool fill, int numSamples, Group3D::StaticGPUData* sceneData);
 
 	/**
 	*	@brief
@@ -131,7 +136,12 @@ public:
 	/**
 	*	@brief Queries cluster for each triangle of the given mesh.
 	*/
-	void queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx);
+	void queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, std::vector<unsigned>& boundaryFaces);
+
+	/**
+	*	@brief Queries cluster for each triangle of the given mesh.
+	*/
+	void queryCluster(std::vector<vec4>* points, std::vector<float>& clusterIdx);
 
 	/**
 	*	@brief Substitutes current grid with new values. 

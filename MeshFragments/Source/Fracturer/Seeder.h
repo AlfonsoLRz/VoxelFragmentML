@@ -25,17 +25,25 @@ namespace fracturer {
         typedef std::function<int(int min, int max, int index, int coord)> RandomFunction;
         typedef std::unordered_map<uint16_t, RandomFunction> RandomUniformMap;
 
+        typedef std::function<float(float min, float max, int index, int coord)> RandomFunctionFloat;
+        typedef std::unordered_map<uint16_t, RandomFunctionFloat> RandomUniformMapFloat;
+
         static Halton_sampler       _haltonSampler;
         static Halton_enum          _haltonEnum;
 
         static RandomInitUniformMap _randomInitFunction;
         static RandomUniformMap     _randomFunction;
+        static RandomUniformMapFloat _randomFunctionFloat;
 
     protected:
-
         static const int            MAX_TRIES = 1000000;     //!< Maximun number of tries on seed search.
 
     public:
+        /**
+        *   @brief 
+        */
+        static void getFloatNoise(unsigned int maxBufferSize, unsigned int nseeds, int randomSeedFunction, std::vector<float>& noiseBuffer);
+
     	/**
     	*   @brief Creates seeds near the current ones. 
     	*/

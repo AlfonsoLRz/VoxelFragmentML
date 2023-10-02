@@ -13,8 +13,9 @@
 */
 class PointCloud3D
 {
-	std::vector<vec4>	_points;					//!< Point cloud
-	AABB				_aabb;						//!< Boundaries
+	std::vector<vec4>		_points;					//!< Point cloud
+	std::vector<float>		_color;						//!< Vertex-wise colouring of point cloud
+	AABB					_aabb;						//!< Boundaries
 
 public:
 	/**
@@ -54,6 +55,11 @@ public:
 	AABB getAABB() { return _aabb; }
 
 	/**
+	*	@return Color vector.
+	*/
+	std::vector<float>* getColors() { return &_color; }
+
+	/**
 	*	@return Point in index position in array.
 	*/
 	vec3 getPoint(const int index) const;
@@ -77,6 +83,11 @@ public:
 	*	@brief Adds a new point to the cloud.
 	*/
 	void push_back(const vec3& point);
+
+	/**
+	*	@brief Adds a new buffer of points.
+	*/
+	void push_back(const vec4* points, unsigned numPoints);
 
 	/**
 	*	@brief Number of points that this cloud contains.

@@ -190,6 +190,7 @@ void GUI::showFractureSettings()
 			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6); ImGui::SameLine(0, 20);
 			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_spreading, 2, 10);
 			ImGui::Checkbox("Fill Shape", &_fractureParameters->_fillShape);
+			ImGui::SliderInt("Boundary Size", &_fractureParameters->_boundarySize, 1, 10);
 			ImGui::SameLine(0, 20); ImGui::Checkbox("Compute Fragment Meshes (Marching cubes)", &_fractureParameters->_computeMCFragments);
 		}
 		ImGui::PopItemWidth();
@@ -247,16 +248,10 @@ void GUI::showRenderingSettings()
 				{
 					ImGui::Spacing();
 
-					ImGui::Checkbox("Voxelized", &_renderingParams->_showVoxelizedMesh);
-					ImGui::Checkbox("Render Original Mesh", &_renderingParams->_showTriangleMesh);
-					ImGui::Checkbox("Marching Cube Fragments", &_renderingParams->_showFragmentsMarchingCubes);
 					ImGui::Checkbox("Screen Space Ambient Occlusion", &_renderingParams->_ambientOcclusion);
 
 					const char* visualizationTitles[] = { "Points", "Lines", "Triangles", "All" };
 					ImGui::Combo("Visualization", &_renderingParams->_visualizationMode, visualizationTitles, IM_ARRAYSIZE(visualizationTitles));
-
-					ImGui::Checkbox("Plane Clipping", &_renderingParams->_planeClipping);
-					ImGui::SameLine(0, 20); ImGui::SliderFloat4("Coefficients", &_renderingParams->_planeCoefficients[0], -10.0f, 10.0f);
 				}
 
 				ImGui::EndTabItem();
@@ -268,6 +263,8 @@ void GUI::showRenderingSettings()
 
 				ImGui::SliderFloat("Point Size", &_renderingParams->_scenePointSize, 0.1f, 50.0f);
 				ImGui::ColorEdit3("Point Cloud Color", &_renderingParams->_scenePointCloudColor[0]);
+				ImGui::Checkbox("Use Cluster Color", &_renderingParams->_useClusterColor);
+				ImGui::Checkbox("Use Uniform Color", &_renderingParams->_useUniformPointColor);
 
 				ImGui::EndTabItem();
 			}
@@ -277,6 +274,19 @@ void GUI::showRenderingSettings()
 				this->leaveSpace(1);
 
 				ImGui::ColorEdit3("Wireframe Color", &_renderingParams->_wireframeColor[0]);
+
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("Triangle mesh"))
+			{
+				this->leaveSpace(1);
+
+				ImGui::Checkbox("Voxelized", &_renderingParams->_showVoxelizedMesh);
+				ImGui::Checkbox("Render Original Mesh", &_renderingParams->_showTriangleMesh);
+				ImGui::Checkbox("Marching Cube Fragments", &_renderingParams->_showFragmentsMarchingCubes);
+				ImGui::Checkbox("Plane Clipping", &_renderingParams->_planeClipping);
+				ImGui::SameLine(0, 20); ImGui::SliderFloat4("Coefficients", &_renderingParams->_planeCoefficients[0], -10.0f, 10.0f);
 
 				ImGui::EndTabItem();
 			}

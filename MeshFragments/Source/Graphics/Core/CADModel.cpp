@@ -17,10 +17,11 @@ const std::string CADModel::OBJ_EXTENSION = ".obj";
 
 /// [Public methods]
 
-CADModel::CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary) : 
+CADModel::CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary, const bool fuseComponents) : 
 	Model3D(mat4(1.0f), 0)
 {
 	_filename = filename;
+	_fuseComponents = fuseComponents;
 	_textureFolder = textureFolder;
 	_useBinary = useBinary;
 }
@@ -59,6 +60,8 @@ bool CADModel::load(const mat4& modelMatrix)
 		if (!success)
 		{
 			success = this->loadModelFromOBJ(modelMatrix);
+			if (success and _fuseComponents and _modelComp.size() > 1)
+				this->fuseComponents();
 		}
 
 		if (!binaryExists && success)
@@ -66,7 +69,7 @@ bool CADModel::load(const mat4& modelMatrix)
 			this->writeToBinary();
 		}
 
-		this->subdivide(0.0001f);
+		//this->subdivide(0.0001f);
 		for (ModelComponent* modelComponent : _modelComp)
 		{
 			modelComponent->buildTriangleMeshTopology();
@@ -74,11 +77,87 @@ bool CADModel::load(const mat4& modelMatrix)
 			modelComponent->buildWireframeTopology();
 		}
 		this->setVAOData();
+		
+		for (ModelComponent* modelComponent : _modelComp)
+			modelComponent->releaseMemory(false, false);
 
 		return _loaded = true;
 	}
 
 	return false;
+}
+
+void CADModel::reload()
+{
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		modelComponent->buildTriangleMeshTopology();
+		modelComponent->buildPointCloudTopology();
+		modelComponent->buildWireframeTopology();
+
+		VAO* vao = modelComponent->_vao;
+		if (vao)
+		{
+			vao->setIBOData(RendEnum::IBO_POINT_CLOUD, modelComponent->_pointCloud);
+			vao->setIBOData(RendEnum::IBO_WIREFRAME, modelComponent->_wireframe);
+			vao->setIBOData(RendEnum::IBO_TRIANGLE_MESH, modelComponent->_triangleMesh);
+		}
+	}
+
+	for (ModelComponent* modelComponent : _modelComp)
+		modelComponent->releaseMemory(false, false);
+}
+
+PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
+{
+	PointCloud3D* pointCloud = nullptr;
+
+	if (_modelComp.size())
+	{
+		Model3D::ModelComponent* modelComp = _modelComp[0];
+		std::vector<float> noiseBuffer;
+		fracturer::Seeder::getFloatNoise(maxSamples, maxSamples * 2, randomFunction, noiseBuffer);
+
+		// Max. triangle area
+		float maxArea = FLT_MIN;
+		Triangle3D triangle;
+		for (const Model3D::FaceGPUData& face : modelComp->_topology)
+		{
+			triangle = Triangle3D(modelComp->_geometry[face._vertices.x]._position, modelComp->_geometry[face._vertices.y]._position, modelComp->_geometry[face._vertices.z]._position);
+			maxArea = std::max(maxArea, triangle.area());
+		}
+
+		ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::SAMPLER_SHADER);
+
+		unsigned numPoints = 0, noiseBufferSize = 0;
+		unsigned maxPoints = maxSamples * modelComp->_topology.size();
+
+		const GLuint vertexSSBO		= ComputeShader::setReadBuffer(modelComp->_geometry, GL_STATIC_DRAW);
+		const GLuint faceSSBO		= ComputeShader::setReadBuffer(modelComp->_topology, GL_STATIC_DRAW);
+		const GLuint pointCloudSSBO = ComputeShader::setWriteBuffer(vec4(), maxPoints, GL_DYNAMIC_DRAW);
+		const GLuint countingSSBO	= ComputeShader::setReadBuffer(&numPoints, 1, GL_DYNAMIC_DRAW);
+		const GLuint noiseSSBO		= ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
+
+		shader->use();
+		shader->bindBuffers(std::vector<GLuint> { vertexSSBO, faceSSBO, pointCloudSSBO, countingSSBO, noiseSSBO });
+		shader->setUniform("maxArea", maxArea);
+		//shader->setUniform("noiseBufferSize", static_cast<unsigned>(noiseBuffer.size()));
+		shader->setUniform("numSamples", maxSamples);
+		shader->setUniform("numTriangles", static_cast<unsigned>(modelComp->_topology.size()));
+		if (modelComp->_material) modelComp->_material->applyTexture(shader, Texture::KAD_TEXTURE);
+		shader->execute(ComputeShader::getNumGroups(maxSamples * modelComp->_topology.size()), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+		numPoints = *ComputeShader::readData(countingSSBO, unsigned());
+		vec4* pointCloudData = ComputeShader::readData(pointCloudSSBO, vec4());
+
+		pointCloud = new PointCloud3D;
+		pointCloud->push_back(pointCloudData, numPoints);
+
+		GLuint buffers[] = { vertexSSBO, faceSSBO, pointCloudSSBO, countingSSBO, noiseSSBO };
+		glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+	}
+
+	return pointCloud;
 }
 
 void CADModel::subdivide(float maxArea)
@@ -272,6 +351,27 @@ void CADModel::createModelComponent(objl::Mesh* mesh)
 		_modelComp.push_back(modelComp);
 		leftVertices = mesh->Vertices.size() - startVertexIdx;
 	}
+}
+
+void CADModel::fuseComponents()
+{
+	Model3D::ModelComponent* newModelComponent = new Model3D::ModelComponent(this);
+	unsigned numVertices = 0;
+
+	for (Model3D::ModelComponent* modelComponent : _modelComp)
+	{
+		newModelComponent->_geometry.insert(newModelComponent->_geometry.end(), modelComponent->_geometry.begin(), modelComponent->_geometry.end());
+		for (FaceGPUData& face : modelComponent->_topology)
+			face._vertices += numVertices;
+		newModelComponent->_topology.insert(newModelComponent->_topology.end(), modelComponent->_topology.begin(), modelComponent->_topology.end());
+
+		numVertices += modelComponent->_geometry.size();
+
+		delete modelComponent;
+	}
+
+	_modelComp.clear();
+	_modelComp.push_back(newModelComponent);
 }
 
 void CADModel::generateGeometryTopology(Model3D::ModelComponent* modelComp, const mat4& modelMatrix)

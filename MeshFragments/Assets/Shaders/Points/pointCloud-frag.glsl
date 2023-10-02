@@ -1,6 +1,6 @@
 #version 450
 
-uniform vec3 vColor;
+flat in vec3 color;
 
 layout (location = 0) out vec4 fColor;
 
@@ -12,5 +12,5 @@ void main() {
 		discard;										// Discarded because distance to center is bigger than 0.5
 	}
 
-	fColor = vec4(vColor, 1.0f);
+	fColor = vec4(color, 1.0f);
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Fracturer/Seeder.h"
+#include "Geometry/3D/PointCloud3D.h"
 #include "Geometry/3D/Triangle3D.h"
 #include "Graphics/Core/Model3D.h"
 #include "objloader/OBJ_Loader.h"
@@ -27,6 +29,7 @@ public:
 
 protected:
 	std::string		_filename;								//!< File path (without extension)
+	bool			_fuseComponents;						//!< Fuse all the components found in the cad model
 	std::string		_textureFolder;							//!< Folder where model textures may be located
 	bool			_useBinary;								//!< Use binary file instead of original obj models
 
@@ -45,6 +48,11 @@ protected:
 	*	@brief Initializes a model component with the content of a mesh.
 	*/
 	void createModelComponent(objl::Mesh* mesh);
+
+	/**
+	*	@brief Fuse components into a single one.
+	*/
+	void fuseComponents();
 
 	/**
 	*	@brief Generates geometry via GPU.
@@ -78,7 +86,7 @@ public:
 	*	@param filename Path where the model is located.
 	*	@param useBinary Use of previously written binary files.
 	*/
-	CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary);
+	CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary, const bool fuseComponents);
 
 	/**
 	*	@brief Model 3D constructor for a triangle mesh.
@@ -107,6 +115,16 @@ public:
 	*	@param model Model to copy attributes.
 	*/
 	CADModel& operator=(const CADModel& model) = delete;
+
+	/**
+	*	@brief Reloads VAO content.
+	*/
+	void reload();
+
+	/**
+	*	@brief Samples the mesh as a set of points.
+	*/
+	PointCloud3D* sample(unsigned maxSamples, int randomFunction);
 
 	/**
 	*	@brief Subdivides mesh with the specified maximum area.

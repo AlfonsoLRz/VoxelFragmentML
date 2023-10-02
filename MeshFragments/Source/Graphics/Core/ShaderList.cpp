@@ -5,6 +5,7 @@
 
 std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::ASSIGN_FACE_CLUSTER, "Assets/Shaders/Compute/Fracturer/assignFaceCluster"},
+		{RendEnum::ASSIGN_VERTEX_CLUSTER, "Assets/Shaders/Compute/Fracturer/assignVertexCluster"},
 		{RendEnum::BIT_MASK_RADIX_SORT, "Assets/Shaders/Compute/RadixSort/bitMask-radixSort"},
 		{RendEnum::BUILD_CLUSTER_BUFFER, "Assets/Shaders/Compute/BVHGeneration/buildClusterBuffer"},
 		{RendEnum::BUILD_REGULAR_GRID, "Assets/Shaders/Compute/Fracturer/buildRegularGrid"},
@@ -16,6 +17,7 @@ std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::COMPUTE_TANGENTS_1, "Assets/Shaders/Compute/Model/computeTangents_1"},
 		{RendEnum::COMPUTE_TANGENTS_2, "Assets/Shaders/Compute/Model/computeTangents_2"},
 		{RendEnum::COUNT_VOXEL_TRIANGLE, "Assets/Shaders/Compute/Fracturer/countVoxelTriangle"},
+		{RendEnum::DETECT_BOUNDARIES, "Assets/Shaders/Compute/Fracturer/detectBoundaries"},
 		{RendEnum::DOWN_SWEEP_PREFIX_SCAN, "Assets/Shaders/Compute/PrefixScan/downSweep-prefixScan"},
 		{RendEnum::END_LOOP_COMPUTATIONS, "Assets/Shaders/Compute/BVHGeneration/endLoopComputations"},
 		{RendEnum::ERODE_GRID, "Assets/Shaders/Compute/Fracturer/erodeGrid"},
@@ -34,6 +36,7 @@ std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::REMOVE_ISOLATED_REGIONS, "Assets/Shaders/Compute/Fracturer/removeIsolatedRegions"},
 		{RendEnum::RESET_BUFFER_INDEX, "Assets/Shaders/Compute/Generic/resetBufferIndex"},
 		{RendEnum::RESET_LAST_POSITION_PREFIX_SCAN, "Assets/Shaders/Compute/PrefixScan/resetLastPosition-prefixScan"},
+		{RendEnum::SAMPLER_SHADER, "Assets/Shaders/Compute/Model/sampler"},
 		{RendEnum::SELECT_VOXEL_TRIANGLE, "Assets/Shaders/Compute/Fracturer/selectVoxelTriangle"},
 };
 

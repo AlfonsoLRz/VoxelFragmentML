@@ -259,7 +259,6 @@ Model3D::ModelComponent* Primitives::getQuadModelComp()
 	{
 		vertex._position = vec3(textCoord, .0f);
 		vertex._normal = vec3(.0f, .0f, 1.0f);
-		vertex._tangent = vec3(1.0f, .0f, .0f);
 		vertex._textCoord = vec2(vertex._position) + vec2(.5f, .0f);
 
 		modelComp->_geometry.push_back(vertex);

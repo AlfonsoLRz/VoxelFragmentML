@@ -290,60 +290,6 @@ void Model3D::computeTangents(ModelComponent* modelComp)
 	glDeleteBuffers(1, &outBufferID);
 }
 
-void Model3D::generatePointCloud()
-{
-	for (ModelComponent* modelComp : _modelComp)
-	{
-		modelComp->_pointCloud.resize(modelComp->_geometry.size());
-		std::iota(modelComp->_pointCloud.begin(), modelComp->_pointCloud.end(), 0);
-	}
-}
-
-void Model3D::generateWireframe()
-{
-	std::unordered_map<int, std::unordered_set<int>> segmentIncluded;
-	auto canInsert = [&](int index1, int index2) -> bool
-	{
-		std::unordered_map<int, std::unordered_set<int>>::iterator it;
-
-		if ((it = segmentIncluded.find(index1)) != segmentIncluded.end())
-		{
-			if (it->second.find(index2) != it->second.end())
-			{
-				return false;
-			}
-		}
-
-		if ((it = segmentIncluded.find(index2)) != segmentIncluded.end())
-		{
-			if (it->second.find(index1) != it->second.end())
-			{
-				return false;
-			}
-		}
-
-		return true;
-	};
-
-	for (ModelComponent* modelComp : _modelComp)
-	{
-		const unsigned triangleMeshSize = modelComp->_triangleMesh.size();
-
-		for (int i = 0; i < triangleMeshSize; i += 3)
-		{
-			for (int j = i; (j <= (i + 1)) && (j < triangleMeshSize - 1); ++j)
-			{
-				if (canInsert(modelComp->_triangleMesh[j], modelComp->_triangleMesh[j + 1]))
-				{
-					modelComp->_wireframe.push_back(modelComp->_triangleMesh[j]);
-					modelComp->_wireframe.push_back(modelComp->_triangleMesh[j + 1]);
-					modelComp->_wireframe.push_back(Model3D::RESTART_PRIMITIVE_INDEX);
-				}
-			}
-		}
-	}
-}
-
 void Model3D::setModelMatrix(std::vector<mat4>& matrix)
 {
 	matrix[RendEnum::MODEL_MATRIX] = _modelMatrix;
@@ -400,11 +346,11 @@ void Model3D::setShaderUniforms(ShaderProgram* shader, const RendEnum::RendShade
 	}
 }
 
-void Model3D::setVAOData()
+void Model3D::setVAOData(bool gpuGeometry)
 {
 	for (int i = 0; i < _modelComp.size(); ++i)
 	{
-		VAO* vao = new VAO(true);
+		VAO* vao = new VAO(gpuGeometry);
 		ModelComponent* modelComp = _modelComp[i];
 
 		modelComp->_topologyIndicesLength[RendEnum::IBO_POINT_CLOUD] = modelComp->_pointCloud.size();
@@ -507,10 +453,14 @@ void Model3D::ModelComponent::buildPointCloudTopology()
 {
 	_pointCloud.resize(_geometry.size());
 	std::iota(_pointCloud.begin(), _pointCloud.end(), 0);
+
+	_topologyIndicesLength[RendEnum::IBO_POINT_CLOUD] = _pointCloud.size();
 }
 
 void Model3D::ModelComponent::buildWireframeTopology()
 {
+	_wireframe.clear();
+
 	std::unordered_map<int, std::unordered_set<int>> includedEdges;				// Already included edges
 
 	auto isEdgeIncluded = [&](int index1, int index2) -> bool
@@ -550,6 +500,8 @@ void Model3D::ModelComponent::buildWireframeTopology()
 		_wireframe.push_back(_triangleMesh[i + 2]);
 		_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
 	}
+
+	_topologyIndicesLength[RendEnum::IBO_WIREFRAME] = _wireframe.size();
 }
 
 void Model3D::ModelComponent::buildTriangleMeshTopology()
@@ -560,12 +512,14 @@ void Model3D::ModelComponent::buildTriangleMeshTopology()
 	{
 		_triangleMesh.insert(_triangleMesh.end(), {face._vertices.x, face._vertices.y, face._vertices.z});
 	}
+
+	_topologyIndicesLength[RendEnum::IBO_TRIANGLE_MESH] = _triangleMesh.size();
 }
 
-void Model3D::ModelComponent::releaseMemory()
+void Model3D::ModelComponent::releaseMemory(bool geometry, bool topology)
 {
-	std::vector<VertexGPUData>().swap(_geometry);
-	std::vector<FaceGPUData>().swap(_topology);
+	if (geometry) std::vector<VertexGPUData>().swap(_geometry);
+	if (topology) std::vector<FaceGPUData>().swap(_topology);
 	std::vector<GLuint>().swap(_pointCloud);
 	std::vector<GLuint>().swap(_wireframe);
 	std::vector<GLuint>().swap(_triangleMesh);

@@ -12,7 +12,8 @@ layout (std430, binding = 0) buffer VertexBuffer	{ VertexGPUData		vertex[]; };
 layout (std430, binding = 1) buffer FaceBuffer		{ FaceGPUData		face[]; };
 layout (std430, binding = 2) buffer GridBuffer		{ CellGrid			grid[]; };
 layout (std430, binding = 3) buffer CountBuffer		{ uint				count[]; };
-layout (std430, binding = 4) buffer NoiseBuffer		{ float				noise[]; };
+layout (std430, binding = 4) buffer BoundaryBuffer	{ uint				boundary[]; };
+layout (std430, binding = 5) buffer NoiseBuffer		{ float				noise[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
@@ -50,5 +51,8 @@ void main()
 	uvec3 gridIndex = getPositionIndex(point);
 
 	if (grid[getPositionIndex(gridIndex)].value > VOXEL_FREE)
+	{
 		atomicAdd(count[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], 1);
+		atomicAdd(boundary[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], uint(grid[getPositionIndex(gridIndex)].boundary > uint16_t(0)));
+	}
 }

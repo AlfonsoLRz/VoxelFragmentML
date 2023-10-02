@@ -250,6 +250,12 @@
     <Filter Include="Archivos de origen\ImportedLibraries\imfiledialog">
       <UniqueIdentifier>{4d570c99-1146-4b05-811c-ce3f34260f46}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Archivos de encabezado\ImportedLibraries\vox">
+      <UniqueIdentifier>{a0780ee0-3270-4f32-a1e1-a9c6b83bc259}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de origen\ImportedLibraries\vox">
+      <UniqueIdentifier>{f3fd6e32-b7d7-4d25-a5b7-f6c4c4c2d7ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Geometry\2D\Vector2.h">
@@ -570,6 +576,12 @@
     <ClInclude Include="Source\Graphics\Core\Voronoi.h">
       <Filter>Archivos de encabezado\Graphics\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\DrawPointCloud.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.h">
+      <Filter>Archivos de encabezado\ImportedLibraries\vox</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -830,6 +842,12 @@
     <ClCompile Include="Source\Graphics\Core\Voronoi.cpp">
       <Filter>Archivos de origen\Graphics\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\Core\DrawPointCloud.cpp">
+      <Filter>Archivos de origen\Graphics\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.cpp">
+      <Filter>Archivos de origen\ImportedLibraries\vox</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shaders\Lines\wireframe-frag.glsl">
@@ -1082,6 +1100,15 @@
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
     <None Include="Assets\Shaders\Compute\Fracturer\selectVoxelTriangle-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Model\sampler-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Model</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\assignPointCluster-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\detectBoundaries-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>

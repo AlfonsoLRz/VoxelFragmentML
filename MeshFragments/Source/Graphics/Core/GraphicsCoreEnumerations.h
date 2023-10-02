@@ -33,6 +33,7 @@ struct RendEnum
 		VBO_ROTATION,
 		VBO_INDEX,
 		VBO_CLUSTER_ID,
+		VBO_COLOR
 	};
 
 	/**
@@ -43,7 +44,7 @@ struct RendEnum
 	/**
 	*	@return Number of VBO different types.
 	*/
-	const static GLsizei numVBOTypes() { return VBO_CLUSTER_ID + 1; }
+	const static GLsizei numVBOTypes() { return VBO_COLOR + 1; }
 
 	/// [Shaders]
 
@@ -113,11 +114,14 @@ struct RendEnum
 		MODEL_MESH_GENERATION,
 		PLANAR_SURFACE_GENERATION,
 		PLANAR_SURFACE_TOPOLOGY,
+		SAMPLER_SHADER,
 
 		// FRACTURER
 		ASSIGN_FACE_CLUSTER,
+		ASSIGN_VERTEX_CLUSTER,
 		BUILD_REGULAR_GRID,
 		COUNT_VOXEL_TRIANGLE,
+		DETECT_BOUNDARIES,
 		ERODE_GRID,
 		FILL_REGULAR_GRID,
 		FLOOD_FRACTURER,

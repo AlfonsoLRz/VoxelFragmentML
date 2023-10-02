@@ -83,3 +83,13 @@ void PointCloud3D::push_back(const vec3& point)
 	_points.push_back(vec4(point, 1.0f));
 	_aabb.update(point);
 }
+
+void PointCloud3D::push_back(const vec4* points, unsigned numPoints)
+{
+	for (unsigned idx = 0; idx < numPoints; ++idx)
+	{
+		this->push_back(points[idx]);	
+		//vec4 color = glm::unpackUnorm4x8(points[idx].w);
+		_color.push_back(points[idx].w);
+	}
+}

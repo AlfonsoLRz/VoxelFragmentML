@@ -107,9 +107,6 @@ void PlanarSurface::generateGeometryTopology(const mat4& modelMatrix)
 	glDeleteBuffers(1, &modelBufferID);
 	glDeleteBuffers(1, &meshBufferID);
 	glDeleteBuffers(1, &rawMeshBufferID);
-
-	this->generatePointCloud();
-	this->generateWireframe();
 }
 
 void PlanarSurface::generateWireframe()
