@@ -459,7 +459,10 @@ void Model3D::ModelComponent::buildPointCloudTopology()
 
 void Model3D::ModelComponent::buildWireframeTopology()
 {
-	_wireframe.clear();
+	int countLines = -3;
+	_wireframe.resize(_triangleMesh.size() * 3);
+
+	ChronoUtilities::initChrono();
 
 	std::unordered_map<int, std::unordered_set<int>> includedEdges;				// Already included edges
 
@@ -488,29 +491,52 @@ void Model3D::ModelComponent::buildWireframeTopology()
 
 	for (unsigned int i = 0; i < _triangleMesh.size(); i += 3)
 	{
-		_wireframe.push_back(_triangleMesh[i]);
-		_wireframe.push_back(_triangleMesh[i + 1]);
-		_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
+		for (int j = 0; j < 3; ++j)
+		{
+			if (!isEdgeIncluded(_triangleMesh[i + j], _triangleMesh[i + (j + 1) % 3]))
+			{
+#pragma omp atomic
+				countLines += 3;
 
-		_wireframe.push_back(_triangleMesh[i + 1]);
-		_wireframe.push_back(_triangleMesh[i + 2]);
-		_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
+				_wireframe[countLines + 0] = _triangleMesh[i + j];
+				_wireframe[countLines + 1] = _triangleMesh[i + (j + 1) % 3];
+				_wireframe[countLines + 2] = RESTART_PRIMITIVE_INDEX;
 
-		_wireframe.push_back(_triangleMesh[i]);
-		_wireframe.push_back(_triangleMesh[i + 2]);
-		_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
+#pragma omp critical
+				{
+					includedEdges[_triangleMesh[i + j]].insert(_triangleMesh[i + (j + 1) % 3]);
+				}
+			}
+		}
+
+
+
+		//_wireframe.push_back(_triangleMesh[i + 1]);
+		//_wireframe.push_back(_triangleMesh[i + 2]);
+		//_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
+
+		//_wireframe.push_back(_triangleMesh[i]);
+		//_wireframe.push_back(_triangleMesh[i + 2]);
+		//_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
 	}
+
+	_wireframe.resize(countLines);
+
+	std::cout << ChronoUtilities::getDuration() << std::endl;
 
 	_topologyIndicesLength[RendEnum::IBO_WIREFRAME] = _wireframe.size();
 }
 
 void Model3D::ModelComponent::buildTriangleMeshTopology()
 {
-	_triangleMesh.clear();
+	int numFaces = static_cast<int>(_topology.size());
+	_triangleMesh.resize(_topology.size() * 3);
 
-	for (const FaceGPUData& face : _topology)
+	#pragma omp parallel for
+	for (int faceIdx = 0; faceIdx < numFaces; ++faceIdx)
 	{
-		_triangleMesh.insert(_triangleMesh.end(), {face._vertices.x, face._vertices.y, face._vertices.z});
+		for (int i = 0; i < 3; ++i)
+			_triangleMesh[faceIdx * 3 + i] = _topology[faceIdx]._vertices[i];
 	}
 
 	_topologyIndicesLength[RendEnum::IBO_TRIANGLE_MESH] = _triangleMesh.size();
@@ -525,11 +551,84 @@ void Model3D::ModelComponent::releaseMemory(bool geometry, bool topology)
 	std::vector<GLuint>().swap(_triangleMesh);
 }
 
+bool Model3D::ModelComponent::subdivide(float maxArea, std::vector<unsigned>& maskFaces)
+{
+	bool applyChangesComp = false;
+
+	auto subdivideTriangle = [=](int faceIdx) -> bool {
+		bool applyChanges = false;
+		Triangle3D triangle(this->_geometry[this->_topology[faceIdx]._vertices.x]._position,
+			this->_geometry[this->_topology[faceIdx]._vertices.y]._position,
+			this->_geometry[this->_topology[faceIdx]._vertices.z]._position);
+
+		if (triangle.area() > maxArea)
+		{
+			// Subdivide
+			triangle.subdivide(this->_geometry, this->_topology, this->_topology[faceIdx], maxArea);
+			applyChanges = true;
+			this->_topology.erase(this->_topology.begin() + faceIdx);
+			--faceIdx;
+		}
+
+		return applyChanges;
+	};
+
+	if (maskFaces.empty())
+	{
+		unsigned numFaces = this->_topology.size();
+
+		for (int faceIdx = 0; faceIdx < numFaces; ++faceIdx)
+		{
+			if (subdivideTriangle(faceIdx))
+			{
+				applyChangesComp = true;
+				--faceIdx;
+			}
+		}
+	}
+	else
+	{
+		unsigned numFaces = maskFaces.size(), numErasedFaces = 0;
+
+		for (int faceIdx = 0; faceIdx < numFaces; ++faceIdx)
+		{
+			if (subdivideTriangle(maskFaces[faceIdx] - numErasedFaces))
+			{
+				applyChangesComp = true;
+				--faceIdx;
+				++numErasedFaces;
+			}
+		}
+	}
+
+	return applyChangesComp;
+}
+
 void Model3D::ModelComponent::setClusterIdx(const std::vector<float>& clusterIdx, bool createVBO)
 {
 	if (_vao)
 	{
 		if (createVBO) _vao->defineVBO(RendEnum::VBO_CLUSTER_ID, float(), GL_FLOAT);
 		_vao->setVBOData(RendEnum::VBO_CLUSTER_ID, clusterIdx);
+
+		//std::vector<std::unordered_set<unsigned>> numVertices(clusterIdx.size());
+		//std::vector<unsigned> numFaces(clusterIdx.size(), 0);
+
+		//for (int idx = 0; idx < clusterIdx.size(); ++idx)
+		//{
+		//	if (clusterIdx[idx] > .0f)
+		//	{
+		//		numVertices[clusterIdx[idx]].insert(_topology[idx]._vertices.x);
+		//		numVertices[clusterIdx[idx]].insert(_topology[idx]._vertices.y);
+		//		numVertices[clusterIdx[idx]].insert(_topology[idx]._vertices.z);
+		//		numFaces[clusterIdx[idx]] += 1;
+		//	}
+		//}
+
+		//for (int idx = 0; idx < clusterIdx.size(); ++idx)
+		//{
+		//	if (numVertices[idx].size())
+		//		std::cout << "Num. vertices: " << numVertices[idx].size() << ", num. faces: " << numFaces[idx] << std::endl;
+		//}
 	}
 }

@@ -30,6 +30,7 @@ public:
 protected:
 	std::string		_filename;								//!< File path (without extension)
 	bool			_fuseComponents;						//!< Fuse all the components found in the cad model
+	bool			_fuseVertices;							//!< Fuse vertices which are too close
 	std::string		_textureFolder;							//!< Folder where model textures may be located
 	bool			_useBinary;								//!< Use binary file instead of original obj models
 
@@ -37,7 +38,7 @@ protected:
 	/**
 	*	@brief Computes a triangle mesh buffer composed only by indices.
 	*/
-	void computeMeshData(Model3D::ModelComponent* modelComp);
+	void computeMeshData(Model3D::ModelComponent* modelComp, bool computeNormals = false);
 
 	/**
 	*	@brief Creates a new material from the attributes of a model component.
@@ -55,9 +56,9 @@ protected:
 	void fuseComponents();
 
 	/**
-	*	@brief Generates geometry via GPU.
+	*	@brief Combines similar vertices.
 	*/
-	void generateGeometryTopology(Model3D::ModelComponent* modelComp, const mat4& modelMatrix);
+	void fuseVertices(std::unordered_map<unsigned, unsigned>& mapping);
 
 	/**
 	*	@brief Fills the content of model component with binary file data.
@@ -75,6 +76,11 @@ protected:
 	bool readBinary(const std::string& filename, const std::vector<Model3D::ModelComponent*>& modelComp);
 
 	/**
+	*	@brief Remaps vertices to merge them.
+	*/
+	void remapVertices(Model3D::ModelComponent* modelComponent, std::unordered_map<unsigned, unsigned>& mapping);
+
+	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
 	*	@return Success of writing process.
 	*/
@@ -86,7 +92,7 @@ public:
 	*	@param filename Path where the model is located.
 	*	@param useBinary Use of previously written binary files.
 	*/
-	CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary, const bool fuseComponents);
+	CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary, const bool fuseComponents, const bool fuseVertices);
 
 	/**
 	*	@brief Model 3D constructor for a triangle mesh.
@@ -127,8 +133,13 @@ public:
 	PointCloud3D* sample(unsigned maxSamples, int randomFunction);
 
 	/**
+	*	@brief 
+	*/
+	void simplify(unsigned numFaces);
+
+	/**
 	*	@brief Subdivides mesh with the specified maximum area.
 	*/
-	void subdivide(float maxArea);
+	bool subdivide(float maxArea);
 };
 

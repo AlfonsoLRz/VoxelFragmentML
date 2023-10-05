@@ -491,6 +491,11 @@ public:
 	*/
 	virtual void releaseMemory(bool geometry = true, bool topology = true);
 
+	/**
+	*	@brief Subdivides the faces to fit the maximum wanted area.
+	*/
+	bool subdivide(float maxArea, std::vector<unsigned>& maskFaces);
+
 	// --------------- Setters -------------------
 
 	/**

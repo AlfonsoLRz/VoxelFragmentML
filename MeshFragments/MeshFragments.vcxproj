@@ -37,6 +37,7 @@
     <ClInclude Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.h" />
     <ClInclude Include="Source\DataStructures\Octree.h" />
     <ClInclude Include="Source\DataStructures\RegularGrid.h" />
+    <ClInclude Include="Source\DataStructures\WingedTriangleMesh.h" />
     <ClInclude Include="Source\Fracturer\FloodFracturer.h" />
     <ClInclude Include="Source\Fracturer\Fracturer.h" />
     <ClInclude Include="Source\Fracturer\NaiveFracturer.h" />
@@ -74,6 +75,7 @@
     <ClInclude Include="Source\Graphics\Core\CADModel.h" />
     <ClInclude Include="Source\Graphics\Core\Camera.h" />
     <ClInclude Include="Source\Graphics\Core\CameraProjection.h" />
+    <ClInclude Include="Source\Graphics\Core\CGALInterface.h" />
     <ClInclude Include="Source\Graphics\Core\ColorUtilities.h" />
     <ClInclude Include="Source\Graphics\Core\ComputeShader.h" />
     <ClInclude Include="Source\Graphics\Core\DirectionalLight.h" />
@@ -214,6 +216,7 @@
     </ClCompile>
     <ClCompile Include="Source\DataStructures\Octree.cpp" />
     <ClCompile Include="Source\DataStructures\RegularGrid.cpp" />
+    <ClCompile Include="Source\DataStructures\WingedTriangleMesh.cpp" />
     <ClCompile Include="Source\Fracturer\FloodFracturer.cpp" />
     <ClCompile Include="Source\Fracturer\NaiveFracturer.cpp" />
     <ClCompile Include="Source\Fracturer\Seeder.cpp" />

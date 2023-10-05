@@ -18,7 +18,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::MESH_1_PATH = "Assets/Models/Jar01/Jar01_v3";
+const std::string CADScene::MESH_1_PATH = "Assets/Models/Modelos Vasijas OBJ (completo)-20211117T102301Z-001/Modelos OBJ (completo)/BO#_#/BO4_2/BO4_2";
 
 // [Public methods]
 
@@ -69,9 +69,10 @@ void CADScene::loadModel(const std::string& path)
 	}
 
 	{
-		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), true, true);
+		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), false, true, true);
 		_mesh->load();
 		_mesh->getModelComponent(0)->_enabled = true;
+		_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
 
 		Group3D* group = new Group3D();
 		group->addComponent(_mesh);
@@ -207,8 +208,7 @@ std::string CADScene::fractureModel()
 	_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
 
 	_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx, boundaryFaces);
-	//for (unsigned& faceIdx : boundaryFaces)
-	//	clusterIdx[faceIdx] = 800;
+	//_mesh->getModelComponent(0)->subdivide(0.001f, boundaryFaces);
 	_mesh->getModelComponent(0)->setClusterIdx(clusterIdx, false);
 
 	clusterIdx.clear();
@@ -230,19 +230,11 @@ void CADScene::loadDefaultLights()
 {
 	Light* pointLight_01 = new Light();
 	pointLight_01->setLightType(Light::POINT_LIGHT);
-	pointLight_01->setPosition(vec3(1.64f, 2.0f, -0.12f));
-	pointLight_01->setId(vec3(0.35f));
+	pointLight_01->setPosition(vec3(5.5f, 4.0f, -1.0f));
+	pointLight_01->setId(vec3(0.4f));
 	pointLight_01->setIs(vec3(0.0f));
 
 	_lights.push_back(std::unique_ptr<Light>(pointLight_01));
-
-	Light* pointLight_02 = new Light();
-	pointLight_02->setLightType(Light::POINT_LIGHT);
-	pointLight_02->setPosition(vec3(-2.86f, 2.0f, -0.13f));
-	pointLight_02->setId(vec3(0.35f));
-	pointLight_02->setIs(vec3(0.0f));
-
-	_lights.push_back(std::unique_ptr<Light>(pointLight_02));
 
 	Light* sunLight = new Light();
 	Camera* camera = sunLight->getCamera();
@@ -250,7 +242,7 @@ void CADScene::loadDefaultLights()
 	camera->setBottomLeftCorner(vec2(-7.0f, -7.0f));
 	shadowMap->modifySize(4096, 4096);
 	sunLight->setLightType(Light::DIRECTIONAL_LIGHT);
-	sunLight->setPosition(vec3(.0f, 3.0f, -5.0f));
+	sunLight->setPosition(vec3(.0f, 5.0f, -8.0f));
 	sunLight->setDirection(vec3(-0.1, -0.8f, 1.0f));
 	sunLight->setId(vec3(0.5f));
 	sunLight->setIs(vec3(0.0f));

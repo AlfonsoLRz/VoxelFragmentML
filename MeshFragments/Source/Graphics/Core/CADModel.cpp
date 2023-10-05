@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "CADModel.h"
 
+#include <CGAL/Surface_mesh_simplification/edge_collapse.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Face_count_stop_predicate.h>
+#include "CGALInterface.h"
 #include <filesystem>
 #include "Graphics/Application/MaterialList.h"
 #include "Graphics/Core/ShaderList.h"
@@ -17,11 +20,12 @@ const std::string CADModel::OBJ_EXTENSION = ".obj";
 
 /// [Public methods]
 
-CADModel::CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary, const bool fuseComponents) : 
+CADModel::CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary, const bool fuseComponents, const bool mergeVertices) : 
 	Model3D(mat4(1.0f), 0)
 {
 	_filename = filename;
 	_fuseComponents = fuseComponents;
+	_fuseVertices = mergeVertices;
 	_textureFolder = textureFolder;
 	_useBinary = useBinary;
 }
@@ -62,6 +66,19 @@ bool CADModel::load(const mat4& modelMatrix)
 			success = this->loadModelFromOBJ(modelMatrix);
 			if (success and _fuseComponents and _modelComp.size() > 1)
 				this->fuseComponents();
+
+			if (_fuseVertices)
+			{
+				for (Model3D::ModelComponent* modelComp : _modelComp)
+				{
+					std::unordered_map<unsigned, unsigned> mapping;
+
+					this->fuseVertices(mapping);
+					this->remapVertices(_modelComp[0], mapping);
+				}
+			}
+
+			//this->simplify(1000);
 		}
 
 		if (!binaryExists && success)
@@ -160,65 +177,75 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 	return pointCloud;
 }
 
-void CADModel::subdivide(float maxArea)
+void CADModel::simplify(unsigned numFaces)
+{
+	for (Model3D::ModelComponent* modelComponent : _modelComp)
+	{
+		if (modelComponent->_topology.size() > numFaces)
+		{
+			Mesh* mesh = CGALInterface::translateMesh(modelComponent);
+
+			CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
+			CGAL::Surface_mesh_simplification::edge_collapse(*mesh, stop);
+
+			CGALInterface::translateMesh(mesh, modelComponent);
+
+			delete mesh;
+
+			this->computeMeshData(modelComponent, true);
+		}
+	}
+}
+
+bool CADModel::subdivide(float maxArea)
 {
 	bool applyChanges = false;
+	std::vector<unsigned> faces;
 
 	#pragma omp parallel for
 	for (int modelCompIdx = 0; modelCompIdx < _modelComp.size(); ++modelCompIdx)
 	{
-		bool applyChangesComp = false;
 		Model3D::ModelComponent* modelComp = _modelComp[modelCompIdx];
-		unsigned numFaces = modelComp->_topology.size();
-
-		for (int faceIdx = 0; faceIdx < numFaces; ++faceIdx)
-		{
-			Triangle3D triangle(modelComp->_geometry[modelComp->_topology[faceIdx]._vertices.x]._position,
-				modelComp->_geometry[modelComp->_topology[faceIdx]._vertices.y]._position,
-				modelComp->_geometry[modelComp->_topology[faceIdx]._vertices.z]._position);
-
-			if (triangle.area() > maxArea)
-			{
-				// Subdivide
-				triangle.subdivide(modelComp->_geometry, modelComp->_topology, modelComp->_topology[faceIdx], maxArea);
-				applyChangesComp = true;
-				modelComp->_topology.erase(modelComp->_topology.begin() + faceIdx);
-				--faceIdx;
-			}
-		}
 
 		#pragma omp critical
-		applyChanges &= applyChangesComp;
+		applyChanges &= modelComp->subdivide(maxArea, faces);
 	}
+
+	return applyChanges;
 }
 
 /// [Protected methods]
 
-void CADModel::computeMeshData(ModelComponent* modelComp)
+void CADModel::computeMeshData(ModelComponent* modelComp, bool computeNormals)
 {
 	ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::MODEL_MESH_GENERATION);
 	const int arraySize = modelComp->_topology.size();
 	const int numGroups = ComputeShader::getNumGroups(arraySize);
 
-	GLuint modelBufferID, meshBufferID, outBufferID;
+	GLuint modelBufferID, meshBufferID;
 	modelBufferID = ComputeShader::setReadBuffer(modelComp->_geometry);
 	meshBufferID = ComputeShader::setReadBuffer(modelComp->_topology);
-	outBufferID = ComputeShader::setWriteBuffer(GLuint(), arraySize * 4);
 
-	shader->bindBuffers(std::vector<GLuint> { modelBufferID, meshBufferID, outBufferID });
+	shader->bindBuffers(std::vector<GLuint> { modelBufferID, meshBufferID });
 	shader->use();
 	shader->setUniform("size", arraySize);
-	shader->setUniform("restartPrimitiveIndex", Model3D::RESTART_PRIMITIVE_INDEX);
 	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 	FaceGPUData* faceData = shader->readData(meshBufferID, FaceGPUData());
-	GLuint* rawMeshData = shader->readData(outBufferID, GLuint());
 	modelComp->_topology = std::move(std::vector<FaceGPUData>(faceData, faceData + arraySize));
-	modelComp->_triangleMesh = std::move(std::vector<GLuint>(rawMeshData, rawMeshData + arraySize * 4));
+
+	if (computeNormals)
+	{
+		#pragma omp parallel for
+		for (int faceIdx = 0; faceIdx < modelComp->_topology.size(); ++faceIdx)
+		{
+			for (int i = 0; i < 3; ++i)
+				modelComp->_geometry[modelComp->_topology[faceIdx]._vertices[i]]._normal = modelComp->_topology[faceIdx]._normal;
+		}
+	}
 
 	glDeleteBuffers(1, &modelBufferID);
 	glDeleteBuffers(1, &meshBufferID);
-	glDeleteBuffers(1, &outBufferID);
 }
 
 Material* CADModel::createMaterial(ModelComponent* modelComp)
@@ -374,33 +401,24 @@ void CADModel::fuseComponents()
 	_modelComp.push_back(newModelComponent);
 }
 
-void CADModel::generateGeometryTopology(Model3D::ModelComponent* modelComp, const mat4& modelMatrix)
+void CADModel::fuseVertices(std::unordered_map<unsigned, unsigned>& mapping)
 {
-	ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::MODEL_APPLY_MODEL_MATRIX);
-	const int arraySize = modelComp->_geometry.size();
-	const int numGroups = ComputeShader::getNumGroups(arraySize);
+	Model3D::ModelComponent* modelComp = _modelComp[0];
+	
+	for (unsigned vertexIdx = 0; vertexIdx < modelComp->_geometry.size(); ++vertexIdx)
+	{
+		if (mapping.find(vertexIdx) != mapping.end())
+			continue;
 
-	GLuint modelBufferID;
-	modelBufferID = ComputeShader::setReadBuffer(modelComp->_geometry);
-
-	shader->bindBuffers(std::vector<GLuint> { modelBufferID});
-	shader->use();
-	shader->setUniform("mModel", modelMatrix * _modelMatrix);
-	shader->setUniform("size", arraySize);
-	if (modelComp->_material) modelComp->_material->applyMaterial4ComputeShader(shader);
-	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	VertexGPUData* data = shader->readData(modelBufferID, VertexGPUData());
-	modelComp->_geometry = std::move(std::vector<VertexGPUData>(data, data + arraySize));
-
-	this->computeTangents(modelComp);
-	this->computeMeshData(modelComp);
-
-	glDeleteBuffers(1, &modelBufferID);
-
-	// Wireframe & point cloud are derived from previous operations
-	//modelComp->buildPointCloudTopology();
-	//modelComp->buildWireframeTopology();
+		for (unsigned j = vertexIdx + 1; j < modelComp->_geometry.size(); ++j)
+		{
+			if (mapping.find(j) == mapping.end() && glm::distance(modelComp->_geometry[vertexIdx]._position, modelComp->_geometry[j]._position) < glm::epsilon<float>())
+			{
+				// Remap
+				mapping[j] = vertexIdx;
+			}
+		}
+	}
 }
 
 bool CADModel::loadModelFromBinaryFile()
@@ -446,7 +464,7 @@ bool CADModel::loadModelFromOBJ(const mat4& modelMatrix)
 			this->createModelComponent(&(loader.LoadedMeshes[i]));
 			while (modelCompIdx < _modelComp.size())
 			{
-				this->generateGeometryTopology(_modelComp[modelCompIdx], modelMatrix);
+				this->computeMeshData(_modelComp[modelCompIdx]);
 				++modelCompIdx;
 			}
 		}
@@ -499,6 +517,35 @@ bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D
 	fin.close();
 
 	return true;
+}
+
+void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::unordered_map<unsigned, unsigned>& mapping)
+{
+	unsigned erasedVertices = 0, startingSize = modelComponent->_geometry.size();
+	std::vector<unsigned> newMapping (startingSize);
+
+	for (size_t vertexIdx = 0; vertexIdx < startingSize; ++vertexIdx)
+	{
+		newMapping[vertexIdx] = vertexIdx - erasedVertices;
+
+		auto mappingIt = mapping.find(vertexIdx);
+		if (mappingIt != mapping.end())
+		{
+			modelComponent->_geometry.erase(modelComponent->_geometry.begin() + vertexIdx - erasedVertices);
+			++erasedVertices;
+		}
+	}
+
+	for (FaceGPUData& face : modelComponent->_topology)
+	{
+		for (int i = 0; i < 3; ++i)
+		{
+			if (mapping.find(face._vertices[i]) != mapping.end())
+				face._vertices[i] = newMapping[mapping.find(face._vertices[i])->second];
+			else
+				face._vertices[i] = newMapping[face._vertices[i]];
+		}
+	}
 }
 
 bool CADModel::writeToBinary()

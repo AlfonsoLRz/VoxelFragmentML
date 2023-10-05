@@ -24,6 +24,16 @@ Triangle3D::~Triangle3D()
 {
 }
 
+AABB Triangle3D::aabb()
+{
+	AABB aabb;
+	aabb.update(_a);
+	aabb.update(_b);
+	aabb.update(_c);
+
+	return aabb;
+}
+
 float Triangle3D::area() const
 {
 	const vec3 u = _b - _a, v = _c - _a;

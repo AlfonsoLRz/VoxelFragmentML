@@ -528,9 +528,6 @@
     <ClInclude Include="Libraries\imgizmo\ImZoomSlider.h">
       <Filter>Archivos de encabezado\ImportedLibraries\imguizmo</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\Core\TriangleSet.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
     <ClInclude Include="Source\DataStructures\Octree.h">
       <Filter>Archivos de encabezado\DataStructures</Filter>
     </ClInclude>
@@ -581,6 +578,15 @@
     </ClInclude>
     <ClInclude Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.h">
       <Filter>Archivos de encabezado\ImportedLibraries\vox</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DataStructures\WingedTriangleMesh.h">
+      <Filter>Archivos de encabezado\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\TriangleSet.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\CGALInterface.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -847,6 +853,9 @@
     </ClCompile>
     <ClCompile Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.cpp">
       <Filter>Archivos de origen\ImportedLibraries\vox</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DataStructures\WingedTriangleMesh.cpp">
+      <Filter>Archivos de origen\DataStructures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

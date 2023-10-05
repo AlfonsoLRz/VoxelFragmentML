@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Geometry/3D/AABB.h"
 #include "Geometry/3D/Edge3D.h"
 #include "Graphics/Core/Model3D.h"
 #include "Utilities/RandomUtilities.h"
@@ -55,6 +56,11 @@ public:
 	*	@brief Destructor.
 	*/
 	virtual ~Triangle3D();
+
+	/**
+	*	@return Bounding box.
+	*/
+	AABB aabb();
 
 	/**
 	*	@return Area of triangle.
