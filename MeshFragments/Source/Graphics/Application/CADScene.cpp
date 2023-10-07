@@ -69,7 +69,7 @@ void CADScene::loadModel(const std::string& path)
 	}
 
 	{
-		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), true, true, false);
+		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), false, true, false);
 		_mesh->load();
 		_mesh->getModelComponent(0)->_enabled = true;
 		_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
@@ -144,6 +144,7 @@ std::string CADScene::fractureModel()
 	std::vector<uvec4> seeds;
 	std::vector<float> faceClusterIdx, vertexClusterIdx;
 	std::vector<unsigned> boundaryFaces;
+	std::vector<std::unordered_map<unsigned, float>> faceClusterOccupancy;
 
 	if (_fractParameters._biasSeeds == 0)
 	{
@@ -205,8 +206,13 @@ std::string CADScene::fractureModel()
 
 	for (Model3D::ModelComponent* modelComponent : _mesh->getModelComponents())
 	{
-		_meshGrid->queryCluster(modelComponent->_geometry, modelComponent->_topology, faceClusterIdx, boundaryFaces);
+		_meshGrid->queryCluster(modelComponent->_geometry, modelComponent->_topology, faceClusterIdx, boundaryFaces, faceClusterOccupancy);
 		//_mesh->getModelComponent(0)->subdivide(0.001f, boundaryFaces);
+
+		WingedTriangleMesh wingedTM (modelComponent->_geometry, modelComponent->_topology, faceClusterOccupancy);
+		for (int i = 0; i < 3; ++i)
+			wingedTM.computeSoftCluster(1.0f);
+		wingedTM.getFaceCluster(modelComponent->_topology.size(), faceClusterIdx);
 
 		vertexClusterIdx.resize(modelComponent->_geometry.size());
 		for (size_t faceIdx = 0; faceIdx < modelComponent->_topology.size(); ++faceIdx)
@@ -214,8 +220,6 @@ std::string CADScene::fractureModel()
 				vertexClusterIdx[modelComponent->_topology[faceIdx]._vertices[i]] = faceClusterIdx[faceIdx];
 
 		modelComponent->setClusterIdx(vertexClusterIdx, false);
-
-		WingedTriangleMesh wingedTM (modelComponent->_geometry, modelComponent->_topology, boundaryFaces, faceClusterIdx);
 	}
 
 	//vertexClusterIdx.clear();

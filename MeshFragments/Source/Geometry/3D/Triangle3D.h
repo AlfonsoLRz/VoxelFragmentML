@@ -23,7 +23,7 @@ public:
 	};
 
 protected:
-	vec3 _a, _b, _c;						//!< Points in counterclockwise direction in an ideal situation (no guaranteed as the user is who specifies these values)
+	vec3 _a, _b, _c, _n;						//!< Points in counterclockwise direction in an ideal situation (no guaranteed as the user is who specifies these values)
 
 protected:
 	/**
@@ -91,6 +91,11 @@ public:
 	*	@return Center of mass of triangle.
 	*/
 	vec3 getCenterOfMass() const;
+
+	/**
+	*	@return Dihedral angle between two planes.
+	*/
+	float getDihedralAngle(const Triangle3D& triangle);
 
 	/**
 	*	@return Selected point from the three that forms the triangle.

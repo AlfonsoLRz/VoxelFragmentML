@@ -136,7 +136,7 @@ public:
 	/**
 	*	@brief Queries cluster for each triangle of the given mesh.
 	*/
-	void queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, std::vector<unsigned>& boundaryFaces);
+	void queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, std::vector<unsigned>& boundaryFaces, std::vector<std::unordered_map<unsigned, float>>& faceClusterOccupancy);
 
 	/**
 	*	@brief Queries cluster for each triangle of the given mesh.

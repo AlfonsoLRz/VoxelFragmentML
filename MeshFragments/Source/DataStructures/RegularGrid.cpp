@@ -292,12 +292,16 @@ void RegularGrid::insertPoint(const vec3& position, unsigned index)
 	_grid[this->getPositionIndex(gridIndex.x, gridIndex.y, gridIndex.z)]._value = index;
 }
 
-void RegularGrid::queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, std::vector<unsigned>& boundaryFaces)
+void RegularGrid::queryCluster(
+	const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, 
+	std::vector<unsigned>& boundaryFaces, std::vector<std::unordered_map<unsigned, float>>& faceClusterOccupancy)
 {
 	ComputeShader* countVoxelTriangle = ShaderList::getInstance()->getComputeShader(RendEnum::COUNT_VOXEL_TRIANGLE);
 	ComputeShader* pickVoxelTriangle = ShaderList::getInstance()->getComputeShader(RendEnum::SELECT_VOXEL_TRIANGLE);
 
 	std::unordered_set<uint16_t> values;
+	faceClusterOccupancy.resize(faces.size());
+
 	size_t numFragments = this->countValues(values);
 	size_t numSamples = 1000;
 	size_t actualSize = numFragments * faces.size();
@@ -347,6 +351,26 @@ void RegularGrid::queryCluster(const std::vector<Model3D::VertexGPUData>& vertic
 		pickVoxelTriangle->setUniform("numFaces", GLuint(faces.size()));
 		pickVoxelTriangle->execute(ComputeShader::getNumGroups(currentNumFaces), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
+		// Extract clusters associated to each face
+		GLuint* countData = ComputeShader::readData(countSSBO, GLuint());
+
+#pragma omp parallel for
+		for (int faceIdx = 0; faceIdx < currentNumFaces; ++faceIdx)
+		{
+			for (int clusterIdx = 0; clusterIdx < numFragments; ++clusterIdx)
+			{
+				if (countData[faceIdx * numFragments + clusterIdx])
+				{
+					faceClusterOccupancy.at(faceIdx + numProcessedFaces)[clusterIdx] = countData[faceIdx * numFragments + clusterIdx];
+				}
+			}
+
+			for (auto& pair : faceClusterOccupancy[faceIdx])
+			{
+				pair.second /= numSamples;
+			}
+		}
+	
 		numProcessedFaces += currentNumFaces;
 
 		glDeleteBuffers(1, &faceSSBO);

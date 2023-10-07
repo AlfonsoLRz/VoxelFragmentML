@@ -13,10 +13,11 @@ Triangle3D::Triangle3D()
 Triangle3D::Triangle3D(const vec3& va, const vec3& vb, const vec3& vc) :
 	_a(va), _b(vb), _c(vc)
 {
+	_n = this->normal();
 }
 
 Triangle3D::Triangle3D(const Triangle3D& triangle) :
-	_a(triangle._a), _b(triangle._b), _c(triangle._c)
+	_a(triangle._a), _b(triangle._b), _c(triangle._c), _n(triangle._n)
 {
 }
 
@@ -93,6 +94,11 @@ float Triangle3D::getAlpha(Triangle3D& triangle) const
 vec3 Triangle3D::getCenterOfMass() const
 {
 	return (_a + _b + _c) * 1.0f / 3.0f;
+}
+
+float Triangle3D::getDihedralAngle(const Triangle3D& triangle)
+{
+	return glm::dot(_n, triangle._n) / (glm::length(_n) * glm::length(triangle._n));
 }
 
 vec3 Triangle3D::getRandomPoint() const
