@@ -7,11 +7,9 @@ layout (local_size_variable) in;
 
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
 
-layout (std430, binding = 0) buffer VertexBuffer	{ VertexGPUData		vertex[]; };
-layout (std430, binding = 1) buffer FaceBuffer		{ FaceGPUData		face[]; };
-layout (std430, binding = 2) buffer CountBuffer		{ uint				count[]; };
-layout (std430, binding = 3) buffer BoundaryBuffer	{ uint				boundary[]; };
-layout (std430, binding = 4) buffer ClusterBuffer	{ float				cluster[]; };
+layout (std430, binding = 0) buffer CountBuffer		{ uint				count[]; };
+layout (std430, binding = 1) buffer BoundaryBuffer	{ uint				boundary[]; };
+layout (std430, binding = 2) buffer ClusterBuffer	{ float				cluster[]; };
 
 uniform uint numFaces;
 uniform uint numFragments;
@@ -35,6 +33,6 @@ void main()
 
 	if (maxCount > 0)
 	{
-		cluster[face[index].vertices.x] = cluster[face[index].vertices.y] = cluster[face[index].vertices.z] = (clusterIdx + uint(2)) * (float(boundary[baseIndex + clusterIdx] > 0) * 2.0f - 1.0f);
+		cluster[index] = (clusterIdx + uint(2)) * (float(boundary[baseIndex + clusterIdx] > 0) * 2.0f - 1.0f);
 	}
 }

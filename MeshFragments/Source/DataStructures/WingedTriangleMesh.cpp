@@ -3,24 +3,25 @@
 
 // [Public methods]
 
-WingedTriangleMesh::WingedTriangleMesh(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, const std::vector<unsigned>& clusterIdx)
+WingedTriangleMesh::WingedTriangleMesh(
+	const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, 
+	const std::vector<unsigned>& isBoundary, const std::vector<float>& clusterIdx)
 {
 	_cellSize = vec3(.0f);
 
-	for (int idx = 0; idx < faces.size(); ++idx)
+	for (int idx = 0; idx < isBoundary.size(); ++idx)
 	{
-		Triangle3D triangle(vertices[faces[idx]._vertices.x]._position, vertices[faces[idx]._vertices.y]._position, vertices[faces[idx]._vertices.z]._position);
+		Triangle3D triangle(vertices[faces[isBoundary[idx]]._vertices.x]._position, vertices[faces[isBoundary[idx]]._vertices.y]._position, vertices[faces[isBoundary[idx]]._vertices.z]._position);
 		AABB aabb = triangle.aabb();
 
-		_aabb.update(vertices[faces[idx]._vertices.x]._position);
-		_aabb.update(vertices[faces[idx]._vertices.y]._position);
-		_aabb.update(vertices[faces[idx]._vertices.z]._position);
-		_cellSize = glm::min(_cellSize, aabb.size());
-
-		_triangle.push_back(WingedTriangle{triangle, clusterIdx[idx]});
+		_aabb.update(vertices[faces[isBoundary[idx]]._vertices.x]._position);
+		_aabb.update(vertices[faces[isBoundary[idx]]._vertices.y]._position);
+		_aabb.update(vertices[faces[isBoundary[idx]]._vertices.z]._position);
+		_cellSize = glm::max(_cellSize, aabb.size());
+		_triangle.push_back(WingedTriangle{triangle, static_cast<unsigned>(clusterIdx[isBoundary[idx]]), isBoundary[idx] });
 	}
 
-	_cellSize *= 3.0f / 4.0f;
+	_cellSize /= 2.0f;
 	_numDivs = glm::ceil(_aabb.size() / _cellSize);
 
 	_pointGrid.resize(_numDivs.x);
@@ -29,7 +30,7 @@ WingedTriangleMesh::WingedTriangleMesh(const std::vector<Model3D::VertexGPUData>
 		_pointGrid[x].resize(_numDivs.y);
 		for (int y = 0; y < _numDivs.y; ++y)
 		{
-			_pointGrid[y].resize(_numDivs.z);
+			_pointGrid[x][y].resize(_numDivs.z);
 		}
 	}
 

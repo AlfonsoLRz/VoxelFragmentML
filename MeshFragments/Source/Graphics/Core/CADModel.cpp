@@ -81,12 +81,13 @@ bool CADModel::load(const mat4& modelMatrix)
 			//this->simplify(1000);
 		}
 
+		this->subdivide(0.0001f);
+
 		if (!binaryExists && success)
 		{
 			this->writeToBinary();
 		}
 
-		//this->subdivide(0.0001f);
 		for (ModelComponent* modelComponent : _modelComp)
 		{
 			modelComponent->buildTriangleMeshTopology();

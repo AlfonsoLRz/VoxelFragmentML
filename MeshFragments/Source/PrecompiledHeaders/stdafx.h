@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <exception>
 #include <execution>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -30,6 +31,7 @@
 #include <memory>
 #include <numeric>
 #include <random>
+#include <regex>
 #include <sstream>
 #include <stdlib.h>
 #include <string>

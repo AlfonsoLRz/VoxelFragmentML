@@ -11,6 +11,7 @@ protected:
 	{
 		Triangle3D						_triangle;
 		unsigned						_cluster;
+		unsigned						_face;
 		std::unordered_set<unsigned>	_connectionVertex;
 		std::unordered_set<unsigned>	_connectionEdge;
 	};
@@ -43,7 +44,7 @@ public:
 	/**
 	*	@brief Constructor from a set of faces, given the vertices forming such faces.
 	*/
-	WingedTriangleMesh(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, const std::vector<unsigned>& clusterIdx);
+	WingedTriangleMesh(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, const std::vector<unsigned>& isBoundary, const std::vector<float>& clusterIdx);
 
 	/**
 	*	@brief Destructor.

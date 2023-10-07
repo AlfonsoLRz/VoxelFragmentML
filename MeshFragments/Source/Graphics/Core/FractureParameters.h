@@ -68,7 +68,7 @@ public:
 		_fillShape(false),
 		_fractureAlgorithm(NAIVE),
 		_distanceFunction(MANHATTAN),
-		_gridSubdivisions(64),
+		_gridSubdivisions(128),
 		_launchGPU(true),
 		_mergeSeedsDistanceFunction(MANHATTAN),
 		_numSeeds(64),

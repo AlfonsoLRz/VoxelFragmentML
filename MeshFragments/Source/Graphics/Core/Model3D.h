@@ -390,6 +390,11 @@ public:
 	ModelComponent* getModelComponent(unsigned index) { return _modelComp[index]; }
 
 	/**
+	*	@return Model component located at the specified index.
+	*/
+	std::vector<ModelComponent*> getModelComponents() { return _modelComp; }
+
+	/**
 	*	@return Model transformation matrix.
 	*/
 	mat4 getModelMatrix() { return _modelMatrix; }

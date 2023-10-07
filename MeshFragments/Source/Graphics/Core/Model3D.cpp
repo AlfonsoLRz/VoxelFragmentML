@@ -462,8 +462,6 @@ void Model3D::ModelComponent::buildWireframeTopology()
 	int countLines = -3;
 	_wireframe.resize(_triangleMesh.size() * 3);
 
-	ChronoUtilities::initChrono();
-
 	std::unordered_map<int, std::unordered_set<int>> includedEdges;				// Already included edges
 
 	auto isEdgeIncluded = [&](int index1, int index2) -> bool
@@ -508,21 +506,9 @@ void Model3D::ModelComponent::buildWireframeTopology()
 				}
 			}
 		}
-
-
-
-		//_wireframe.push_back(_triangleMesh[i + 1]);
-		//_wireframe.push_back(_triangleMesh[i + 2]);
-		//_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
-
-		//_wireframe.push_back(_triangleMesh[i]);
-		//_wireframe.push_back(_triangleMesh[i + 2]);
-		//_wireframe.push_back(RESTART_PRIMITIVE_INDEX);
 	}
 
 	_wireframe.resize(countLines);
-
-	std::cout << ChronoUtilities::getDuration() << std::endl;
 
 	_topologyIndicesLength[RendEnum::IBO_WIREFRAME] = _wireframe.size();
 }

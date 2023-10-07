@@ -294,33 +294,6 @@ void RegularGrid::insertPoint(const vec3& position, unsigned index)
 
 void RegularGrid::queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, std::vector<unsigned>& boundaryFaces)
 {
-	//ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::ASSIGN_FACE_CLUSTER);
-
-	//// Input data
-	//uvec3 numDivs = this->getNumSubdivisions();
-	//unsigned numThreads = vertices.size();
-	//unsigned numGroups = ComputeShader::getNumGroups(numThreads);
-
-	//// Input data
-	//const GLuint vertexSSBO = ComputeShader::setReadBuffer(vertices, GL_STATIC_DRAW);
-	//const GLuint faceSSBO = ComputeShader::setReadBuffer(faces, GL_DYNAMIC_DRAW);
-	//const GLuint gridSSBO = ComputeShader::setReadBuffer(_grid, GL_STATIC_DRAW);
-	//const GLuint clusterSSBO = ComputeShader::setWriteBuffer(float(), vertices.size(), GL_DYNAMIC_DRAW);
-
-	//shader->bindBuffers(std::vector<GLuint>{ vertexSSBO, faceSSBO, gridSSBO, clusterSSBO });
-	//shader->use();
-	//shader->setUniform("aabbMin", _aabb.min());
-	//shader->setUniform("cellSize", _cellSize);
-	//shader->setUniform("gridDims", numDivs);
-	//shader->setUniform("numVertices", GLuint(vertices.size()));
-	//shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	//float* clusterData = ComputeShader::readData(clusterSSBO, float());
-	//clusterIdx = std::vector<float>(clusterData, clusterData + vertices.size());
-
-	//GLuint buffers[] = { vertexSSBO, faceSSBO, gridSSBO, clusterSSBO };
-	//glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
-
 	ComputeShader* countVoxelTriangle = ShaderList::getInstance()->getComputeShader(RendEnum::COUNT_VOXEL_TRIANGLE);
 	ComputeShader* pickVoxelTriangle = ShaderList::getInstance()->getComputeShader(RendEnum::SELECT_VOXEL_TRIANGLE);
 
@@ -334,9 +307,11 @@ void RegularGrid::queryCluster(const std::vector<Model3D::VertexGPUData>& vertic
 	std::vector<float> noiseBuffer;
 	this->fillNoiseBuffer(noiseBuffer, numSamples * numSamples);
 
+	ComputeShader::getMaxSSBOSize(sizeof(unsigned));
+
 	// Buffers for counting
 	GLuint* count = (GLuint*)malloc(maxFaces * numFragments * sizeof(GLuint));
-	clusterIdx.resize(vertices.size()); std::fill(clusterIdx.begin(), clusterIdx.end(), -1.0f);
+	clusterIdx.resize(faces.size()); std::fill(clusterIdx.begin(), clusterIdx.end(), -1.0f);
 	GLuint* boundary = (GLuint*)calloc(maxFaces * numFragments, sizeof(unsigned));
 
 	const GLuint countSSBO = ComputeShader::setReadBuffer(count, maxFaces * numFragments, GL_DYNAMIC_DRAW);
@@ -366,7 +341,7 @@ void RegularGrid::queryCluster(const std::vector<Model3D::VertexGPUData>& vertic
 		countVoxelTriangle->setUniform("numFaces", GLuint(faces.size()));
 		countVoxelTriangle->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-		pickVoxelTriangle->bindBuffers(std::vector<GLuint>{ vertexSSBO, faceSSBO, countSSBO, boundarySSBO, clusterSSBO });
+		pickVoxelTriangle->bindBuffers(std::vector<GLuint>{ countSSBO, boundarySSBO, clusterSSBO });
 		pickVoxelTriangle->use();
 		pickVoxelTriangle->setUniform("numFragments", GLuint(numFragments));
 		pickVoxelTriangle->setUniform("numFaces", GLuint(faces.size()));
@@ -378,7 +353,7 @@ void RegularGrid::queryCluster(const std::vector<Model3D::VertexGPUData>& vertic
 	}
 
 	float* clusterData = ComputeShader::readData(clusterSSBO, float());
-	clusterIdx = std::vector<float>(clusterData, clusterData + vertices.size());
+	clusterIdx = std::vector<float>(clusterData, clusterData + faces.size());
 
 	for (int idx = 0; idx < clusterIdx.size(); ++idx)
 	{
