@@ -59,6 +59,21 @@ WingedTriangleMesh::WingedTriangleMesh(
 				maxProb = pair.second;
 			}
 	}
+
+	for (int idx = 0; idx < _triangle.size(); ++idx)
+	{
+		unsigned boundaries = 0;
+		for (int i = 0; i < 3; ++i)
+		{
+			std::unordered_set<unsigned> cluster;
+			for (auto& pair : _triangle[idx]->_connectionVertexWise[i])
+				cluster.insert(pair.first->_finalCluster);
+
+			boundaries += unsigned(cluster.size() > 1);
+		}
+
+		_triangle[idx]->_boundary = boundaries >= 2;
+	}
 }
 
 WingedTriangleMesh::~WingedTriangleMesh()
@@ -66,6 +81,66 @@ WingedTriangleMesh::~WingedTriangleMesh()
 	for (WingedTriangle* triangle : _triangle)
 		delete triangle;
 	_triangle.clear();
+}
+
+void WingedTriangleMesh::computeAlgebraicConvexity()
+{
+	for (int idx = 0; idx < _triangle.size(); ++idx)
+	{
+		WingedTriangle* triangle = _triangle[idx];
+		triangle->_test = triangle->_finalCluster;
+
+		if (!triangle->_boundary)
+			continue;
+
+		for (int i = 0; i < 3; ++i)
+		{
+			unsigned newCluster = triangle->_finalCluster;
+			auto neighbourIt = triangle->_connectionVertexWise[i].begin();
+			while (neighbourIt != triangle->_connectionVertexWise[i].end())
+			{
+				if (neighbourIt->first->_finalCluster != newCluster)
+				{
+					newCluster = neighbourIt->first->_finalCluster;
+					break;
+				}
+				++neighbourIt;
+			}
+
+			if (newCluster == triangle->_finalCluster)
+				continue;
+
+			float maxDot = FLT_MAX;
+			WingedTriangle* neighbourTriangle = nullptr;
+			vec3 b = triangle->_triangle.getPoint(i);
+			vec3 a = triangle->_triangle.getPoint((i - 1 + 3) % 3);
+			vec3 v1 = glm::normalize(b - a);
+
+			for (const auto& neighbourPair : triangle->_connectionVertexWise[i])
+			{
+				if (neighbourPair.first->_finalCluster == triangle->_finalCluster)
+				{
+					vec3 c = neighbourPair.first->_triangle.getPoint((neighbourPair.second + 1) % 3);
+					vec3 v2 = glm::normalize(c - a);
+					float angle = glm::dot(v1, v2);
+
+					if (angle < maxDot)
+					{
+						maxDot = angle;
+						neighbourTriangle = neighbourPair.first;
+					}
+				}
+			}
+
+			if (neighbourTriangle && maxDot < 0.0f)
+			{
+				//neighbourTriangle->_finalCluster = newCluster;
+				//neighbourTriangle->_boundary = false;
+				//neighbourTriangle->_test = true;
+				triangle->_test = triangle->_finalCluster + 1;
+			}
+		}
+	}
 }
 
 void WingedTriangleMesh::computeHardCluster(float smoothness)
@@ -116,9 +191,6 @@ void WingedTriangleMesh::computeHardCluster(float smoothness)
 			}
 		}
 
-		if (triangle->_finalCluster != minCluster)
-			std::cout << "Hola" << std::endl;
-
 		triangle->_finalCluster = minCluster;
 	}
 
@@ -154,7 +226,7 @@ void WingedTriangleMesh::computeSoftCluster(float threshold)
 			auto clusterIt = triangle->_cluster.find(cluster);
 			//if (clusterIt != triangle->_cluster.end())
 			//{
-			//	occupancy += clusterIt->second;
+			//	++occupancy;
 			//}
 
 			for (WingedTriangle* neighbour : triangle->_connectionVertex)
@@ -162,7 +234,7 @@ void WingedTriangleMesh::computeSoftCluster(float threshold)
 				clusterIt = neighbour->_cluster.find(cluster);
 				if (clusterIt != triangle->_cluster.end())
 				{
-					occupancy += clusterIt->second;
+					++occupancy;
 				}
 			}
 
@@ -190,7 +262,10 @@ void WingedTriangleMesh::getFaceCluster(unsigned numFaces, std::vector<float>& c
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < _triangle.size(); ++idx)
-		clusterIdx[_triangle[idx]->_face] = _triangle[idx]->_finalCluster;
+		//if (_triangle[idx]->_test)
+		//	clusterIdx[_triangle[idx]->_face] = 700;
+		//else
+			clusterIdx[_triangle[idx]->_face] = _triangle[idx]->_test;
 }
 
 // [Protected methods]
@@ -212,7 +287,10 @@ void WingedTriangleMesh::checkVertexConnectivity()
 							vertices->at(j).first->_triangle.getPoint(vertices->at(j).second)) < glm::epsilon<float>())
 						{
 							vertices->at(i).first->_connectionVertex.insert(vertices->at(j).first);
+							vertices->at(i).first->_connectionVertexWise[vertices->at(i).second][vertices->at(j).first] = vertices->at(j).second;
+
 							vertices->at(j).first->_connectionVertex.insert(vertices->at(i).first);
+							vertices->at(j).first->_connectionVertexWise[vertices->at(j).second][vertices->at(i).first] = vertices->at(i).second;
 						}
 					}
 				}

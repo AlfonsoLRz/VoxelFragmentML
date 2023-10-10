@@ -432,13 +432,16 @@ void Model3D::renderTriangles4Shadows(RenderingShader* shader, const RendEnum::R
 /// [Public methods]
 
 Model3D::ModelComponent::ModelComponent(Model3D* root) :
-	_root(root), _id(-1), _enabled(true), _material(nullptr), _topologyIndicesLength(RendEnum::numIBOTypes()), _vao(nullptr)
+	_root(root), _id(-1), _enabled(true), _material(nullptr), _topologyIndicesLength(RendEnum::numIBOTypes()), _vao(nullptr), _geometrySSBO(UINT_MAX), _topologySSBO(UINT_MAX)
 {
 }
 
 Model3D::ModelComponent::~ModelComponent()
 {
 	delete _vao;
+
+	if (_geometrySSBO != UINT_MAX) glDeleteBuffers(1, &_geometrySSBO);
+	if (_topologySSBO != UINT_MAX) glDeleteBuffers(1, &_topologySSBO);
 }
 
 void Model3D::ModelComponent::assignModelCompIDFaces()
@@ -588,6 +591,19 @@ bool Model3D::ModelComponent::subdivide(float maxArea, std::vector<unsigned>& ma
 	}
 
 	return applyChangesComp;
+}
+
+void Model3D::ModelComponent::updateSSBO()
+{
+	if (_geometrySSBO == UINT_MAX)
+		_geometrySSBO = ComputeShader::setReadBuffer(_geometry, GL_STATIC_DRAW);
+	else
+		ComputeShader::updateReadBuffer(_geometrySSBO, _geometry.data(), _geometry.size(), GL_STATIC_DRAW);
+
+	if (_topologySSBO == UINT_MAX)
+		_topologySSBO = ComputeShader::setReadBuffer(_topology, GL_STATIC_DRAW);
+	else
+		ComputeShader::updateReadBuffer(_topologySSBO, _topology.data(), _topology.size(), GL_STATIC_DRAW);
 }
 
 void Model3D::ModelComponent::setClusterIdx(const std::vector<float>& clusterIdx, bool createVBO)

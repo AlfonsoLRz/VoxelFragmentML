@@ -439,6 +439,8 @@ public:
 	// [GPU Data]
 	std::vector<VertexGPUData>	_geometry;									//!<
 	std::vector<FaceGPUData>	_topology;									//!<
+	GLuint						_geometrySSBO;								//!<
+	GLuint						_topologySSBO;
 				
 	// [GPU storage]
 	VAO*						_vao;										//!<
@@ -500,6 +502,11 @@ public:
 	*	@brief Subdivides the faces to fit the maximum wanted area.
 	*/
 	bool subdivide(float maxArea, std::vector<unsigned>& maskFaces);
+
+	/**
+	*	@brief Updates geometry and topology SSBOs.
+	*/
+	void updateSSBO();
 
 	// --------------- Setters -------------------
 

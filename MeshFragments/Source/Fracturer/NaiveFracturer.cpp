@@ -80,9 +80,8 @@ namespace fracturer {
         RegularGrid::CellGrid* gridData = grid.data();
 
         const GLuint seedSSBO = ComputeShader::setReadBuffer(seeds, GL_STATIC_DRAW);
-        const GLuint gridSSBO = ComputeShader::setReadBuffer(&gridData[0], numThreads, GL_DYNAMIC_DRAW);
 
-        shader->bindBuffers(std::vector<GLuint>{ seedSSBO, gridSSBO });
+        shader->bindBuffers(std::vector<GLuint>{ seedSSBO, grid.ssbo() });
         shader->use();
         shader->setUniform("gridDims", numDivs);
         shader->setUniform("numSeeds", GLuint(seeds.size()));
@@ -92,18 +91,17 @@ namespace fracturer {
 
         if (fractParameters->_removeIsolatedRegions)
         {
-            this->removeIsolatedRegionsGPU(gridSSBO, grid, seeds);
+            this->removeIsolatedRegionsGPU(grid.ssbo(), grid, seeds);
         }
         else
         {
-            RegularGrid::CellGrid* resultPointer = ComputeShader::readData(gridSSBO, RegularGrid::CellGrid());
+            RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());
             std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numThreads);
 
             grid.swap(resultBuffer);
         }
 
         glDeleteBuffers(1, &seedSSBO);
-        glDeleteBuffers(1, &gridSSBO);
     }
 
     void NaiveFracturer::removeIsolatedRegionsCPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds)

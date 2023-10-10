@@ -35,6 +35,8 @@
     <ClInclude Include="Libraries\imgui\imstb_truetype.h" />
     <ClInclude Include="Libraries\lodepng\lodepng.h" />
     <ClInclude Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.h" />
+    <ClInclude Include="Libraries\simplify\Simplify.h" />
+    <ClInclude Include="Source\DataStructures\FragmentGraph.h" />
     <ClInclude Include="Source\DataStructures\Octree.h" />
     <ClInclude Include="Source\DataStructures\RegularGrid.h" />
     <ClInclude Include="Source\DataStructures\WingedTriangleMesh.h" />
@@ -80,6 +82,7 @@
     <ClInclude Include="Source\Graphics\Core\ComputeShader.h" />
     <ClInclude Include="Source\Graphics\Core\DirectionalLight.h" />
     <ClInclude Include="Source\Graphics\Core\DrawAABB.h" />
+    <ClInclude Include="Source\Graphics\Core\DrawLines.h" />
     <ClInclude Include="Source\Graphics\Core\DrawPointCloud.h" />
     <ClInclude Include="Source\Graphics\Core\DrawRay3D.h" />
     <ClInclude Include="Source\Graphics\Core\FBO.h" />
@@ -214,6 +217,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Source\DataStructures\FragmentGraph.cpp" />
     <ClCompile Include="Source\DataStructures\Octree.cpp" />
     <ClCompile Include="Source\DataStructures\RegularGrid.cpp" />
     <ClCompile Include="Source\DataStructures\WingedTriangleMesh.cpp" />
@@ -250,6 +254,7 @@
     <ClCompile Include="Source\Graphics\Core\ComputeShader.cpp" />
     <ClCompile Include="Source\Graphics\Core\DirectionalLight.cpp" />
     <ClCompile Include="Source\Graphics\Core\DrawAABB.cpp" />
+    <ClCompile Include="Source\Graphics\Core\DrawLines.cpp" />
     <ClCompile Include="Source\Graphics\Core\DrawPointCloud.cpp" />
     <ClCompile Include="Source\Graphics\Core\DrawRay3D.cpp" />
     <ClCompile Include="Source\Graphics\Core\FBO.cpp" />
@@ -306,12 +311,16 @@
     <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\assignPointCluster-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\buildMarchingCubesFaces-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\computeMortonCodes-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\countVoxelTriangle-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\detectBoundaries-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\marchingCubes-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\selectVoxelTriangle-comp.glsl" />
@@ -497,7 +506,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer;Libraries/simplify</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>
@@ -521,7 +530,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer;Libraries/simplify</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>

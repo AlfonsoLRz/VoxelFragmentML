@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CADScene.h"
 
+#include "DataStructures/FragmentGraph.h"
 #include "DataStructures/WingedTriangleMesh.h"
 #include "Geometry/3D/Triangle3D.h"
 #include "Graphics/Application/TextureList.h"
@@ -69,7 +70,7 @@ void CADScene::loadModel(const std::string& path)
 	}
 
 	{
-		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), false, true, false);
+		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), true, true, true);
 		_mesh->load();
 		_mesh->getModelComponent(0)->_enabled = true;
 		_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
@@ -90,6 +91,7 @@ void CADScene::loadModel(const std::string& path)
 
 		this->rebuildGrid();
 		this->fractureModel();
+		this->prepareScene();
 	}
 
 	this->loadDefaultCamera(_cameraManager->getActiveCamera());
@@ -103,14 +105,14 @@ void CADScene::rebuildGrid()
 	delete _meshGrid;
 
 	_meshGrid = new RegularGrid(_sceneGroup[0]->getAABB(), _fractParameters._gridSubdivisions);
-	float maxArea = _meshGrid->fill(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, _fractParameters._fillShape, 10000, _sceneGPUData[0]);
+	float maxArea = _meshGrid->fill(_mesh->getModelComponent(0), _fractParameters._fillShape, 10000, _sceneGPUData[0]);
 
 	//_meshGrid->queryCluster(_mesh->getModelComponent(0)->_geometry, _mesh->getModelComponent(0)->_topology, clusterIdx, 1);
 	std::fill(clusterIdx.begin(), clusterIdx.end(), 0);
 	_meshGrid->getAABBs(aabbs);
 
-	//_aabbRenderer->load(aabbs);
-	//_aabbRenderer->homogenize();
+	_aabbRenderer->load(aabbs);
+	_aabbRenderer->homogenize();
 	_mesh->getModelComponent(0)->setClusterIdx(clusterIdx);
 }
 
@@ -185,6 +187,7 @@ std::string CADScene::fractureModel()
 
 		Voronoi voronoi(seeds3);
 		_meshGrid->fill(voronoi);
+		_meshGrid->updateSSBO();
 	}
 
 	_meshGrid->detectBoundaries(_fractParameters._boundarySize);
@@ -193,38 +196,6 @@ std::string CADScene::fractureModel()
 		_meshGrid->erode(static_cast<FractureParameters::ErosionType>(
 			_fractParameters._erosionConvolution), _fractParameters._erosionSize, _fractParameters._erosionIterations,
 			_fractParameters._erosionProbability, _fractParameters._erosionThreshold);
-
-	//{
-	//	std::vector<AABB> aabbs;
-	//	_meshGrid->getAABBs(aabbs);
-	//	_aabbRenderer->load(aabbs);
-	//}
-
-	if (_fractParameters._computeMCFragments) _fractureMeshes = _meshGrid->toTriangleMesh();
-
-	//_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
-
-	for (Model3D::ModelComponent* modelComponent : _mesh->getModelComponents())
-	{
-		_meshGrid->queryCluster(modelComponent->_geometry, modelComponent->_topology, faceClusterIdx, boundaryFaces, faceClusterOccupancy);
-		//_mesh->getModelComponent(0)->subdivide(0.001f, boundaryFaces);
-
-		WingedTriangleMesh wingedTM (modelComponent->_geometry, modelComponent->_topology, faceClusterOccupancy);
-		for (int i = 0; i < 3; ++i)
-			wingedTM.computeSoftCluster(1.0f);
-		wingedTM.getFaceCluster(modelComponent->_topology.size(), faceClusterIdx);
-
-		vertexClusterIdx.resize(modelComponent->_geometry.size());
-		for (size_t faceIdx = 0; faceIdx < modelComponent->_topology.size(); ++faceIdx)
-			for (int i = 0; i < 3; ++i)
-				vertexClusterIdx[modelComponent->_topology[faceIdx]._vertices[i]] = faceClusterIdx[faceIdx];
-
-		modelComponent->setClusterIdx(vertexClusterIdx, false);
-	}
-
-	//vertexClusterIdx.clear();
-	//_meshGrid->queryCluster(_pointCloud->getPoints(), vertexClusterIdx);
-	//_pointCloudRenderer->getModelComponent(0)->setClusterIdx(vertexClusterIdx);
 
 	return "";
 }
@@ -304,6 +275,57 @@ void CADScene::loadLights()
 void CADScene::loadModels()
 {
 	this->loadModel(MESH_1_PATH);
+}
+
+void CADScene::prepareScene()
+{
+	{
+		std::vector<AABB> aabbs;
+		_meshGrid->getAABBs(aabbs);
+		_aabbRenderer->load(aabbs);
+	}
+
+	_fractureMeshes = _meshGrid->toTriangleMesh();
+	_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
+
+	for (Model3D::ModelComponent* modelComponent : _mesh->getModelComponents())
+	{
+		//_meshGrid->queryCluster(modelComponent->_geometry, modelComponent->_topology, faceClusterIdx, boundaryFaces, faceClusterOccupancy);
+		//FragmentGraph graph(&modelComponent->_geometry, &modelComponent->_topology, faceClusterIdx);
+		//_fragmentBoundaries = new DrawLines(graph.getClusterBoundaries()[0]);	
+
+		//_mesh->getModelComponent(0)->subdivide(0.001f, boundaryFaces);
+
+		//WingedTriangleMesh wingedTM (modelComponent->_geometry, modelComponent->_topology, faceClusterOccupancy);
+		//wingedTM.computeAlgebraicConvexity();
+		//wingedTM.getFaceCluster(modelComponent->_topology.size(), faceClusterIdx);
+
+		//std::vector<Triangle3D> fragmentTriangles;
+
+		//vertexClusterIdx.resize(modelComponent->_geometry.size());
+		//for (size_t faceIdx = 0; faceIdx < modelComponent->_topology.size(); ++faceIdx)
+		//{
+		//	for (int i = 0; i < 3; ++i)
+		//		vertexClusterIdx[modelComponent->_topology[faceIdx]._vertices[i]] = faceClusterIdx[faceIdx] + VOXEL_FREE + 1;
+		//	
+		//	if (faceClusterIdx[faceIdx] > 2.5f && faceClusterIdx[faceIdx] < 3.5f)
+		//	{
+		//		fragmentTriangles.push_back(Triangle3D(
+		//			modelComponent->_geometry[modelComponent->_topology[faceIdx]._vertices.x]._position,
+		//			modelComponent->_geometry[modelComponent->_topology[faceIdx]._vertices.y]._position,
+		//			modelComponent->_geometry[modelComponent->_topology[faceIdx]._vertices.z]._position
+		//		));
+		//	}
+		//}
+
+		//_fractureMeshes.push_back(new CADModel(fragmentTriangles));
+
+		//modelComponent->setClusterIdx(vertexClusterIdx, false);
+	}
+
+	//vertexClusterIdx.clear();
+	//_meshGrid->queryCluster(_pointCloud->getPoints(), vertexClusterIdx);
+	//_pointCloudRenderer->getModelComponent(0)->setClusterIdx(vertexClusterIdx);
 }
 
 bool CADScene::readCameraFromSettings(Camera* camera)
@@ -590,8 +612,13 @@ void CADScene::drawSceneAsPoints(RenderingShader* shader, RendEnum::RendShaderTy
 
 void CADScene::drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
-	for (Group3D* group : _sceneGroup)
-		group->drawAsLines(shader, shaderType, *matrix);
+	//for (Group3D* group : _sceneGroup)
+	//	group->drawAsLines(shader, shaderType, *matrix);
+
+	vec3 previousColor = rendParams->_wireframeColor;
+	rendParams->_wireframeColor = vec3(1.0f, .0f, .0f);
+	_fragmentBoundaries->drawAsLines(shader, shaderType, *matrix);
+	rendParams->_wireframeColor = previousColor;
 }
 
 void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
@@ -608,7 +635,9 @@ void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShade
 		else if (rendParams->_showFragmentsMarchingCubes)
 		{
 			for (Model3D* fractureMesh : _fractureMeshes)
+			{
 				fractureMesh->drawAsTriangles(shader, shaderType, *matrix);
+			}
 		}
 	}
 	else if (shaderType == RendEnum::CLUSTER_SHADER)
@@ -642,7 +671,9 @@ void CADScene::drawSceneAsTriangles4Normal(RenderingShader* shader, RendEnum::Re
 			else if (rendParams->_showFragmentsMarchingCubes)
 			{
 				for (Model3D* fractureMesh : _fractureMeshes)
+				{
 					fractureMesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+				}
 			}
 		}
 	}
@@ -674,7 +705,9 @@ void CADScene::drawSceneAsTriangles4Position(RenderingShader* shader, RendEnum::
 			else if (rendParams->_showFragmentsMarchingCubes)
 			{
 				for (Model3D* fractureMesh : _fractureMeshes)
+				{
 					fractureMesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+				}
 			}
 		}
 	}

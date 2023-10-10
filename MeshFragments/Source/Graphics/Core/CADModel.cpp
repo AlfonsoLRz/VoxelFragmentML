@@ -8,6 +8,7 @@
 #include "Graphics/Application/MaterialList.h"
 #include "Graphics/Core/ShaderList.h"
 #include "Graphics/Core/VAO.h"
+#include "Simplify.h"
 #include "Utilities/FileManagement.h"
 #include "Utilities/ChronoUtilities.h"
 
@@ -39,8 +40,23 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, const mat4& modelMa
 		for (int i = 0; i < 3; ++i)
 		{
 			_modelComp[0]->_geometry.push_back(Model3D::VertexGPUData{ triangle.getPoint(i), .0f, normal });
-			_modelComp[0]->_triangleMesh.push_back(_modelComp[0]->_geometry.size() - 1);
+			//_modelComp[0]->_triangleMesh.push_back(_modelComp[0]->_geometry.size() - 1);
 		}
+		_modelComp[0]->_topology.push_back(Model3D::FaceGPUData{ uvec3(_modelComp[0]->_geometry.size() - 3, _modelComp[0]->_geometry.size() - 2, _modelComp[0]->_geometry.size() - 1) });
+	}
+
+	std::vector<int> mapping (_modelComp[0]->_geometry.size());
+	std::iota(mapping.begin(), mapping.end(), 0);
+
+	//this->fuseVertices(mapping);
+	//this->remapVertices(_modelComp[0], mapping);
+	//this->simplify(1000);
+
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		modelComponent->buildTriangleMeshTopology();
+		modelComponent->buildPointCloudTopology();
+		modelComponent->buildWireframeTopology();
 	}
 
 	Model3D::setVAOData();
@@ -67,21 +83,20 @@ bool CADModel::load(const mat4& modelMatrix)
 			if (success and _fuseComponents and _modelComp.size() > 1)
 				this->fuseComponents();
 
+			this->subdivide(0.0001f);
+
 			if (_fuseVertices)
 			{
 				for (Model3D::ModelComponent* modelComp : _modelComp)
 				{
-					std::unordered_map<unsigned, unsigned> mapping;
+					std::vector<int> mapping (_modelComp[0]->_geometry.size());
+					std::iota(mapping.begin(), mapping.end(), 0);
 
 					this->fuseVertices(mapping);
 					this->remapVertices(_modelComp[0], mapping);
 				}
 			}
-
-			//this->simplify(1000);
 		}
-
-		this->subdivide(0.0001f);
 
 		if (!binaryExists && success)
 		{
@@ -97,7 +112,10 @@ bool CADModel::load(const mat4& modelMatrix)
 		this->setVAOData();
 		
 		for (ModelComponent* modelComponent : _modelComp)
+		{
 			modelComponent->releaseMemory(false, false);
+			modelComponent->updateSSBO();
+		}
 
 		return _loaded = true;
 	}
@@ -184,6 +202,7 @@ void CADModel::simplify(unsigned numFaces)
 	{
 		if (modelComponent->_topology.size() > numFaces)
 		{
+#if CGAL_SIMPLIFICATION
 			Mesh* mesh = CGALInterface::translateMesh(modelComponent);
 
 			CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
@@ -192,6 +211,31 @@ void CADModel::simplify(unsigned numFaces)
 			CGALInterface::translateMesh(mesh, modelComponent);
 
 			delete mesh;
+#else
+			Simplify::vertices.clear();
+			Simplify::triangles.clear();
+
+			for (const Model3D::VertexGPUData& vertex : modelComponent->_geometry)
+				Simplify::vertices.push_back(Simplify::Vertex{ vec3f(vertex._position.x, vertex._position.y, vertex._position.z) });
+
+			for (const Model3D::FaceGPUData& face : modelComponent->_topology)
+			{
+				Simplify::triangles.push_back(Simplify::Triangle());
+				for (int i = 0; i < 3; ++i)
+					Simplify::triangles[Simplify::triangles.size() - 1].v[i] = face._vertices[i];
+			}
+
+			Simplify::simplify_mesh(numFaces);
+
+			modelComponent->_geometry.clear();
+			modelComponent->_topology.clear();
+
+			for (const Simplify::Vertex& vertex : Simplify::vertices)
+				modelComponent->_geometry.push_back(Model3D::VertexGPUData{vec3(vertex.p.x, vertex.p.y, vertex.p.z)});
+
+			for (const Simplify::Triangle& triangle : Simplify::triangles)
+				modelComponent->_topology.push_back(Model3D::FaceGPUData{uvec3(triangle.v[0], triangle.v[1], triangle.v[2])});
+#endif
 
 			this->computeMeshData(modelComponent, true);
 		}
@@ -402,18 +446,19 @@ void CADModel::fuseComponents()
 	_modelComp.push_back(newModelComponent);
 }
 
-void CADModel::fuseVertices(std::unordered_map<unsigned, unsigned>& mapping)
+void CADModel::fuseVertices(std::vector<int>& mapping)
 {
 	Model3D::ModelComponent* modelComp = _modelComp[0];
 	
 	for (unsigned vertexIdx = 0; vertexIdx < modelComp->_geometry.size(); ++vertexIdx)
 	{
-		if (mapping.find(vertexIdx) != mapping.end())
+		if (mapping[vertexIdx] != vertexIdx)
 			continue;
 
-		for (unsigned j = vertexIdx + 1; j < modelComp->_geometry.size(); ++j)
+#pragma omp parallel for
+		for (int j = vertexIdx + 1; j < modelComp->_geometry.size(); ++j)
 		{
-			if (mapping.find(j) == mapping.end() && glm::distance(modelComp->_geometry[vertexIdx]._position, modelComp->_geometry[j]._position) < glm::epsilon<float>())
+			if (mapping[vertexIdx] == vertexIdx && glm::distance(modelComp->_geometry[vertexIdx]._position, modelComp->_geometry[j]._position) < glm::epsilon<float>())
 			{
 				// Remap
 				mapping[j] = vertexIdx;
@@ -520,7 +565,7 @@ bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D
 	return true;
 }
 
-void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::unordered_map<unsigned, unsigned>& mapping)
+void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vector<int>& mapping)
 {
 	unsigned erasedVertices = 0, startingSize = modelComponent->_geometry.size();
 	std::vector<unsigned> newMapping (startingSize);
@@ -529,8 +574,7 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::unord
 	{
 		newMapping[vertexIdx] = vertexIdx - erasedVertices;
 
-		auto mappingIt = mapping.find(vertexIdx);
-		if (mappingIt != mapping.end())
+		if (mapping[vertexIdx] != vertexIdx)
 		{
 			modelComponent->_geometry.erase(modelComponent->_geometry.begin() + vertexIdx - erasedVertices);
 			++erasedVertices;
@@ -541,10 +585,7 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::unord
 	{
 		for (int i = 0; i < 3; ++i)
 		{
-			if (mapping.find(face._vertices[i]) != mapping.end())
-				face._vertices[i] = newMapping[mapping.find(face._vertices[i])->second];
-			else
-				face._vertices[i] = newMapping[face._vertices[i]];
+			face._vertices[i] = newMapping[mapping[face._vertices[i]]];
 		}
 	}
 }

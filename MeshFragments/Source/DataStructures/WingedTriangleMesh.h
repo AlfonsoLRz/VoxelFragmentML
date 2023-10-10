@@ -12,7 +12,10 @@ protected:
 		Triangle3D							_triangle;
 		std::unordered_map<unsigned, float>	_cluster;
 		unsigned							_face, _finalCluster;
+		bool								_boundary;
+		unsigned							_test;
 		std::unordered_set<WingedTriangle*>	_connectionVertex;
+		std::unordered_map<WingedTriangle*, unsigned>	_connectionVertexWise[3];
 	};
 
 protected:
@@ -64,6 +67,11 @@ public:
 	*	@brief Destructor.
 	*/
 	virtual ~WingedTriangleMesh();
+
+	/**
+	*	@brief 
+	*/
+	void computeAlgebraicConvexity();
 
 	/**
 	*	@brief 

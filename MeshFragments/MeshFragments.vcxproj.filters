@@ -256,6 +256,9 @@
     <Filter Include="Archivos de origen\ImportedLibraries\vox">
       <UniqueIdentifier>{f3fd6e32-b7d7-4d25-a5b7-f6c4c4c2d7ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Archivos de encabezado\ImportedLibraries\simplify">
+      <UniqueIdentifier>{23952825-26c7-4b35-8c15-ede0f344def9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Geometry\2D\Vector2.h">
@@ -588,6 +591,15 @@
     <ClInclude Include="Source\Graphics\Core\CGALInterface.h">
       <Filter>Archivos de encabezado\Graphics\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\simplify\Simplify.h">
+      <Filter>Archivos de encabezado\ImportedLibraries\simplify</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DataStructures\FragmentGraph.h">
+      <Filter>Archivos de encabezado\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\DrawLines.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -857,6 +869,12 @@
     <ClCompile Include="Source\DataStructures\WingedTriangleMesh.cpp">
       <Filter>Archivos de origen\DataStructures</Filter>
     </ClCompile>
+    <ClCompile Include="Source\DataStructures\FragmentGraph.cpp">
+      <Filter>Archivos de origen\DataStructures</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Core\DrawLines.cpp">
+      <Filter>Archivos de origen\Graphics\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shaders\Lines\wireframe-frag.glsl">
@@ -1118,6 +1136,18 @@
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
     <None Include="Assets\Shaders\Compute\Fracturer\detectBoundaries-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\marchingCubes-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\computeMortonCodes-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\buildMarchingCubesFaces-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>

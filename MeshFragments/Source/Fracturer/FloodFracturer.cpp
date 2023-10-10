@@ -46,6 +46,8 @@ namespace fracturer {
         // Set seeds
         for (auto& seed : seeds)
             grid.set(seed.x, seed.y, seed.z, seed.w);
+
+        grid.updateSSBO();
     	
         ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::FLOOD_FRACTURER);
 
@@ -59,7 +61,6 @@ namespace fracturer {
 
         GLuint stack1SSBO           = ComputeShader::setWriteBuffer(GLuint(), numCells, GL_DYNAMIC_DRAW);
         GLuint stack2SSBO           = ComputeShader::setWriteBuffer(GLuint(), numCells, GL_DYNAMIC_DRAW);
-        const GLuint gridSSBO       = ComputeShader::setReadBuffer(&gridData[0], numCells, GL_DYNAMIC_DRAW);
         const GLuint neighborSSBO   = ComputeShader::setReadBuffer(_dfunc == 1 ? VON_NEUMANN : MOORE, GL_STATIC_DRAW);
         const GLuint stackSizeSSBO  = ComputeShader::setWriteBuffer(GLuint(), 1, GL_DYNAMIC_DRAW);
 
@@ -78,7 +79,7 @@ namespace fracturer {
             unsigned numGroups = ComputeShader::getNumGroups(stackSize * numNeigh);
             ComputeShader::updateReadBuffer(stackSizeSSBO, &nullCount, 1, GL_DYNAMIC_DRAW);
 
-            shader->bindBuffers(std::vector<GLuint>{ gridSSBO, stack1SSBO, stack2SSBO, stackSizeSSBO, neighborSSBO });
+            shader->bindBuffers(std::vector<GLuint>{ grid.ssbo(), stack1SSBO, stack2SSBO, stackSizeSSBO, neighborSSBO });
             shader->setUniform("stackSize", stackSize);
             shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
@@ -88,11 +89,11 @@ namespace fracturer {
 		    std::swap(stack1SSBO, stack2SSBO);
         }
 
-        RegularGrid::CellGrid* resultPointer = ComputeShader::readData(gridSSBO, RegularGrid::CellGrid());
+        RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());
         std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numCells);
         grid.swap(resultBuffer);
 
-        GLuint deleteBuffers[] = { stack1SSBO, stack2SSBO, gridSSBO, neighborSSBO, stackSize };
+        GLuint deleteBuffers[] = { stack1SSBO, stack2SSBO, neighborSSBO, stackSize };
         glDeleteBuffers(sizeof(deleteBuffers) / sizeof(GLuint), deleteBuffers);
     }
 

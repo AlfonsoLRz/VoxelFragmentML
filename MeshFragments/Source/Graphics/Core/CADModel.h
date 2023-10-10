@@ -13,6 +13,7 @@
 */
 
 #define COMMENT_CHAR "#"
+#define CGAL_SIMPLIFICATION false
 
 /**
 *	@brief Model loaded from an OBJ file.
@@ -58,7 +59,7 @@ protected:
 	/**
 	*	@brief Combines similar vertices.
 	*/
-	void fuseVertices(std::unordered_map<unsigned, unsigned>& mapping);
+	void fuseVertices(std::vector<int>& mapping);
 
 	/**
 	*	@brief Fills the content of model component with binary file data.
@@ -78,7 +79,7 @@ protected:
 	/**
 	*	@brief Remaps vertices to merge them.
 	*/
-	void remapVertices(Model3D::ModelComponent* modelComponent, std::unordered_map<unsigned, unsigned>& mapping);
+	void remapVertices(Model3D::ModelComponent* modelComponent, std::vector<int>& mapping);
 
 	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.

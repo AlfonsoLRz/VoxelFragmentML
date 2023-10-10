@@ -8,6 +8,7 @@
 #include "Geometry/3D/PointCloud3D.h"
 #include "Graphics/Application/SSAOScene.h"
 #include "Graphics/Core/AABBSet.h"
+#include "Graphics/Core/DrawLines.h"
 #include "Graphics/Core/DrawPointCloud.h"
 #include "Graphics/Core/FractureParameters.h"
 
@@ -56,6 +57,7 @@ protected:
 
 protected:
 	AABBSet*				_aabbRenderer;					//!< Buffer of voxels
+	DrawLines*				_fragmentBoundaries;			//!<
 	FractureParameters		_fractParameters;				//!< 
 	std::vector<Model3D*>	_fractureMeshes;				//!<
 	CADModel*				_mesh;							//!< Jar mesh
@@ -93,6 +95,11 @@ protected:
 	*	@brief Loads the models which are necessary to render the scene.
 	*/
 	virtual void loadModels();
+
+	/**
+	*	@brief Updates the scene content.
+	*/
+	void prepareScene();
 
 	/**
 	*	@brief Loads camera values from a file, if possible.

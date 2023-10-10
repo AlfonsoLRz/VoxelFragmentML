@@ -39,6 +39,7 @@ protected:
 	AABB					_aabb;									//!< Bounding box of the scene
 	vec3					_cellSize;								//!< Size of each grid cell
 	uvec3					_numDivs;								//!< Number of subdivisions of space between mininum and maximum point
+	GLuint					_ssbo;									//!< GPU buffer to save the grid
 
 protected:
 	/**
@@ -106,7 +107,7 @@ public:
 	/**
 	*	@brief  
 	*/
-	float fill(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, bool fill, int numSamples, Group3D::StaticGPUData* sceneData);
+	float fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples, Group3D::StaticGPUData* sceneData);
 
 	/**
 	*	@brief
@@ -149,9 +150,19 @@ public:
 	void swap(const std::vector<CellGrid>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }
 
 	/**
+	*	@return Compute shader's buffer.
+	*/
+	GLuint ssbo() { return _ssbo; }
+
+	/**
 	*	@brief Transforms the regular grid into a triangle mesh per value.
 	*/
 	std::vector<Model3D*> toTriangleMesh();
+
+	/**
+	*	@brief Updates SSBO content with the CPU's one.
+	*/
+	void updateSSBO();
 
 	// ----------- External functions ----------
 
