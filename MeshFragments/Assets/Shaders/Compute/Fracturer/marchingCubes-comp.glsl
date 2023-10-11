@@ -72,6 +72,14 @@ vec3 findVertex(in ivec3 cellIndices, in float isolevel, in ivec2 edge, float va
 	return p;
 }
 
+bool ccw(uint offset)
+{
+	vec3 v1 = vertexData[offset + 1].xyz - vertexData[offset + 0].xyz;
+	vec3 v2 = vertexData[offset + 2].xyz - vertexData[offset + 1].xyz;
+
+	return dot(cross(v1, v2), vec3(.0f, 1.0f, .0f)) > -EPSILON;
+}
+
 void march(in uint index, in ivec3 cellIndices)
 {
 	uvec3 volumeSize = gridDims;
@@ -119,8 +127,12 @@ void march(in uint index, in ivec3 cellIndices)
 			vertexData[offset + 0].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 0)]].xyz;
 			vertexData[offset + 1].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
 			vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 2)]].xyz;
-			//testBuffer[getPositionIndex(cellIndices)].x = int(grid[getPositionIndex(cellIndices + neighbors[0])].value);
-			//testBuffer[getPositionIndex(cellIndices)].yzw = vertexData[offset + 2].position;
+
+			if (!ccw(offset))
+			{
+				vertexData[offset + 1].xyz = vertexData[offset + 2].xyz;
+				vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
+			}
 		}
 	}
 }

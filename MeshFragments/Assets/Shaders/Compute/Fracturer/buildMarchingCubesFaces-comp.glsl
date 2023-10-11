@@ -21,5 +21,5 @@ void main()
 	
 	uint faceIndex = indices[index] / 3;
 	uint vertexIndex = indices[index] % 3;
-	faceData[faceIndex].vertices[vertexIndex] = indices2[index] ^ (1 << 31);
+	faceData[faceIndex].vertices[vertexIndex] = indices2[index];
 }

@@ -325,7 +325,7 @@ protected:
     GLuint          _edgeTableSSBO;
     GLuint          _gridSSBO;
     GLuint          _mortonCodeSSBO;
-    GLuint          _nonUpdatedVertices;
+    GLuint          _nonUpdatedVerticesSSBO;
     GLuint          _numVerticesSSBO;
     GLuint          _supportVerticesSSBO;
     GLuint          _triangleTableSSBO;
@@ -333,6 +333,7 @@ protected:
 
     GLuint          _indicesBufferID_1;
     GLuint          _indicesBufferID_2;
+    GLuint          _indices4ID;
     GLuint          _pBitsBufferID;
     GLuint          _nBitsBufferID;
     GLuint          _positionBufferID;

@@ -637,6 +637,7 @@ void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShade
 			for (Model3D* fractureMesh : _fractureMeshes)
 			{
 				fractureMesh->drawAsTriangles(shader, shaderType, *matrix);
+				break;
 			}
 		}
 	}

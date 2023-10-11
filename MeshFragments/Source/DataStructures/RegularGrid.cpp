@@ -284,6 +284,15 @@ void RegularGrid::insertPoint(const vec3& position, unsigned index)
 	_grid[this->getPositionIndex(gridIndex.x, gridIndex.y, gridIndex.z)]._value = index;
 }
 
+unsigned RegularGrid::numOccupiedVoxels()
+{
+	unsigned count = 0;
+	for (const CellGrid& grid : _grid)
+		count += grid._value > VOXEL_FREE;
+
+	return count;
+}
+
 void RegularGrid::queryCluster(
 	const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, 
 	std::vector<unsigned>& boundaryFaces, std::vector<std::unordered_map<unsigned, float>>& faceClusterOccupancy)
@@ -471,35 +480,14 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh()
 		values.push_back(std::move(valuesSet.extract(it++).value()));
 	}
 
-	MarchingCubes mCubes(*this, _numDivs);
+	MarchingCubes mCubes(*this, _numDivs, 5);
 	vec3 scale = (_aabb.size()) / vec3(_numDivs + uvec3(2));
 	vec3 minPoint = _aabb.min();
+	mat4 transformationMatrix = glm::translate(glm::mat4(1.0f), -vec3(1.0f) * scale) * glm::translate(glm::mat4(1.0f), minPoint) * glm::scale(glm::mat4(1.0f), scale);
 
-//#pragma omp parallel for
 	for (int idx = 0; idx < values.size(); ++idx)
 	{
-		unsigned index;
-		//std::vector<std::vector<std::vector<float>>> grid = std::vector<std::vector<std::vector<float>>>(_numDivs.x + 2, std::vector<std::vector<float>>(_numDivs.y + 2, std::vector<float>(_numDivs.z + 2, VOXEL_EMPTY)));
-
-		//for (unsigned int x = 0; x < _numDivs.x + 2; ++x)
-		//	for (unsigned int y = 0; y < _numDivs.y + 2; ++y)
-		//		for (unsigned int z = 0; z < _numDivs.z + 2; ++z)
-		//			grid[x][y][z] = VOXEL_EMPTY;
-
-		//for (unsigned int x = 1; x < _numDivs.x + 1; ++x)
-		//	for (unsigned int y = 1; y < _numDivs.y + 1; ++y)
-		//		for (unsigned int z = 1; z < _numDivs.z + 1; ++z)
-		//		{
-		//			index = this->getPositionIndex(x - 1, y - 1, z - 1);
-		//			if (_grid[index]._value == values[idx])
-		//			{
-		//				grid[x][y][z] = 1.0f;
-		//			}
-		//		}
-		//mCubes.triangulateField(grid, _numDivs, 0.5f, triangles);
-		meshes[idx] = mCubes.triangulateFieldGPU(
-			_ssbo, _numDivs, values[idx], 
-			glm::translate(glm::mat4(1.0f), -vec3(1.0f) * scale) * glm::translate(glm::mat4(1.0f), minPoint) * glm::scale(glm::mat4(1.0f), scale));
+		meshes[idx] = mCubes.triangulateFieldGPU(_ssbo, _numDivs, values[idx], transformationMatrix);
 	}
 
 	return meshes;

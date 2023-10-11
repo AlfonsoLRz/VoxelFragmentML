@@ -96,6 +96,14 @@ public:
 	static T* readData(GLuint bufferID, const T& dataType);
 
 	/**
+	*	@brief Retrieves data from GPU.
+	*	@param bufferID Identifier of buffer in GPU.
+	*	@param Type of data to be retrieved. Any value can be used here.
+	*/
+	template<typename T>
+	static T* readData(GLuint bufferID, const T& dataType, size_t offset, size_t length);
+
+	/**
 	*	@brief Sets a new uniform which correspondons to an input image.
 	*/
 	void setImageUniform(const GLint id, const std::string& shaderVariable);
@@ -146,6 +154,16 @@ inline T* ComputeShader::readData(GLuint bufferID, const T& dataType)
 {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferID);																	
 	T* data = (T*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+	return data;
+}
+
+template<typename T>
+inline T* ComputeShader::readData(GLuint bufferID, const T& dataType, size_t offset, size_t length)
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferID);
+	T* data = (T*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, offset, length, GL_MAP_READ_BIT);
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
 	return data;

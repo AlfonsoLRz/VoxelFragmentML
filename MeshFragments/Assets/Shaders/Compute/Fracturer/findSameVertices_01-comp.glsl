@@ -13,6 +13,7 @@ layout (std430, binding = 2) buffer PointBuffer		{ vec4			points[]; };
 layout (std430, binding = 3) buffer VertexBuffer	{ VertexGPUData	vertexData[]; };
 layout (std430, binding = 4) buffer VertexCount		{ uint			vertexCount; };
 
+uniform uint defaultValue;
 uniform mat4 modelMatrix;
 uniform uint numPoints;
 
@@ -20,6 +21,8 @@ void main()
 {
 	const int index = int(gl_GlobalInvocationID.x);
 	if (index >= numPoints) return;
+
+	indices2[index] = defaultValue;
 
 	int previousIndex = clamp(index - 1, 0, int(numPoints) - 1);
 	if (index == 0 || distance(points[indices[index]].xyz, points[indices[previousIndex]].xyz) > EPSILON)

@@ -135,6 +135,11 @@ public:
 	void insertPoint(const vec3& position, unsigned index);
 
 	/**
+	*	@return Number of occupied voxels.
+	*/
+	unsigned numOccupiedVoxels();
+
+	/**
 	*	@brief Queries cluster for each triangle of the given mesh.
 	*/
 	void queryCluster(const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, std::vector<unsigned>& boundaryFaces, std::vector<std::unordered_map<unsigned, float>>& faceClusterOccupancy);

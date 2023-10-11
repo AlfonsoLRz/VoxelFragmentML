@@ -55,10 +55,14 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory,
 	for (ModelComponent* modelComponent : _modelComp)
 	{
 		modelComponent->buildTriangleMeshTopology();
-		modelComponent->releaseMemory(releaseMemory, releaseMemory);
 	}
 
 	Model3D::setVAOData();
+
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		modelComponent->releaseMemory(releaseMemory, releaseMemory);
+	}
 }
 
 CADModel::CADModel(Model3D::VertexGPUData* vertices, unsigned numVertices, Model3D::FaceGPUData* faces, unsigned numFaces, bool releaseMemory, const mat4& modelMatrix): 
@@ -69,15 +73,17 @@ CADModel::CADModel(Model3D::VertexGPUData* vertices, unsigned numVertices, Model
 	modelComponent->_geometry.insert(modelComponent->_geometry.end(), vertices, vertices + numVertices);
 	modelComponent->_topology.insert(modelComponent->_topology.end(), faces, faces + numFaces);
 
-	//this->simplify(1000);
+	this->simplify(10000);
 
 	for (ModelComponent* modelComponent : _modelComp)
 	{
 		modelComponent->buildTriangleMeshTopology();
-		modelComponent->releaseMemory(releaseMemory, releaseMemory);
 	}
 
 	Model3D::setVAOData();
+
+	for (ModelComponent* modelComponent : _modelComp)
+		modelComponent->releaseMemory(releaseMemory, releaseMemory);
 }
 
 CADModel::~CADModel()
@@ -243,7 +249,7 @@ void CADModel::simplify(unsigned numFaces)
 					Simplify::triangles[Simplify::triangles.size() - 1].v[i] = face._vertices[i];
 			}
 
-			Simplify::simplify_mesh(numFaces);
+			Simplify::simplify_mesh(numFaces, 3.0);
 
 			modelComponent->_geometry.clear();
 			modelComponent->_topology.clear();
