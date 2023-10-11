@@ -18,6 +18,7 @@ layout (std430, binding = 5) buffer SupportBuffer	{ vec4		vertexList[]; };
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
 uniform float isolevel;
+uniform mat4 modelMatrix;
 uniform int targetValue;
 
 // The indices of the 8 neighbors that form the boundary of this cell
@@ -126,9 +127,9 @@ void march(in uint index, in ivec3 cellIndices)
 		{
 			uint offset = atomicAdd(numVertices, 3);
 
-			vertexData[offset + 0].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 0)]].xyz;
-			vertexData[offset + 1].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
-			vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 2)]].xyz;
+			vertexData[offset + 0] = modelMatrix * vec4(vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 0)]].xyz, 1.0f);
+			vertexData[offset + 1] = modelMatrix * vec4(vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz, 1.0f);
+			vertexData[offset + 2] = modelMatrix * vec4(vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 2)]].xyz, 1.0f);
 			//testBuffer[getPositionIndex(cellIndices)].x = int(grid[getPositionIndex(cellIndices + neighbors[0])].value);
 			//testBuffer[getPositionIndex(cellIndices)].yzw = vertexData[offset + 2].position;
 		}

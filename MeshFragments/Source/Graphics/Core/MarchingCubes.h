@@ -2,6 +2,7 @@
 
 #include "DataStructures/RegularGrid.h"
 #include "Geometry/3D/Triangle3D.h"
+#include "Graphics/Core/CADModel.h"
 
 class MarchingCubes
 {
@@ -351,7 +352,7 @@ protected:
     /**
     *   @brief Fuses similar vertices.
     */
-    void fuseSimilarVertices(unsigned numVertices);
+    unsigned fuseSimilarVertices(unsigned numVertices);
 
     /**
     *   @brief Resets counter for number of vertices in the GPU.
@@ -377,6 +378,6 @@ public:
     /**
     *   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
     */
-    void triangulateFieldGPU(GLuint gridSSBO, const uvec3& numDivs, float targetValue, std::vector<Triangle3D>& triangles);
+    CADModel* triangulateFieldGPU(GLuint gridSSBO, const uvec3& numDivs, float targetValue, const mat4& modelMatrix);
 };
 

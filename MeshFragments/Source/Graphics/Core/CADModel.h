@@ -98,7 +98,12 @@ public:
 	/**
 	*	@brief Model 3D constructor for a triangle mesh.
 	*/
-	CADModel(const std::vector<Triangle3D>& triangles, const mat4& modelMatrix = mat4(1.0f));
+	CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory = true, const mat4& modelMatrix = mat4(1.0f));
+
+	/**
+	*	@brief Model 3D constructor for a triangle mesh.
+	*/
+	CADModel(Model3D::VertexGPUData* vertices, unsigned numVertices, Model3D::FaceGPUData* faces, unsigned numFaces, bool releaseMemory = true, const mat4& modelMatrix = mat4(1.0f));
 
 	/**
 	*	@brief Deleted copy constructor.

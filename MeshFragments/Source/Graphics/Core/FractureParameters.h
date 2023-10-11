@@ -71,7 +71,7 @@ public:
 		_gridSubdivisions(64),
 		_launchGPU(true),
 		_mergeSeedsDistanceFunction(MANHATTAN),
-		_numSeeds(6),
+		_numSeeds(64),
 		_numExtraSeeds(200),
 		_pointCloudSeedingRandom(HALTON),
 		_removeIsolatedRegions(true),

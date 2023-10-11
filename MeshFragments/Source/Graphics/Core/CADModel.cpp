@@ -31,7 +31,7 @@ CADModel::CADModel(const std::string& filename, const std::string& textureFolder
 	_useBinary = useBinary;
 }
 
-CADModel::CADModel(const std::vector<Triangle3D>& triangles, const mat4& modelMatrix) :
+CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory, const mat4& modelMatrix) :
 	Model3D(modelMatrix, 1), _useBinary(false)
 {
 	for (const Triangle3D& triangle : triangles)
@@ -45,8 +45,8 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, const mat4& modelMa
 		_modelComp[0]->_topology.push_back(Model3D::FaceGPUData{ uvec3(_modelComp[0]->_geometry.size() - 3, _modelComp[0]->_geometry.size() - 2, _modelComp[0]->_geometry.size() - 1) });
 	}
 
-	std::vector<int> mapping (_modelComp[0]->_geometry.size());
-	std::iota(mapping.begin(), mapping.end(), 0);
+	//std::vector<int> mapping (_modelComp[0]->_geometry.size());
+	//std::iota(mapping.begin(), mapping.end(), 0);
 
 	//this->fuseVertices(mapping);
 	//this->remapVertices(_modelComp[0], mapping);
@@ -55,8 +55,26 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, const mat4& modelMa
 	for (ModelComponent* modelComponent : _modelComp)
 	{
 		modelComponent->buildTriangleMeshTopology();
-		modelComponent->buildPointCloudTopology();
-		modelComponent->buildWireframeTopology();
+		modelComponent->releaseMemory(releaseMemory, releaseMemory);
+	}
+
+	Model3D::setVAOData();
+}
+
+CADModel::CADModel(Model3D::VertexGPUData* vertices, unsigned numVertices, Model3D::FaceGPUData* faces, unsigned numFaces, bool releaseMemory, const mat4& modelMatrix): 
+	Model3D(modelMatrix, 1), _useBinary(false)
+{
+	ModelComponent* modelComponent = _modelComp[0];
+
+	modelComponent->_geometry.insert(modelComponent->_geometry.end(), vertices, vertices + numVertices);
+	modelComponent->_topology.insert(modelComponent->_topology.end(), faces, faces + numFaces);
+
+	//this->simplify(1000);
+
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		modelComponent->buildTriangleMeshTopology();
+		modelComponent->releaseMemory(releaseMemory, releaseMemory);
 	}
 
 	Model3D::setVAOData();

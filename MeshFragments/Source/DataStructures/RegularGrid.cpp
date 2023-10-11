@@ -471,6 +471,10 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh()
 		values.push_back(std::move(valuesSet.extract(it++).value()));
 	}
 
+	MarchingCubes mCubes(*this, _numDivs);
+	vec3 scale = (_aabb.size()) / vec3(_numDivs + uvec3(2));
+	vec3 minPoint = _aabb.min();
+
 //#pragma omp parallel for
 	for (int idx = 0; idx < values.size(); ++idx)
 	{
@@ -492,20 +496,10 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh()
 		//				grid[x][y][z] = 1.0f;
 		//			}
 		//		}
-
-		MarchingCubes mCubes (*this, _numDivs);
-		std::vector<Triangle3D> triangles;
-
 		//mCubes.triangulateField(grid, _numDivs, 0.5f, triangles);
-		mCubes.triangulateFieldGPU(_ssbo, _numDivs, values[idx], triangles);
-
-		vec3 scale = (_aabb.size()) / vec3(_numDivs);
-		vec3 minPoint = _aabb.min();
-
-		meshes[idx] = new CADModel(triangles, 
-			glm::translate(glm::mat4(1.0f), -vec3(1.0f) * scale) *
-			glm::translate(glm::mat4(1.0f), minPoint) *
-			glm::scale(glm::mat4(1.0f), scale));
+		meshes[idx] = mCubes.triangulateFieldGPU(
+			_ssbo, _numDivs, values[idx], 
+			glm::translate(glm::mat4(1.0f), -vec3(1.0f) * scale) * glm::translate(glm::mat4(1.0f), minPoint) * glm::scale(glm::mat4(1.0f), scale));
 	}
 
 	return meshes;

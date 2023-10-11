@@ -71,7 +71,7 @@ MarchingCubes::~MarchingCubes()
 	delete[] _indices;
 }
 
-void MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, const uvec3& numDivs, float targetValue, std::vector<Triangle3D>& triangles)
+CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, const uvec3& numDivs, float targetValue, const mat4& modelMatrix)
 {
 	this->resetCounter();
 
@@ -79,17 +79,22 @@ void MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, const uvec3& numDivs, f
     _marchingCubesShader->use();
     _marchingCubesShader->setUniform("gridDims", _numDivs);
     _marchingCubesShader->setUniform("isolevel", 0.5f);
+	_marchingCubesShader->setUniform("modelMatrix", modelMatrix);
     _marchingCubesShader->setUniform("targetValue", int(targetValue));
     _marchingCubesShader->execute(_numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
     unsigned numVertices = *ComputeShader::readData(_numVerticesSSBO, unsigned());
-    vec4* vertexData = ComputeShader::readData(_verticesSSBO, vec4());
+	//vec4* vertexData = ComputeShader::readData(_verticesSSBO, vec4());
 
 	this->calculateMortonCodes(numVertices);
 	this->sortMortonCodes(numVertices);
-	this->fuseSimilarVertices(numVertices);
-	this->buildMarchingCubesFaces(numVertices);
+	unsigned newNumVertices = this->fuseSimilarVertices(numVertices);
+	//this->buildMarchingCubesFaces(numVertices);
 
+	Model3D::VertexGPUData* vertices = ComputeShader::readData(_vertexSSBO, Model3D::VertexGPUData());
+	Model3D::FaceGPUData* faces = ComputeShader::readData(_faceSSBO, Model3D::FaceGPUData());
+
+	return new CADModel(vertices, numVertices, faces, numVertices / 3, true);
     //triangles.resize(numVertices / 3);
     //for (int idx = 0; idx < numVertices; idx += 3)
     //{
@@ -106,10 +111,18 @@ void MarchingCubes::buildMarchingCubesFaces(unsigned numVertices)
 	_buildMarchingCubesShader->bindBuffers(std::vector<GLuint> { _indicesBufferID_2, _indicesBufferID_1, _faceSSBO, _numVerticesSSBO });
 	_buildMarchingCubesShader->use();
 	_buildMarchingCubesShader->setUniform("numPoints", numVertices);
-	_buildMarchingCubesShader->execute(_numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+	_buildMarchingCubesShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-	Model3D::FaceGPUData* faceData = ComputeShader::readData(_faceSSBO, Model3D::FaceGPUData());
-	std::vector<Model3D::FaceGPUData> faces = std::vector<Model3D::FaceGPUData>(faceData, faceData + numVertices / 3);
+	//Model3D::FaceGPUData* faceData = ComputeShader::readData(_faceSSBO, Model3D::FaceGPUData());
+	//std::vector<Model3D::FaceGPUData> faces = std::vector<Model3D::FaceGPUData>(faceData, faceData + numVertices / 3);
+
+	//std::unordered_set<unsigned> indices;
+	//for (const Model3D::FaceGPUData& face : faces)
+	//{
+	//	indices.insert(face._vertices.x);
+	//	indices.insert(face._vertices.y);
+	//	indices.insert(face._vertices.z);
+	//}
 };
 
 void MarchingCubes::calculateMortonCodes(unsigned numVertices)
@@ -119,19 +132,19 @@ void MarchingCubes::calculateMortonCodes(unsigned numVertices)
 	_computeMortonShader->setUniform("numPoints", numVertices);
 	_computeMortonShader->setUniform("sceneMaxBoundary", vec3(_numDivs));
 	_computeMortonShader->setUniform("sceneMinBoundary", vec3(.0f));
-	_computeMortonShader->execute(_numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+	_computeMortonShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 }
 
-void MarchingCubes::fuseSimilarVertices(unsigned numVertices)
+unsigned MarchingCubes::fuseSimilarVertices(unsigned numVertices)
 {
 	this->resetCounter();
 
 	_fuseSimilarVerticesShader->bindBuffers(std::vector<GLuint> { _indicesBufferID_2, _indicesBufferID_1, _verticesSSBO, _vertexSSBO, _numVerticesSSBO });
 	_fuseSimilarVerticesShader->use();
 	_fuseSimilarVerticesShader->setUniform("numPoints", numVertices);
-	_fuseSimilarVerticesShader->execute(_numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+	_fuseSimilarVerticesShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-	unsigned n = *ComputeShader::readData(_numVerticesSSBO, unsigned());
+	return *ComputeShader::readData(_numVerticesSSBO, unsigned());
 }
 
 void MarchingCubes::resetCounter()
