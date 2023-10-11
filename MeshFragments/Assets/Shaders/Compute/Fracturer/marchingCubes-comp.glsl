@@ -94,14 +94,6 @@ void march(in uint index, in ivec3 cellIndices)
 			configuration |= 1 << i;
 	}
 
-	 // Normally, we could `return` here, but we want to make sure to "clear"
-	 // the vertex buffer at unused indices, otherwise the drawing gets super
-	 // wonky...
-	if (configurationTable[configuration] == 0)
-	{
-		return;
-	}
-
 	// Grab all of the (interpolated) vertices along each of the 12 edges of this cell
 	for (int i = 0; i < 12; ++i)
 	{
@@ -111,9 +103,6 @@ void march(in uint index, in ivec3 cellIndices)
 		{
 			ivec2 edge = edgeTable[i];
 			vertexList[index * 12 + i].xyz = findVertex(cellIndices, isolevel, edge, values[edge.x], values[edge.y]);
-
-			//testBuffer[offset + i].x = int(grid[getPositionIndex(cellIndices + neighbors[0])].value);
-			//testBuffer[offset + i].yzw = vertexList[i];
 		}
 	}
 
@@ -127,9 +116,9 @@ void march(in uint index, in ivec3 cellIndices)
 		{
 			uint offset = atomicAdd(numVertices, 3);
 
-			vertexData[offset + 0] = modelMatrix * vec4(vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 0)]].xyz, 1.0f);
-			vertexData[offset + 1] = modelMatrix * vec4(vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz, 1.0f);
-			vertexData[offset + 2] = modelMatrix * vec4(vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 2)]].xyz, 1.0f);
+			vertexData[offset + 0].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 0)]].xyz;
+			vertexData[offset + 1].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
+			vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 2)]].xyz;
 			//testBuffer[getPositionIndex(cellIndices)].x = int(grid[getPositionIndex(cellIndices + neighbors[0])].value);
 			//testBuffer[getPositionIndex(cellIndices)].yzw = vertexData[offset + 2].position;
 		}

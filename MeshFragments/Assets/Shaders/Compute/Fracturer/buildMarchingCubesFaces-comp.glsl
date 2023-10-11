@@ -21,10 +21,5 @@ void main()
 	
 	uint faceIndex = indices[index] / 3;
 	uint vertexIndex = indices[index] % 3;
-
-	uint signal = indices2[index] >> 31;
-	if (signal == 1)
-		faceData[faceIndex].vertices[vertexIndex] = indices2[index] ^ (1 << 31);
-	else
-		faceData[faceIndex].vertices[vertexIndex] = indices2[indices2[index]] ^ (1 << 31);
+	faceData[faceIndex].vertices[vertexIndex] = indices2[index] ^ (1 << 31);
 }

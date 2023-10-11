@@ -317,13 +317,15 @@ protected:
     ComputeShader*  _reallocatePositionShader;
 
     ComputeShader*  _buildMarchingCubesShader;
-    ComputeShader*  _fuseSimilarVerticesShader;
+    ComputeShader*  _fuseSimilarVerticesShader_01, *_fuseSimilarVerticesShader_02;
     ComputeShader*  _marchingCubesShader;
+    ComputeShader*  _resetBufferShader;
 
     // SSBOs
     GLuint          _edgeTableSSBO;
     GLuint          _gridSSBO;
     GLuint          _mortonCodeSSBO;
+    GLuint          _nonUpdatedVertices;
     GLuint          _numVerticesSSBO;
     GLuint          _supportVerticesSSBO;
     GLuint          _triangleTableSSBO;
@@ -352,12 +354,12 @@ protected:
     /**
     *   @brief Fuses similar vertices.
     */
-    unsigned fuseSimilarVertices(unsigned numVertices);
+    unsigned fuseSimilarVertices(unsigned numVertices, const mat4& modelMatrix);
 
     /**
     *   @brief Resets counter for number of vertices in the GPU.
     */
-    void resetCounter();
+    void resetCounter(GLuint ssbo);
 
     /**
     *   @brief Sorts previously computed Morton codes.

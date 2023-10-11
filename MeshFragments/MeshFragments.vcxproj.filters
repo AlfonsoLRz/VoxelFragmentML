@@ -1144,10 +1144,16 @@
     <None Include="Assets\Shaders\Compute\Fracturer\computeMortonCodes-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
-    <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices-comp.glsl">
+    <None Include="Assets\Shaders\Compute\Fracturer\buildMarchingCubesFaces-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
-    <None Include="Assets\Shaders\Compute\Fracturer\buildMarchingCubesFaces-comp.glsl">
+    <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices_01-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices_02-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\resetBuffer-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>

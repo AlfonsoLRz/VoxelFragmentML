@@ -318,11 +318,13 @@
     <None Include="Assets\Shaders\Compute\Fracturer\detectBoundaries-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl" />
-    <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices_01-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices_02-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\marchingCubes-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\resetBuffer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\selectVoxelTriangle-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\voxel.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\voxelStructs.glsl" />
