@@ -48,51 +48,30 @@ std::string CADScene::fractureGrid()
 
 void CADScene::loadModel(const std::string& path)
 {
-	// Delete resources
-	{
-		delete _aabbRenderer;
-		_aabbRenderer = nullptr;
+	this->eraseFragmentContent();
 
-		delete _pointCloud;
-		_pointCloud = nullptr;
+	_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), true, true, true);
+	_mesh->load();
+	_mesh->getModelComponent(0)->_enabled = true;
+	_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
 
-		delete _pointCloudRenderer;
-		_pointCloudRenderer = nullptr;
+	Group3D* group = new Group3D();
+	group->addComponent(_mesh);
+	group->registerScene();
+	group->generateBVH(_sceneGPUData, false);
+	_sceneGroup.push_back(group);
 
-		delete _meshGrid;
-		_meshGrid = nullptr;
+	// Build octree and retrieve AABBs
+	_aabbRenderer = new AABBSet();
+	_aabbRenderer->load();
+	_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
 
-		for (Group3D* group : _sceneGroup) delete group;
-		_sceneGroup.clear();
+	//_pointCloud = _mesh->sample(100, _fractParameters._pointCloudSeedingRandom);
+	//_pointCloudRenderer = new DrawPointCloud(_pointCloud);
 
-		for (Model3D* fractureMesh : _fractureMeshes) delete fractureMesh;
-		_fractureMeshes.clear();
-	}
-
-	{
-		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), true, true, true);
-		_mesh->load();
-		_mesh->getModelComponent(0)->_enabled = true;
-		_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
-
-		Group3D* group = new Group3D();
-		group->addComponent(_mesh);
-		group->registerScene();
-		group->generateBVH(_sceneGPUData, true);
-		_sceneGroup.push_back(group);
-
-		// Build octree and retrieve AABBs
-		_aabbRenderer = new AABBSet();
-		_aabbRenderer->load();
-		_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
-
-		//_pointCloud = _mesh->sample(100, _fractParameters._pointCloudSeedingRandom);
-		//_pointCloudRenderer = new DrawPointCloud(_pointCloud);
-
-		this->rebuildGrid();
-		this->fractureModel();
-		this->prepareScene();
-	}
+	this->rebuildGrid();
+	this->fractureModel();
+	this->prepareScene();
 
 	this->loadDefaultCamera(_cameraManager->getActiveCamera());
 }
@@ -134,6 +113,32 @@ void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
 }
 
 // [Protected methods]
+
+void CADScene::eraseFragmentContent()
+{
+	delete _aabbRenderer;
+	_aabbRenderer = nullptr;
+
+	delete _pointCloud;
+	_pointCloud = nullptr;
+
+	delete _pointCloudRenderer;
+	_pointCloudRenderer = nullptr;
+
+	delete _meshGrid;
+	_meshGrid = nullptr;
+
+	for (Group3D* group : _sceneGroup) delete group;
+	_sceneGroup.clear();
+
+	for (Model3D* fractureMesh : _fractureMeshes) delete fractureMesh;
+	_fractureMeshes.clear();
+
+	for (Material* material : _fragmentMaterials) delete material;
+	for (Texture* texture: _fragmentTextures) delete texture;
+	_fragmentMaterials.clear();
+	_fragmentTextures.clear();
+}
 
 std::string CADScene::fractureModel()
 {
@@ -286,6 +291,17 @@ void CADScene::prepareScene()
 	}
 
 	_fractureMeshes = _meshGrid->toTriangleMesh();
+	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
+	{
+		Material* material = new Material;
+		Texture* kad = new Texture(vec4(ColorUtilities::HSVtoRGB(ColorUtilities::getHueValue(idx), 1.0f, 1.0f), 1.0f));
+		material->setTexture(Texture::KAD_TEXTURE, kad);
+		_fractureMeshes[idx]->setMaterial(material);
+
+		_fragmentMaterials.push_back(material);
+		_fragmentTextures.push_back(kad);
+	}
+
 	_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
 
 	for (Model3D::ModelComponent* modelComponent : _mesh->getModelComponents())
@@ -615,10 +631,11 @@ void CADScene::drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTyp
 	//for (Group3D* group : _sceneGroup)
 	//	group->drawAsLines(shader, shaderType, *matrix);
 
-	vec3 previousColor = rendParams->_wireframeColor;
-	rendParams->_wireframeColor = vec3(1.0f, .0f, .0f);
-	_fragmentBoundaries->drawAsLines(shader, shaderType, *matrix);
-	rendParams->_wireframeColor = previousColor;
+
+	for (Model3D* fractureMesh : _fractureMeshes)
+	{
+		fractureMesh->drawAsLines(shader, shaderType, *matrix);
+	}
 }
 
 void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
@@ -637,7 +654,6 @@ void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShade
 			for (Model3D* fractureMesh : _fractureMeshes)
 			{
 				fractureMesh->drawAsTriangles(shader, shaderType, *matrix);
-				break;
 			}
 		}
 	}

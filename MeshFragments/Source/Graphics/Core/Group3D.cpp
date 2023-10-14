@@ -30,7 +30,6 @@ Group3D::~Group3D()
 	}
 
 	for (VAO* vao : _bvhVAO) delete vao;
-	for (GroupData* groupData: _groupData) delete groupData;
 	for (StaticGPUData* staticData: _staticGPUData) delete staticData;
 	delete _triangleSet;
 }
@@ -311,6 +310,7 @@ void Group3D::aggregateSSBOData(VolatileGPUData*& volatileGPUData)
 	// Second step: gather geometry and topology
 	unsigned currentGeometry = 0, currentTopology = 0;
 	GroupData* currentGroupData = new GroupData;
+	std::vector<GroupData*> groupData;
 
 	for (ModelComponent* modelComp : _globalModelComp)
 	{
@@ -318,7 +318,7 @@ void Group3D::aggregateSSBOData(VolatileGPUData*& volatileGPUData)
 
 		if (currentGroupData->_geometry.size() + numVertices > maxVertices)
 		{
-			_groupData.push_back(currentGroupData);
+			groupData.push_back(currentGroupData);
 			currentGeometry = currentTopology = 0;
 
 			currentGroupData = new GroupData;
@@ -334,10 +334,10 @@ void Group3D::aggregateSSBOData(VolatileGPUData*& volatileGPUData)
 		//modelComp->releaseMemory();
 	}
 
-	_groupData.push_back(currentGroupData);		// Last group
+	groupData.push_back(currentGroupData);		// Last group
 
 	// Compute scene AABB once the geometry and topology is all given in a row
-	for (GroupData* groupData: _groupData)
+	for (GroupData* groupData: groupData)
 	{
 		StaticGPUData* staticData = new StaticGPUData;
 
@@ -354,6 +354,8 @@ void Group3D::aggregateSSBOData(VolatileGPUData*& volatileGPUData)
 
 		this->buildClusterBuffer(volatileGPUData, staticData, sortedIndices);
 		_staticGPUData.push_back(staticData);
+
+		delete groupData;
 	}
 }
 

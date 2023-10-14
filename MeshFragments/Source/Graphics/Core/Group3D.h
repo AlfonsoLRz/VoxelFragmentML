@@ -32,7 +32,6 @@ protected:
 	TriangleSet*						_triangleSet;					//!< Set of faces from collision tests
 
 	// [Scene data]
-	std::vector<GroupData*>				_groupData;						//!< 
 	std::vector<StaticGPUData*>			_staticGPUData;					//!<
 
 	// [Rendering status]
@@ -206,11 +205,6 @@ public:
 	*/
 	struct StaticGPUData
 	{
-		// [CPU Buffers]
-		std::vector<Model3D::VertexGPUData> _vertices;		//!<
-		std::vector<Model3D::FaceGPUData>	_faces;			//!<
-		std::vector<Model3D::MeshGPUData>	_meshes;		//!<
-		 
 		// [SSBO]
 		GLuint		_groupGeometrySSBO;						//!< SSBO of group geometry
 		GLuint		_groupTopologySSBO;						//!< SSBO of group faces

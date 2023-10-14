@@ -60,12 +60,19 @@ protected:
 	DrawLines*				_fragmentBoundaries;			//!<
 	FractureParameters		_fractParameters;				//!< 
 	std::vector<Model3D*>	_fractureMeshes;				//!<
+	std::vector<Material*>	_fragmentMaterials;				//!< Material for each fragment, built with marching cubes
+	std::vector<Texture*>	_fragmentTextures;				//!< Texture for each fragment, built with marching cubes
 	CADModel*				_mesh;							//!< Jar mesh
 	RegularGrid*			_meshGrid;						//!< Mesh regular grid
 	PointCloud3D*			_pointCloud;					//!<
 	DrawPointCloud*			_pointCloudRenderer;			//!<
 
 protected:
+	/**
+	*	@brief Erase content from a previous fragmentation process.
+	*/
+	void eraseFragmentContent();
+
 	/**
 	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm. 
 	*/

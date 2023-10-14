@@ -73,11 +73,13 @@ CADModel::CADModel(Model3D::VertexGPUData* vertices, unsigned numVertices, Model
 	modelComponent->_geometry.insert(modelComponent->_geometry.end(), vertices, vertices + numVertices);
 	modelComponent->_topology.insert(modelComponent->_topology.end(), faces, faces + numFaces);
 
-	this->simplify(10000);
+	this->simplify(1000);
+	this->computeMeshData(modelComponent, true);
 
 	for (ModelComponent* modelComponent : _modelComp)
 	{
 		modelComponent->buildTriangleMeshTopology();
+		modelComponent->buildWireframeTopology();
 	}
 
 	Model3D::setVAOData();
@@ -130,8 +132,8 @@ bool CADModel::load(const mat4& modelMatrix)
 		for (ModelComponent* modelComponent : _modelComp)
 		{
 			modelComponent->buildTriangleMeshTopology();
-			modelComponent->buildPointCloudTopology();
-			modelComponent->buildWireframeTopology();
+			//modelComponent->buildPointCloudTopology();
+			//modelComponent->buildWireframeTopology();
 		}
 		this->setVAOData();
 		
@@ -249,7 +251,7 @@ void CADModel::simplify(unsigned numFaces)
 					Simplify::triangles[Simplify::triangles.size() - 1].v[i] = face._vertices[i];
 			}
 
-			Simplify::simplify_mesh(numFaces, 3.0);
+			Simplify::simplify_mesh(numFaces);
 
 			modelComponent->_geometry.clear();
 			modelComponent->_topology.clear();
@@ -260,8 +262,6 @@ void CADModel::simplify(unsigned numFaces)
 			for (const Simplify::Triangle& triangle : Simplify::triangles)
 				modelComponent->_topology.push_back(Model3D::FaceGPUData{uvec3(triangle.v[0], triangle.v[1], triangle.v[2])});
 #endif
-
-			this->computeMeshData(modelComponent, true);
 		}
 	}
 }
@@ -305,11 +305,22 @@ void CADModel::computeMeshData(ModelComponent* modelComp, bool computeNormals)
 
 	if (computeNormals)
 	{
-		#pragma omp parallel for
+		//#pragma omp parallel for
+		std::vector<unsigned> faceCount(modelComp->_geometry.size(), 0);
 		for (int faceIdx = 0; faceIdx < modelComp->_topology.size(); ++faceIdx)
 		{
 			for (int i = 0; i < 3; ++i)
-				modelComp->_geometry[modelComp->_topology[faceIdx]._vertices[i]]._normal = modelComp->_topology[faceIdx]._normal;
+			{
+				modelComp->_geometry[modelComp->_topology[faceIdx]._vertices[i]]._normal += modelComp->_topology[faceIdx]._normal;
+				++faceCount[modelComp->_topology[faceIdx]._vertices[i]];
+			}
+		}
+
+		#pragma omp parallel for
+		for (int vertexIdx = 0; vertexIdx < modelComp->_geometry.size(); ++vertexIdx)
+		{
+			modelComp->_geometry[vertexIdx]._normal /= faceCount[vertexIdx];
+			modelComp->_geometry[vertexIdx]._normal = glm::normalize(modelComp->_geometry[vertexIdx]._normal);
 		}
 	}
 
