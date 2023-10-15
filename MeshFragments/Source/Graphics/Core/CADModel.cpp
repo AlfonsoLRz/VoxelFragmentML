@@ -65,15 +65,18 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory,
 	}
 }
 
-CADModel::CADModel(Model3D::VertexGPUData* vertices, unsigned numVertices, Model3D::FaceGPUData* faces, unsigned numFaces, bool releaseMemory, const mat4& modelMatrix): 
+CADModel::CADModel(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned numFaces, bool releaseMemory, const mat4& modelMatrix):
 	Model3D(modelMatrix, 1), _useBinary(false)
 {
 	ModelComponent* modelComponent = _modelComp[0];
 
-	modelComponent->_geometry.insert(modelComponent->_geometry.end(), vertices, vertices + numVertices);
-	modelComponent->_topology.insert(modelComponent->_topology.end(), faces, faces + numFaces);
+	for (int idx = 0; idx < numVertices; ++idx)
+		modelComponent->_geometry.push_back(Model3D::VertexGPUData{ vec3(vertices[idx].x, vertices[idx].y, vertices[idx].z)});
 
-	this->simplify(1000);
+	for (int idx = 0; idx < numFaces; ++idx)
+		modelComponent->_topology.push_back(Model3D::FaceGPUData{ uvec3(faces[idx].x, faces[idx].y, faces[idx].z)});
+
+	//this->simplify(5000);
 	this->computeMeshData(modelComponent, true);
 
 	for (ModelComponent* modelComponent : _modelComp)
@@ -406,6 +409,7 @@ void CADModel::createModelComponent(objl::Mesh* mesh)
 			vertexData._normal		= vec3(mesh->Vertices[j].Normal.X, mesh->Vertices[j].Normal.Y, mesh->Vertices[j].Normal.Z);
 			vertexData._textCoord	= vec2(mesh->Vertices[j].TextureCoordinate.X, mesh->Vertices[j].TextureCoordinate.Y);
 
+			_aabb.update(vertexData._position);
 			modelComp->_geometry.push_back(vertexData);
 		}
 
@@ -595,6 +599,8 @@ bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D
 		fin.read((char*)&model->_modelDescription, sizeof(Model3D::ModelComponentDescription));
 	}
 
+	fin.read((char*)&_aabb, sizeof(AABB));
+
 	fin.close();
 
 	return true;
@@ -661,6 +667,8 @@ bool CADModel::writeToBinary()
 
 		fout.write((char*)&model->_modelDescription, sizeof(Model3D::ModelComponentDescription));
 	}
+
+	fout.write((char*)&_aabb, sizeof(AABB));
 
 	fout.close();
 

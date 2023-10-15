@@ -44,141 +44,141 @@ void Group3D::generateBVH(std::vector<StaticGPUData*>& sceneData, bool buildVisu
 	VolatileGPUData* volatileGPUData;
 	this->aggregateSSBOData(volatileGPUData);
 
-	// BVH generation
-	const unsigned radius = BVH_BUILDING_RADIUS;
-	
-	ComputeShader* findNeighborShader		= ShaderList::getInstance()->getComputeShader(RendEnum::FIND_BEST_NEIGHBOR);
-	ComputeShader* clusterMergingShader		= ShaderList::getInstance()->getComputeShader(RendEnum::CLUSTER_MERGING);
-	ComputeShader* reallocClustersShader	= ShaderList::getInstance()->getComputeShader(RendEnum::REALLOCATE_CLUSTERS);
-	ComputeShader* endLoopCompShader		= ShaderList::getInstance()->getComputeShader(RendEnum::END_LOOP_COMPUTATIONS);
+	//// BVH generation
+	//const unsigned radius = BVH_BUILDING_RADIUS;
+	//
+	//ComputeShader* findNeighborShader		= ShaderList::getInstance()->getComputeShader(RendEnum::FIND_BEST_NEIGHBOR);
+	//ComputeShader* clusterMergingShader		= ShaderList::getInstance()->getComputeShader(RendEnum::CLUSTER_MERGING);
+	//ComputeShader* reallocClustersShader	= ShaderList::getInstance()->getComputeShader(RendEnum::REALLOCATE_CLUSTERS);
+	//ComputeShader* endLoopCompShader		= ShaderList::getInstance()->getComputeShader(RendEnum::END_LOOP_COMPUTATIONS);
 
-	// Prefix scan
-	ComputeShader* reduceShader				= ShaderList::getInstance()->getComputeShader(RendEnum::REDUCE_PREFIX_SCAN);
-	ComputeShader* downSweepShader			= ShaderList::getInstance()->getComputeShader(RendEnum::DOWN_SWEEP_PREFIX_SCAN);
-	ComputeShader* resetPositionShader		= ShaderList::getInstance()->getComputeShader(RendEnum::RESET_LAST_POSITION_PREFIX_SCAN);
+	//// Prefix scan
+	//ComputeShader* reduceShader				= ShaderList::getInstance()->getComputeShader(RendEnum::REDUCE_PREFIX_SCAN);
+	//ComputeShader* downSweepShader			= ShaderList::getInstance()->getComputeShader(RendEnum::DOWN_SWEEP_PREFIX_SCAN);
+	//ComputeShader* resetPositionShader		= ShaderList::getInstance()->getComputeShader(RendEnum::RESET_LAST_POSITION_PREFIX_SCAN);
 
-	// Compute shader execution data: groups and iteration control
-	for (StaticGPUData* staticData : _staticGPUData)
-	{
-		unsigned arraySize = staticData->_numTriangles, startIndex = arraySize, finishBit = 0, iteration, numExec, numThreads, startThreads;
-		int numGroups, numGroups2Log;
-		const int maxGroupSize = ComputeShader::getMaxGroupSize();
+	//// Compute shader execution data: groups and iteration control
+	//for (StaticGPUData* staticData : _staticGPUData)
+	//{
+	//	unsigned arraySize = staticData->_numTriangles, startIndex = arraySize, finishBit = 0, iteration, numExec, numThreads, startThreads;
+	//	int numGroups, numGroups2Log;
+	//	const int maxGroupSize = ComputeShader::getMaxGroupSize();
 
-		// Prepare buffers for GPU
-		BVHCluster* outCluster = new BVHCluster[arraySize];					// We declare an input buffer instead of asking for a GPU one cause we've proved it's faster
+	//	// Prepare buffers for GPU
+	//	BVHCluster* outCluster = new BVHCluster[arraySize];					// We declare an input buffer instead of asking for a GPU one cause we've proved it's faster
 
-		// Compact cluster buffer support
-		GLuint* currentPosBuffer = new GLuint[arraySize], * currentPosBufferOut = new GLuint[arraySize];
-		std::iota(currentPosBufferOut, currentPosBufferOut + arraySize, 0);
+	//	// Compact cluster buffer support
+	//	GLuint* currentPosBuffer = new GLuint[arraySize], * currentPosBufferOut = new GLuint[arraySize];
+	//	std::iota(currentPosBufferOut, currentPosBufferOut + arraySize, 0);
 
-		GLuint coutBuffer = volatileGPUData->_tempClusterSSBO;													// Swapped during loop => not const
-		GLuint cinBuffer = ComputeShader::setReadBuffer(outCluster, arraySize);
-		GLuint inCurrentPosition = ComputeShader::setReadBuffer(currentPosBuffer, arraySize);		// Position of compact buffer where a cluster is saved
-		GLuint outCurrentPosition = ComputeShader::setReadBuffer(currentPosBufferOut, arraySize);
-		const GLuint neighborIndex = ComputeShader::setWriteBuffer(GLuint(), arraySize);				// Nearest neighbor search	
-		const GLuint prefixScan = ComputeShader::setWriteBuffer(GLuint(), arraySize);				// Final position of each valid cluster for the next loop iteration
-		const GLuint validCluster = ComputeShader::setWriteBuffer(GLuint(), arraySize);				// Clusters which takes part of next loop iteration
-		const GLuint mergedCluster = ComputeShader::setWriteBuffer(GLuint(), arraySize);				// A merged cluster is always valid, but the opposite situation is not fitting
-		const GLuint numNodesCount = ComputeShader::setReadData(arraySize);							// Number of currently added nodes, which increases as the clusters are merged
-		const GLuint arraySizeCount = ComputeShader::setWriteBuffer(GLuint(), 1);
+	//	GLuint coutBuffer = volatileGPUData->_tempClusterSSBO;													// Swapped during loop => not const
+	//	GLuint cinBuffer = ComputeShader::setReadBuffer(outCluster, arraySize);
+	//	GLuint inCurrentPosition = ComputeShader::setReadBuffer(currentPosBuffer, arraySize);		// Position of compact buffer where a cluster is saved
+	//	GLuint outCurrentPosition = ComputeShader::setReadBuffer(currentPosBufferOut, arraySize);
+	//	const GLuint neighborIndex = ComputeShader::setWriteBuffer(GLuint(), arraySize);				// Nearest neighbor search	
+	//	const GLuint prefixScan = ComputeShader::setWriteBuffer(GLuint(), arraySize);				// Final position of each valid cluster for the next loop iteration
+	//	const GLuint validCluster = ComputeShader::setWriteBuffer(GLuint(), arraySize);				// Clusters which takes part of next loop iteration
+	//	const GLuint mergedCluster = ComputeShader::setWriteBuffer(GLuint(), arraySize);				// A merged cluster is always valid, but the opposite situation is not fitting
+	//	const GLuint numNodesCount = ComputeShader::setReadData(arraySize);							// Number of currently added nodes, which increases as the clusters are merged
+	//	const GLuint arraySizeCount = ComputeShader::setWriteBuffer(GLuint(), 1);
 
-		while (arraySize > 1)
-		{
-			// Binary tree and whole array group sizes and iteration boundaries
-			numGroups = ComputeShader::getNumGroups(arraySize);
-			startThreads = std::ceil(arraySize / 2.0f);
-			numExec = std::ceil(std::log2(arraySize));
-			numGroups2Log = ComputeShader::getNumGroups(startThreads);
+	//	while (arraySize > 1)
+	//	{
+	//		// Binary tree and whole array group sizes and iteration boundaries
+	//		numGroups = ComputeShader::getNumGroups(arraySize);
+	//		startThreads = std::ceil(arraySize / 2.0f);
+	//		numExec = std::ceil(std::log2(arraySize));
+	//		numGroups2Log = ComputeShader::getNumGroups(startThreads);
 
-			std::vector<GLuint> threadCount{ startThreads };				// Thread sizes are repeated on reduce and sweep down phases
-			threadCount.reserve(numExec);
+	//		std::vector<GLuint> threadCount{ startThreads };				// Thread sizes are repeated on reduce and sweep down phases
+	//		threadCount.reserve(numExec);
 
-			std::swap(coutBuffer, cinBuffer);
-			std::swap(inCurrentPosition, outCurrentPosition);
+	//		std::swap(coutBuffer, cinBuffer);
+	//		std::swap(inCurrentPosition, outCurrentPosition);
 
-			findNeighborShader->bindBuffers(std::vector<GLuint>{ cinBuffer, neighborIndex });
-			findNeighborShader->use();
-			findNeighborShader->setUniform("arraySize", arraySize);
-			findNeighborShader->setUniform("radius", radius);
-			findNeighborShader->execute(numGroups, 1, 1, maxGroupSize, 1, 1);
+	//		findNeighborShader->bindBuffers(std::vector<GLuint>{ cinBuffer, neighborIndex });
+	//		findNeighborShader->use();
+	//		findNeighborShader->setUniform("arraySize", arraySize);
+	//		findNeighborShader->setUniform("radius", radius);
+	//		findNeighborShader->execute(numGroups, 1, 1, maxGroupSize, 1, 1);
 
-			clusterMergingShader->bindBuffers(std::vector<GLuint>{ cinBuffer, staticData->_clusterSSBO, neighborIndex, validCluster, mergedCluster,
-				prefixScan, inCurrentPosition, numNodesCount });
-			clusterMergingShader->use();
-			clusterMergingShader->setUniform("arraySize", arraySize);
-			clusterMergingShader->execute(numGroups, 1, 1, maxGroupSize, 1, 1);
+	//		clusterMergingShader->bindBuffers(std::vector<GLuint>{ cinBuffer, staticData->_clusterSSBO, neighborIndex, validCluster, mergedCluster,
+	//			prefixScan, inCurrentPosition, numNodesCount });
+	//		clusterMergingShader->use();
+	//		clusterMergingShader->setUniform("arraySize", arraySize);
+	//		clusterMergingShader->execute(numGroups, 1, 1, maxGroupSize, 1, 1);
 
-			// FIRST STEP: build a binary tree with a summatory of the array
-			reduceShader->bindBuffers(std::vector<GLuint> { prefixScan });
-			reduceShader->use();
-			reduceShader->setUniform("arraySize", arraySize);
+	//		// FIRST STEP: build a binary tree with a summatory of the array
+	//		reduceShader->bindBuffers(std::vector<GLuint> { prefixScan });
+	//		reduceShader->use();
+	//		reduceShader->setUniform("arraySize", arraySize);
 
-			iteration = 0;
-			while (iteration < numExec)
-			{
-				numThreads = threadCount[threadCount.size() - 1];
+	//		iteration = 0;
+	//		while (iteration < numExec)
+	//		{
+	//			numThreads = threadCount[threadCount.size() - 1];
 
-				reduceShader->setUniform("iteration", iteration++);
-				reduceShader->setUniform("numThreads", numThreads);
-				reduceShader->execute(numGroups2Log, 1, 1, maxGroupSize, 1, 1);
+	//			reduceShader->setUniform("iteration", iteration++);
+	//			reduceShader->setUniform("numThreads", numThreads);
+	//			reduceShader->execute(numGroups2Log, 1, 1, maxGroupSize, 1, 1);
 
-				threadCount.push_back(std::ceil(numThreads / 2.0f));
-			}
+	//			threadCount.push_back(std::ceil(numThreads / 2.0f));
+	//		}
 
-			// SECOND STEP: set last position to zero, its faster to do it in GPU than retrieve the array in CPU, modify and write it again to GPU
-			resetPositionShader->bindBuffers(std::vector<GLuint> { prefixScan });
-			resetPositionShader->use();
-			resetPositionShader->setUniform("arraySize", arraySize);
-			resetPositionShader->execute(1, 1, 1, 1, 1, 1);
+	//		// SECOND STEP: set last position to zero, its faster to do it in GPU than retrieve the array in CPU, modify and write it again to GPU
+	//		resetPositionShader->bindBuffers(std::vector<GLuint> { prefixScan });
+	//		resetPositionShader->use();
+	//		resetPositionShader->setUniform("arraySize", arraySize);
+	//		resetPositionShader->execute(1, 1, 1, 1, 1, 1);
 
-			// THIRD STEP: build tree back to first level and compute final summatory
-			downSweepShader->bindBuffers(std::vector<GLuint> { prefixScan });
-			downSweepShader->use();
-			downSweepShader->setUniform("arraySize", arraySize);
+	//		// THIRD STEP: build tree back to first level and compute final summatory
+	//		downSweepShader->bindBuffers(std::vector<GLuint> { prefixScan });
+	//		downSweepShader->use();
+	//		downSweepShader->setUniform("arraySize", arraySize);
 
-			iteration = threadCount.size() - 2;
-			while (iteration >= 0 && iteration < numExec)
-			{
-				downSweepShader->setUniform("iteration", iteration);
-				downSweepShader->setUniform("numThreads", threadCount[iteration--]);
-				downSweepShader->execute(numGroups2Log, 1, 1, maxGroupSize, 1, 1);
-			}
+	//		iteration = threadCount.size() - 2;
+	//		while (iteration >= 0 && iteration < numExec)
+	//		{
+	//			downSweepShader->setUniform("iteration", iteration);
+	//			downSweepShader->setUniform("numThreads", threadCount[iteration--]);
+	//			downSweepShader->execute(numGroups2Log, 1, 1, maxGroupSize, 1, 1);
+	//		}
 
-			reallocClustersShader->bindBuffers(std::vector<GLuint>{ cinBuffer, coutBuffer, validCluster, prefixScan, inCurrentPosition, outCurrentPosition });
-			reallocClustersShader->use();
-			reallocClustersShader->setUniform("arraySize", arraySize);
-			reallocClustersShader->execute(numGroups, 1, 1, maxGroupSize, 1, 1);
+	//		reallocClustersShader->bindBuffers(std::vector<GLuint>{ cinBuffer, coutBuffer, validCluster, prefixScan, inCurrentPosition, outCurrentPosition });
+	//		reallocClustersShader->use();
+	//		reallocClustersShader->setUniform("arraySize", arraySize);
+	//		reallocClustersShader->execute(numGroups, 1, 1, maxGroupSize, 1, 1);
 
-			// Updates cluster size
-			endLoopCompShader->bindBuffers(std::vector<GLuint>{ arraySizeCount, prefixScan, validCluster });
-			endLoopCompShader->use();
-			endLoopCompShader->setUniform("arraySize", arraySize);
-			endLoopCompShader->execute(1, 1, 1, 1, 1, 1);
+	//		// Updates cluster size
+	//		endLoopCompShader->bindBuffers(std::vector<GLuint>{ arraySizeCount, prefixScan, validCluster });
+	//		endLoopCompShader->use();
+	//		endLoopCompShader->setUniform("arraySize", arraySize);
+	//		endLoopCompShader->execute(1, 1, 1, 1, 1, 1);
 
-			arraySize = endLoopCompShader->readData(arraySizeCount, GLuint())[0];
-			sceneData.push_back(staticData);
-		}
+	//		arraySize = endLoopCompShader->readData(arraySizeCount, GLuint())[0];
+	//		sceneData.push_back(staticData);
+	//	}
 
-		BVHCluster* clusterData = ComputeShader::readData(staticData->_clusterSSBO, BVHCluster());
-		volatileGPUData->_cluster = std::move(std::vector<BVHCluster>(clusterData, clusterData + staticData->_numTriangles * 2 - 1));
+	//	BVHCluster* clusterData = ComputeShader::readData(staticData->_clusterSSBO, BVHCluster());
+	//	volatileGPUData->_cluster = std::move(std::vector<BVHCluster>(clusterData, clusterData + staticData->_numTriangles * 2 - 1));
 
-		if (buildVisualization)
-		{
-			this->buildBVHVAO(staticData, volatileGPUData);
-		}
+	//	if (buildVisualization)
+	//	{
+	//		this->buildBVHVAO(staticData, volatileGPUData);
+	//	}
 
-		// Free buffers from GPU
-		GLuint toDeleteBuffers[] = { coutBuffer, cinBuffer, inCurrentPosition, outCurrentPosition, neighborIndex,
-									 prefixScan, validCluster, mergedCluster, numNodesCount, arraySizeCount };
-		glDeleteBuffers(sizeof(toDeleteBuffers) / sizeof(GLuint), toDeleteBuffers);
+	//	// Free buffers from GPU
+	//	GLuint toDeleteBuffers[] = { coutBuffer, cinBuffer, inCurrentPosition, outCurrentPosition, neighborIndex,
+	//								 prefixScan, validCluster, mergedCluster, numNodesCount, arraySizeCount };
+	//	glDeleteBuffers(sizeof(toDeleteBuffers) / sizeof(GLuint), toDeleteBuffers);
 
-		// Free dynamic memory
-		delete[]	outCluster;
-		delete[]	currentPosBuffer;
-		delete[]	currentPosBufferOut;
+	//	// Free dynamic memory
+	//	delete[]	outCluster;
+	//	delete[]	currentPosBuffer;
+	//	delete[]	currentPosBufferOut;
 
-		delete volatileGPUData;
-	}
+	//	delete volatileGPUData;
+	//}
 }
 
 Model3D::ModelComponent* Group3D::getModelComponent(unsigned id)

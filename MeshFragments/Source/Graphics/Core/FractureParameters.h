@@ -43,6 +43,7 @@ public:
 	ivec3	_gridSubdivisions;
 	bool	_launchGPU;
 	int		_mergeSeedsDistanceFunction;
+	int		_numGridSubdivisions;
 	int		_numSeeds;
 	int		_numExtraSeeds;
 	int		_pointCloudSeedingRandom;
@@ -50,6 +51,11 @@ public:
 	int		_seed;
 	int		_seedingRandom;
 	int		_spreading;
+
+	// Rendering during the build procedure
+	bool	_renderGrid;
+	bool    _renderMesh;
+	bool    _renderPointCloud;
 
 public:
 	/**
@@ -68,16 +74,21 @@ public:
 		_fillShape(true),
 		_fractureAlgorithm(FLOOD),
 		_distanceFunction(MANHATTAN),
-		_gridSubdivisions(32),
+		_gridSubdivisions(128),
 		_launchGPU(true),
 		_mergeSeedsDistanceFunction(MANHATTAN),
+		_numGridSubdivisions(2),
 		_numSeeds(64),
 		_numExtraSeeds(200),
 		_pointCloudSeedingRandom(HALTON),
 		_removeIsolatedRegions(true),
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),
-		_spreading(5)
+		_spreading(5),
+
+		_renderGrid(true),
+		_renderMesh(false),
+		_renderPointCloud(false)
 	{
 	}
 };

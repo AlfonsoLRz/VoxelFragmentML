@@ -2,7 +2,6 @@
 
 #include "Geometry/3D/AABB.h"
 #include "Graphics/Core/FractureParameters.h"
-#include "Graphics/Core/Group3D.h"
 #include "Graphics/Core/Image.h"
 #include "Graphics/Core/Model3D.h"
 #include "Graphics/Core/Texture.h"
@@ -25,12 +24,10 @@ class RegularGrid
 public:
 	struct CellGrid
 	{
-		vec3	 _padding;
 		uint16_t _value;
-		uint16_t _boundary;
 
-		CellGrid() : _value(VOXEL_EMPTY), _boundary(0), _padding(.0f) {}
-		CellGrid(uint16_t value) : _value(value), _boundary(0), _padding(.0f) {}
+		CellGrid() : _value(VOXEL_EMPTY)/*, _boundary(0), _padding(.0f) */{}
+		CellGrid(uint16_t value) : _value(value)/*, _boundary(0), _padding(.0f)*/ {}
 	};
 
 protected:
@@ -107,7 +104,7 @@ public:
 	/**
 	*	@brief  
 	*/
-	float fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples, Group3D::StaticGPUData* sceneData);
+	float fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples);
 
 	/**
 	*	@brief

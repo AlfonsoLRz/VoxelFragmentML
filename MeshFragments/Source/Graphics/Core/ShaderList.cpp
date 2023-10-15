@@ -24,6 +24,7 @@ std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::END_LOOP_COMPUTATIONS, "Assets/Shaders/Compute/BVHGeneration/endLoopComputations"},
 		{RendEnum::ERODE_GRID, "Assets/Shaders/Compute/Fracturer/erodeGrid"},
 		{RendEnum::FILL_REGULAR_GRID, "Assets/Shaders/Compute/Collision/fillRegularGrid"},
+		{RendEnum::FILL_REGULAR_GRID_VOXEL, "Assets/Shaders/Compute/Fracturer/fillRegularGrid"},
 		{RendEnum::FIND_BEST_NEIGHBOR, "Assets/Shaders/Compute/BVHGeneration/findBestNeighbor"},
 		{RendEnum::FLOOD_FRACTURER, "Assets/Shaders/Compute/Fracturer/floodFracturer"},
 		{RendEnum::FUSE_VERTICES_01, "Assets/Shaders/Compute/Fracturer/findSameVertices_01"},
@@ -44,6 +45,7 @@ std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::RESET_LAST_POSITION_PREFIX_SCAN, "Assets/Shaders/Compute/PrefixScan/resetLastPosition-prefixScan"},
 		{RendEnum::SAMPLER_SHADER, "Assets/Shaders/Compute/Model/sampler"},
 		{RendEnum::SELECT_VOXEL_TRIANGLE, "Assets/Shaders/Compute/Fracturer/selectVoxelTriangle"},
+		{RendEnum::UNDO_MASK_SHADER, "Assets/Shaders/Compute/Fracturer/undoMask"}
 };
 
 std::unordered_map<uint8_t, std::string> ShaderList::REND_SHADER_SOURCE {

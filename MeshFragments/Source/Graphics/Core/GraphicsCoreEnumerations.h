@@ -126,6 +126,7 @@ struct RendEnum
 		DETECT_BOUNDARIES,
 		ERODE_GRID,
 		FILL_REGULAR_GRID,
+		FILL_REGULAR_GRID_VOXEL,
 		FLOOD_FRACTURER,
 		FUSE_VERTICES_01,
 		FUSE_VERTICES_02,
@@ -133,13 +134,14 @@ struct RendEnum
 		NAIVE_FRACTURER,
 		REMOVE_ISOLATED_REGIONS,
 		RESET_BUFFER,
-		SELECT_VOXEL_TRIANGLE
+		SELECT_VOXEL_TRIANGLE,
+		UNDO_MASK_SHADER
 	};
 
 	/**
 	*	@return Number of compute shaders.
 	*/
-	const static GLsizei numComputeShaderTypes() { return SELECT_VOXEL_TRIANGLE + 1; }
+	const static GLsizei numComputeShaderTypes() { return UNDO_MASK_SHADER + 1; }
 
 	/**
 	*	@return Number of rendering shaders.

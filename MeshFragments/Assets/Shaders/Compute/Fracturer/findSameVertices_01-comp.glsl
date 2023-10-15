@@ -10,7 +10,7 @@ layout(local_size_variable) in;
 layout (std430, binding = 0) buffer IndicesBuffer	{ uint			indices[]; };
 layout (std430, binding = 1) buffer OutputBuffer	{ uint			indices2[]; };
 layout (std430, binding = 2) buffer PointBuffer		{ vec4			points[]; };
-layout (std430, binding = 3) buffer VertexBuffer	{ VertexGPUData	vertexData[]; };
+layout (std430, binding = 3) buffer VertexBuffer	{ vec4			vertexData[]; };
 layout (std430, binding = 4) buffer VertexCount		{ uint			vertexCount; };
 
 uniform uint defaultValue;
@@ -28,7 +28,7 @@ void main()
 	if (index == 0 || distance(points[indices[index]].xyz, points[indices[previousIndex]].xyz) > EPSILON)
 	{
 		uint vertexIndex = atomicAdd(vertexCount, 1);
-		vertexData[vertexIndex].position = (modelMatrix * vec4(points[indices[index]].xyz, 1.0f)).xyz;
+		vertexData[vertexIndex] = modelMatrix * vec4(points[indices[index]].xyz, 1.0f);
 		indices2[index] = vertexIndex;
 	}
 }

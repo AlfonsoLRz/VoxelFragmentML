@@ -65,7 +65,6 @@ void SSAOScene::loadModels()
 	{
 		group->load();
 		group->registerScene();	
-
 	}
 }
 

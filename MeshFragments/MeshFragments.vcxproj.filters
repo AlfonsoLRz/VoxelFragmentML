@@ -1120,9 +1120,6 @@
     <None Include="Assets\Shaders\Compute\Fracturer\voxelStructs.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
-    <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl">
-      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
-    </None>
     <None Include="Assets\Shaders\Compute\Fracturer\countVoxelTriangle-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
@@ -1154,6 +1151,15 @@
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
     <None Include="Assets\Shaders\Compute\Fracturer\resetBuffer-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Collision</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\fillRegularGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\undoMask-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>

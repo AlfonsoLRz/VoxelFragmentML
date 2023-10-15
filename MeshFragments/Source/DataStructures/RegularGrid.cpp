@@ -14,11 +14,18 @@
 RegularGrid::RegularGrid(const AABB& aabb, uvec3 subdivisions) :
 	_aabb(aabb), _numDivs(subdivisions)
 {
-	_cellSize = vec3((_aabb.max().x - _aabb.min().x) / float(subdivisions.x), (_aabb.max().y - _aabb.min().y) / float(subdivisions.y), (_aabb.max().z - _aabb.min().z) / float(subdivisions.z));
-	float minCellSize = glm::min(_cellSize.x, glm::min(_cellSize.y, _cellSize.z));
-	vec3 scale = _cellSize / minCellSize;
-	_cellSize = vec3(minCellSize);
-	_numDivs = glm::ceil(vec3(_numDivs) * scale);
+	vec3 aabbSize = _aabb.size();
+	float maxDimension = glm::max(glm::max(aabbSize.x, aabbSize.y), aabbSize.z);
+	vec3 scale = vec3(maxDimension) / aabbSize;
+	aabbSize *= scale;
+	_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
+	_cellSize = _aabb.size() / vec3(_numDivs);
+
+	//_cellSize = vec3((_aabb.max().x - _aabb.min().x) / float(subdivisions.x), (_aabb.max().y - _aabb.min().y) / float(subdivisions.y), (_aabb.max().z - _aabb.min().z) / float(subdivisions.z));
+	//float minCellSize = glm::min(_cellSize.x, glm::min(_cellSize.y, _cellSize.z));
+	//vec3 scale = _cellSize / minCellSize;
+	//_cellSize = vec3(minCellSize);
+	//_numDivs = glm::ceil(vec3(_numDivs) * scale);
 
 	this->buildGrid();
 }
@@ -54,6 +61,7 @@ void RegularGrid::detectBoundaries(int boundarySize)
 void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint8_t numIterations, float erosionProbability, float erosionThreshold)
 {
 	ComputeShader* erodeShader = ShaderList::getInstance()->getComputeShader(RendEnum::ERODE_GRID);
+	ComputeShader* undoMaskShader = ShaderList::getInstance()->getComputeShader(RendEnum::UNDO_MASK_SHADER);
 
 	if (!(convolutionSize % 2))
 		++convolutionSize;
@@ -116,6 +124,12 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 		erodeShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 	}
 
+	undoMaskShader->bindBuffers(std::vector<GLuint>{ _ssbo, maskSSBO, noiseSSBO });
+	undoMaskShader->use();
+	undoMaskShader->setUniform("numCells", numCells);
+	undoMaskShader->setUniform("position", unsigned(15));
+	undoMaskShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
 	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
 	_grid = std::vector<CellGrid>(gridData, gridData + numCells);
 
@@ -157,10 +171,10 @@ void RegularGrid::exportGrid(const AABB& aabb)
 	vox.PrintStats();
 }
 
-float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples, Group3D::StaticGPUData* sceneData)
+float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples)
 {
 	ComputeShader* boundaryShader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_REGULAR_GRID);
-	ComputeShader* fillShader = ShaderList::getInstance()->getComputeShader(RendEnum::FILL_REGULAR_GRID);
+	ComputeShader* fillShader = ShaderList::getInstance()->getComputeShader(RendEnum::FILL_REGULAR_GRID_VOXEL);
 
 	// Input data
 	uvec3 numDivs		= this->getNumSubdivisions();
@@ -184,9 +198,8 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 
 	// Input data
 	const GLuint noiseSSBO	= ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
-	const GLuint gridSSBO	= ComputeShader::setReadBuffer(&_grid[0], numCells, GL_DYNAMIC_DRAW);
 
-	boundaryShader->bindBuffers(std::vector<GLuint>{ modelComponent->_geometrySSBO, modelComponent->_topologySSBO, noiseSSBO, gridSSBO });
+	boundaryShader->bindBuffers(std::vector<GLuint>{ modelComponent->_geometrySSBO, modelComponent->_topologySSBO, noiseSSBO, _ssbo });
 	boundaryShader->use();
 	boundaryShader->setUniform("aabbMin", _aabb.min());
 	boundaryShader->setUniform("cellSize", _cellSize);
@@ -200,21 +213,16 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 	if (fill)
 	{
 		fillShader->use();
-		fillShader->bindBuffers(std::vector<GLuint>{
-			sceneData->_clusterSSBO, sceneData->_groupGeometrySSBO, sceneData->_groupTopologySSBO, sceneData->_groupMeshSSBO, gridSSBO
-		});
-		fillShader->setUniform("aabbMin", _aabb.min());
-		fillShader->setUniform("cellSize", _cellSize);
+		fillShader->bindBuffers(std::vector<GLuint>{_ssbo});
 		fillShader->setUniform("gridDims", numDivs);
-		fillShader->setUniform("numClusters", sceneData->_numClusters);
 		fillShader->setUniform("numVoxels", numCells);
 		fillShader->execute(numGroups2, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 	}
 
-	CellGrid* gridData = ComputeShader::readData(gridSSBO, CellGrid());
+	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
 	_grid = std::vector<CellGrid>(gridData, gridData + numCells);
 
-	GLuint buffers[] = { noiseSSBO, gridSSBO };
+	GLuint buffers[] = { noiseSSBO };
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 	
 	return maxArea;

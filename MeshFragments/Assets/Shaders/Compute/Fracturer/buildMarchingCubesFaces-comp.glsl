@@ -9,7 +9,7 @@ layout (local_size_variable) in;
 
 layout (std430, binding = 0) buffer IndicesBuffer	{ uint			indices[]; };
 layout (std430, binding = 1) buffer OutputBuffer	{ uint			indices2[]; };
-layout (std430, binding = 2) buffer FaceBuffer		{ FaceGPUData	faceData[]; };
+layout (std430, binding = 2) buffer FaceBuffer		{ uvec4			faceData[]; };
 layout (std430, binding = 3) buffer FaceCount		{ uint			faceCount; };
 
 uniform uint numPoints;
@@ -21,5 +21,5 @@ void main()
 	
 	uint faceIndex = indices[index] / 3;
 	uint vertexIndex = indices[index] % 3;
-	faceData[faceIndex].vertices[vertexIndex] = indices2[index];
+	faceData[faceIndex][vertexIndex] = indices2[index];
 }

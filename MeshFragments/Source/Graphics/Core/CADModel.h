@@ -29,6 +29,7 @@ public:
 	const static std::string OBJ_EXTENSION;					//!< File extension for original OBJ models
 
 protected:
+	AABB			_aabb;									//!< Boundaries 
 	std::string		_filename;								//!< File path (without extension)
 	bool			_fuseComponents;						//!< Fuse all the components found in the cad model
 	bool			_fuseVertices;							//!< Fuse vertices which are too close
@@ -103,7 +104,7 @@ public:
 	/**
 	*	@brief Model 3D constructor for a triangle mesh.
 	*/
-	CADModel(Model3D::VertexGPUData* vertices, unsigned numVertices, Model3D::FaceGPUData* faces, unsigned numFaces, bool releaseMemory = true, const mat4& modelMatrix = mat4(1.0f));
+	CADModel(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned numFaces, bool releaseMemory = true, const mat4& modelMatrix = mat4(1.0f));
 
 	/**
 	*	@brief Deleted copy constructor.
@@ -115,6 +116,11 @@ public:
 	*	@brief Destructor.
 	*/
 	virtual ~CADModel();
+
+	/**
+	*	@return Bounding box of the model.
+	*/
+	AABB getAABB() { return _aabb; }
 
 	/**
 	*	@brief Loads the model data from file.

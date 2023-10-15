@@ -28,12 +28,4 @@ void main()
 		atomicAdd(vertexCount, 1);
 	else
 		indices2[index] = indices2[previousIndex];
-	//int currentIndex = index - 1;
-	//while (index >= 0 && distance(points[indices[index]].xyz, points[indices[currentIndex]].xyz) < EPSILON)
-	//{
-	//	--currentIndex;
-	//}
-
-	//currentIndex += 1;
-	//indices2[index] = indices2[currentIndex];
 }

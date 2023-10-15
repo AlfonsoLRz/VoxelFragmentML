@@ -38,5 +38,5 @@ void main()
 	}
 
 	if (boundary)
-		grid[index].boundary = uint16_t(1);
+		grid[index].value |= uint16_t(1 << 15);
 }
