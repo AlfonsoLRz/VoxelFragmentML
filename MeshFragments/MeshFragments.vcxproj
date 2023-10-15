@@ -314,6 +314,7 @@
     <None Include="Assets\Shaders\Compute\Fracturer\buildMarchingCubesFaces-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\computeMortonCodes-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\countQuadrantOccupancy-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\countVoxelTriangle-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\detectBoundaries-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />

@@ -42,8 +42,8 @@ public:
 	int		_distanceFunction;
 	ivec3	_gridSubdivisions;
 	bool	_launchGPU;
+	int		_marchingCubesSubdivisions;
 	int		_mergeSeedsDistanceFunction;
-	int		_numGridSubdivisions;
 	int		_numSeeds;
 	int		_numExtraSeeds;
 	int		_pointCloudSeedingRandom;
@@ -74,10 +74,10 @@ public:
 		_fillShape(true),
 		_fractureAlgorithm(FLOOD),
 		_distanceFunction(MANHATTAN),
-		_gridSubdivisions(128),
+		_gridSubdivisions(512),
 		_launchGPU(true),
+		_marchingCubesSubdivisions(2),
 		_mergeSeedsDistanceFunction(MANHATTAN),
-		_numGridSubdivisions(2),
 		_numSeeds(64),
 		_numExtraSeeds(200),
 		_pointCloudSeedingRandom(HALTON),

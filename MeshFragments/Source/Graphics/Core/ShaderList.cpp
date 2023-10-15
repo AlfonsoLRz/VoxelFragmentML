@@ -18,6 +18,7 @@ std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::COMPUTE_MORTON_CODES_FRACTURER, "Assets/Shaders/Compute/Fracturer/computeMortonCodes"},
 		{RendEnum::COMPUTE_TANGENTS_1, "Assets/Shaders/Compute/Model/computeTangents_1"},
 		{RendEnum::COMPUTE_TANGENTS_2, "Assets/Shaders/Compute/Model/computeTangents_2"},
+		{RendEnum::COUNT_QUADRANT_OCCUPANCY, "Assets/Shaders/Compute/Fracturer/countQuadrantOccupancy"},
 		{RendEnum::COUNT_VOXEL_TRIANGLE, "Assets/Shaders/Compute/Fracturer/countVoxelTriangle"},
 		{RendEnum::DETECT_BOUNDARIES, "Assets/Shaders/Compute/Fracturer/detectBoundaries"},
 		{RendEnum::DOWN_SWEEP_PREFIX_SCAN, "Assets/Shaders/Compute/PrefixScan/downSweep-prefixScan"},

@@ -299,13 +299,16 @@ const int MarchingCubes::_edgeTable[256] = {
 
 // [Public methods]
 
-MarchingCubes::MarchingCubes(RegularGrid& regularGrid, const uvec3& numDivs, unsigned maxTriangles)
+MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, const uvec3& numDivs, unsigned maxTriangles)
 {
+    _gridSubdivisions = subdivisions;
     _numDivs = numDivs + uvec3(2);
     _maxTriangles = maxTriangles;
-    _numThreads = _numDivs.x * _numDivs.y * _numDivs.z;
+    _steps = glm::ceil(vec3(_numDivs) / vec3(_gridSubdivisions));
+    _numThreads = _steps.x * _steps.y * _steps.z;
     _numGroups = ComputeShader::getNumGroups(_numThreads);
-	unsigned maxNumPoints = regularGrid.numOccupiedVoxels() * _maxTriangles * 3;
+	//unsigned maxNumPoints = regularGrid.numOccupiedVoxels() * _maxTriangles * 3;
+    unsigned maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3;
 	_indices = new unsigned[maxNumPoints];
 	std::iota(_indices, _indices + maxNumPoints, 0);
 
@@ -343,7 +346,7 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, const uvec3& numDivs, uns
 	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints, GL_DYNAMIC_DRAW);
 	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), maxNumPoints / 3, GL_DYNAMIC_DRAW);
 
-    float* gridData = (float*) malloc(sizeof(float) * _numThreads);
+    float* gridData = (float*) malloc(sizeof(float) * _numDivs.x * _numDivs.y * _numDivs.z);
     for (int x = 0; x < _numDivs.x; ++x)
         for (int y = 0; y < _numDivs.y; ++y)
             for (int z = 0; z < _numDivs.z; ++z)
@@ -354,7 +357,7 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, const uvec3& numDivs, uns
             for (int z = 1; z < _numDivs.z - 1; ++z)
                 gridData[x * _numDivs.y * _numDivs.z + y * _numDivs.z + z] = regularGrid.at(x - 1, y - 1, z - 1);
 
-    _gridSSBO = ComputeShader::setReadBuffer(gridData, _numThreads, GL_STATIC_DRAW);
+    _gridSSBO = ComputeShader::setReadBuffer(gridData, _numDivs.x * _numDivs.y * _numDivs.z, GL_STATIC_DRAW);
     free(gridData);
 }
 
@@ -369,33 +372,55 @@ MarchingCubes::~MarchingCubes()
 	delete[] _indices;
 }
 
-CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, const uvec3& numDivs, float targetValue, const mat4& modelMatrix)
+CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, float targetValue, const mat4& modelMatrix)
 {
 	std::cout << "Solving fragment " << static_cast<unsigned>(targetValue) << std::endl;
 
-	this->resetCounter(_numVerticesSSBO);
+    CADModel* model = new CADModel();
+    unsigned numSteps = _gridSubdivisions * _gridSubdivisions * _gridSubdivisions, stepIdx = 0;
 
-    _marchingCubesShader->bindBuffers(std::vector<GLuint>{ _gridSSBO, _verticesSSBO, _numVerticesSSBO, _triangleTableSSBO, _edgeTableSSBO, _supportVerticesSSBO });
-    _marchingCubesShader->use();
-    _marchingCubesShader->setUniform("gridDims", _numDivs);
-    _marchingCubesShader->setUniform("isolevel", 0.5f);
-    _marchingCubesShader->setUniform("targetValue", int(targetValue));
-    _marchingCubesShader->execute(_numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+    for (int x = 0; x < _numDivs.x; x += _steps.x)
+    {
+        for (int y = 0; y < _numDivs.y; y += _steps.y)
+        {
+            for (int z = 0; z < _numDivs.z; z += _steps.z)
+            {
+                uvec3 start = uvec3(x, y, z), size = glm::min(start + _steps, _numDivs) - start;
+                ++stepIdx;
 
-    unsigned numVertices = *ComputeShader::readData(_numVerticesSSBO, unsigned());
-	//vec4* vertexData = ComputeShader::readData(_verticesSSBO, vec4());
+                this->resetCounter(_numVerticesSSBO);
 
-	std::cout << numVertices << std::endl;
+                _marchingCubesShader->bindBuffers(std::vector<GLuint>{ _gridSSBO, _verticesSSBO, _numVerticesSSBO, _triangleTableSSBO, _edgeTableSSBO, _supportVerticesSSBO });
+                _marchingCubesShader->use();
+                _marchingCubesShader->setUniform("gridDims", _numDivs);
+                _marchingCubesShader->setUniform("isolevel", 0.5f);
+                _marchingCubesShader->setUniform("localSize", size);
+                _marchingCubesShader->setUniform("start", start);
+                _marchingCubesShader->setUniform("targetValue", int(targetValue));
+                _marchingCubesShader->execute(_numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-	this->calculateMortonCodes(numVertices);
-	this->sortMortonCodes(numVertices);
-	unsigned newNumVertices = this->fuseSimilarVertices(numVertices, modelMatrix);
-	this->buildMarchingCubesFaces(numVertices);
+                unsigned numVertices = *ComputeShader::readData(_numVerticesSSBO, unsigned());
+                //vec4* vertexData = ComputeShader::readData(_verticesSSBO, vec4());
 
-	vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
-	uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * numVertices / 3);
+                if (numVertices)
+                {
+                    this->calculateMortonCodes(numVertices);
+                    this->sortMortonCodes(numVertices);
+                    unsigned newNumVertices = this->fuseSimilarVertices(numVertices, modelMatrix);
+                    this->buildMarchingCubesFaces(numVertices);
 
-	return new CADModel(vertices, newNumVertices, faces, numVertices / 3, true);
+                    vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
+                    uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * numVertices / 3);
+
+                    model->insert(vertices, newNumVertices, faces, numVertices / 3);
+                }
+            }
+        }
+    }
+
+    model->endBatch(true);
+
+    return model;
     //triangles.resize(numVertices / 3);
     //for (int idx = 0; idx < numVertices; idx += 3)
     //{

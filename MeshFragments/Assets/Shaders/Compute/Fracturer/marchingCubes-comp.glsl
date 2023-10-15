@@ -17,9 +17,11 @@ layout (std430, binding = 5) buffer SupportBuffer	{ vec4		vertexList[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
-uniform float isolevel;
-uniform mat4 modelMatrix;
-uniform int targetValue;
+uniform float	isolevel;
+uniform uvec3	localSize;
+uniform mat4	modelMatrix;
+uniform uvec3	start;
+uniform int		targetValue;
 
 // The indices of the 8 neighbors that form the boundary of this cell
 const ivec3 neighbors[8] =
@@ -49,6 +51,16 @@ const ivec2 edgeTable[12] =
 	{ 2, 6 },
 	{ 3, 7 }
 };
+
+uvec3 getPosition2(uint index)
+{
+	float x = index / float(localSize.y * localSize.z);
+	float w = index % (localSize.y * localSize.z);
+	float y = w / localSize.z;
+	float z = uint(w) % localSize.z;
+
+	return uvec3(x, y, z);
+}
 
 vec3 findVertex(in ivec3 cellIndices, in float isolevel, in ivec2 edge, float value_1, float value_2)
 {
@@ -140,11 +152,11 @@ void march(in uint index, in ivec3 cellIndices)
 void main()
 {
 	const uint index = gl_GlobalInvocationID.x;
-	if (index >= gridDims.x * gridDims.y * gridDims.z)
+	if (index >= localSize.x * localSize.y * localSize.z)
 		return;
 
 	// The 3D coordinates of this compute shader thread
-	ivec3 cellIndices = ivec3(getPosition(index));
+	ivec3 cellIndices = ivec3(getPosition2(index) + start);
 
 	// Perform marching cubes
 	march(index, cellIndices);

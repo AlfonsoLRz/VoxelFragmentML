@@ -286,7 +286,7 @@ void CADScene::prepareScene()
 		_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
 	}
 
-	_fractureMeshes = _meshGrid->toTriangleMesh();
+	_fractureMeshes = _meshGrid->toTriangleMesh(_fractParameters._marchingCubesSubdivisions);
 	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
 	{
 		Material* material = new Material;

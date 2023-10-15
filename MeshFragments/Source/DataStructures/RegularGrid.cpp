@@ -30,13 +30,43 @@ RegularGrid::RegularGrid(const AABB& aabb, uvec3 subdivisions) :
 	this->buildGrid();
 }
 
-RegularGrid::RegularGrid(uvec3 subdivisions) : _cellSize(.0f), _numDivs(subdivisions)
+RegularGrid::RegularGrid(uvec3 subdivisions) : _cellSize(.0f), _numDivs(subdivisions), _ssbo(-1)
 {
 	
 }
 
 RegularGrid::~RegularGrid()
 {
+	glDeleteBuffers(1, &_ssbo);
+}
+
+unsigned RegularGrid::calculateMaxQuadrantOccupancy(unsigned subdivisions)
+{
+	ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::COUNT_QUADRANT_OCCUPANCY);
+
+	uvec3 numDivs = this->getNumSubdivisions();
+	unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
+	unsigned numGroups = ComputeShader::getNumGroups(numCells);
+	uvec3 step = glm::ceil(vec3(_numDivs) / vec3(subdivisions));
+
+	unsigned* counter = (unsigned*) calloc(subdivisions * subdivisions * subdivisions, sizeof(unsigned));
+	const GLuint counterSSBO = ComputeShader::setReadBuffer(counter, subdivisions * subdivisions * subdivisions, GL_DYNAMIC_DRAW);
+
+	shader->bindBuffers(std::vector<GLuint>{ _ssbo, counterSSBO });
+	shader->use();
+	shader->setUniform("gridDims", numDivs);
+	shader->setUniform("numCells", numCells);
+	shader->setUniform("step", step);
+	shader->setUniform("subdivisions", subdivisions);
+	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+	unsigned* countData = ComputeShader::readData(counterSSBO, unsigned());
+	unsigned maxCount = *std::max_element(countData, countData + subdivisions * subdivisions * subdivisions);
+
+	glDeleteBuffers(1, &counterSSBO);
+	free(counter);
+
+	return maxCount;
 }
 
 void RegularGrid::detectBoundaries(int boundarySize)
@@ -473,7 +503,7 @@ void RegularGrid::queryCluster(std::vector<vec4>* points, std::vector<float>& cl
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 }
 
-std::vector<Model3D*> RegularGrid::toTriangleMesh()
+std::vector<Model3D*> RegularGrid::toTriangleMesh(int subdivisions)
 {
 	std::vector<Model3D*> meshes;
 	std::unordered_set<uint16_t> valuesSet;
@@ -488,14 +518,14 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh()
 		values.push_back(std::move(valuesSet.extract(it++).value()));
 	}
 
-	MarchingCubes mCubes(*this, _numDivs, 5);
+	MarchingCubes mCubes(*this, subdivisions, _numDivs, 5);
 	vec3 scale = (_aabb.size()) / vec3(_numDivs + uvec3(2));
 	vec3 minPoint = _aabb.min();
 	mat4 transformationMatrix = glm::translate(glm::mat4(1.0f), -vec3(1.0f) * scale) * glm::translate(glm::mat4(1.0f), minPoint) * glm::scale(glm::mat4(1.0f), scale);
 
 	for (int idx = 0; idx < values.size(); ++idx)
 	{
-		meshes[idx] = mCubes.triangulateFieldGPU(_ssbo, _numDivs, values[idx], transformationMatrix);
+		meshes[idx] = mCubes.triangulateFieldGPU(_ssbo, values[idx], transformationMatrix);
 	}
 
 	return meshes;

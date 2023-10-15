@@ -11,11 +11,13 @@ protected:
     static const int _edgeTable[256];
 
 protected:
+    unsigned        _gridSubdivisions;
     unsigned*       _indices;
     unsigned        _maxTriangles;
     uvec3           _numDivs;
     unsigned        _numGroups;
     unsigned        _numThreads;
+    uvec3           _steps;
 
     // Shaders
     ComputeShader*  _computeMortonShader;
@@ -80,7 +82,7 @@ public:
     /**
     *   @brief Constructor.
     */
-    MarchingCubes(RegularGrid& regularGrid, const uvec3& numDivs, unsigned maxTriangles = 5);
+    MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, const uvec3& numDivs, unsigned maxTriangles = 5);
 
     /**
     *   @brief Destructor.
@@ -90,6 +92,6 @@ public:
     /**
     *   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
     */
-    CADModel* triangulateFieldGPU(GLuint gridSSBO, const uvec3& numDivs, float targetValue, const mat4& modelMatrix);
+    CADModel* triangulateFieldGPU(GLuint gridSSBO, float targetValue, const mat4& modelMatrix);
 };
 

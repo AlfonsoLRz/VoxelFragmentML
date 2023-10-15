@@ -87,6 +87,11 @@ public:
     virtual ~RegularGrid();
 
 	/**
+	*	@brief Calculates the maximum number of voxels occupied per quadrant.
+	*/
+	unsigned calculateMaxQuadrantOccupancy(unsigned subdivisions);
+
+	/**
 	*	@brief Detects which voxels are in the boundary of fragments.
 	*/
 	void detectBoundaries(int boundarySize);
@@ -159,7 +164,7 @@ public:
 	/**
 	*	@brief Transforms the regular grid into a triangle mesh per value.
 	*/
-	std::vector<Model3D*> toTriangleMesh();
+	std::vector<Model3D*> toTriangleMesh(int subdivisions);
 
 	/**
 	*	@brief Updates SSBO content with the CPU's one.

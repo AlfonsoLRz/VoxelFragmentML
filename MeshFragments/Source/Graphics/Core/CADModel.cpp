@@ -65,16 +65,17 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory,
 	}
 }
 
-CADModel::CADModel(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned numFaces, bool releaseMemory, const mat4& modelMatrix):
-	Model3D(modelMatrix, 1), _useBinary(false)
+CADModel::CADModel(const mat4& modelMatrix): Model3D(modelMatrix, 1), _useBinary(false), _fuseComponents(false), _fuseVertices(false)
+{
+}
+
+CADModel::~CADModel()
+{
+}
+
+void CADModel::endBatch(bool releaseMemory)
 {
 	ModelComponent* modelComponent = _modelComp[0];
-
-	for (int idx = 0; idx < numVertices; ++idx)
-		modelComponent->_geometry.push_back(Model3D::VertexGPUData{ vec3(vertices[idx].x, vertices[idx].y, vertices[idx].z)});
-
-	for (int idx = 0; idx < numFaces; ++idx)
-		modelComponent->_topology.push_back(Model3D::FaceGPUData{ uvec3(faces[idx].x, faces[idx].y, faces[idx].z)});
 
 	//this->simplify(5000);
 	this->computeMeshData(modelComponent, true);
@@ -86,13 +87,20 @@ CADModel::CADModel(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned 
 	}
 
 	Model3D::setVAOData();
-
 	for (ModelComponent* modelComponent : _modelComp)
 		modelComponent->releaseMemory(releaseMemory, releaseMemory);
 }
 
-CADModel::~CADModel()
+void CADModel::insert(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned numFaces, bool updateIndices)
 {
+	ModelComponent* modelComponent = _modelComp[0];
+	unsigned baseIndex = modelComponent->_geometry.size();
+
+	for (int idx = 0; idx < numVertices; ++idx)
+		modelComponent->_geometry.push_back(Model3D::VertexGPUData{ vec3(vertices[idx].x, vertices[idx].y, vertices[idx].z) });
+
+	for (int idx = 0; idx < numFaces; ++idx)
+		modelComponent->_topology.push_back(Model3D::FaceGPUData{ uvec3(faces[idx].x + baseIndex, faces[idx].y + baseIndex, faces[idx].z + baseIndex) });
 }
 
 bool CADModel::load(const mat4& modelMatrix)

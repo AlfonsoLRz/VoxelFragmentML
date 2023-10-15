@@ -1162,5 +1162,8 @@
     <None Include="Assets\Shaders\Compute\Fracturer\undoMask-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\countQuadrantOccupancy-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
   </ItemGroup>
 </Project>

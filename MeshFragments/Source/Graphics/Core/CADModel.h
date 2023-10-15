@@ -102,9 +102,9 @@ public:
 	CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory = true, const mat4& modelMatrix = mat4(1.0f));
 
 	/**
-	*	@brief Model 3D constructor for a triangle mesh.
+	*	@brief Model 3D constructor for a triangle mesh with no known geometry at first.
 	*/
-	CADModel(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned numFaces, bool releaseMemory = true, const mat4& modelMatrix = mat4(1.0f));
+	CADModel(const mat4& modelMatrix = mat4(1.0f));
 
 	/**
 	*	@brief Deleted copy constructor.
@@ -118,9 +118,19 @@ public:
 	virtual ~CADModel();
 
 	/**
+	*	@brief Sends geometry & topology to GPU.
+	*/
+	void endBatch(bool releaseMemory = true);
+
+	/**
 	*	@return Bounding box of the model.
 	*/
 	AABB getAABB() { return _aabb; }
+
+	/**
+	*	@brief Appends new geometry & topology.
+	*/
+	void insert(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned numFaces, bool updateIndices = true);
 
 	/**
 	*	@brief Loads the model data from file.
