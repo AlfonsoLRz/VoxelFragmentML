@@ -500,10 +500,15 @@ bool CADScene::readLightsFromSettings()
 
 void CADScene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingParameters* rendParams)
 {
-	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::TRIANGLE_MESH_SHADER);
-	RenderingShader* clusteringShader = ShaderList::getInstance()->getRenderingShader(RendEnum::CLUSTER_SHADER);
-	RenderingShader* multiInstanceShader = ShaderList::getInstance()->getRenderingShader(RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER);
+	RendEnum::RendShaderTypes shaderType = RendEnum::TRIANGLE_MESH_SHADER;
+	if (rendParams->_triangleMeshRendering == RenderingParameters::VOXELIZATION)
+		shaderType = RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER;
+	else if (rendParams->_triangleMeshRendering == RenderingParameters::ORIGINAL_MESH_T or rendParams->_triangleMeshRendering == RenderingParameters::FRAGMENTED_MESH_T)
+		shaderType = RendEnum::TRIANGLE_MESH_SHADER;
+	else
+		shaderType = RendEnum::CLUSTER_SHADER;
 
+	RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(shaderType);
 	std::vector<mat4> matrix(RendEnum::numMatricesTypes());
 	const mat4 bias = glm::translate(mat4(1.0f), vec3(0.5f)) * glm::scale(mat4(1.0f), vec3(0.5f));						// Proj: [-1, 1] => with bias: [0, 1]
 
@@ -532,39 +537,13 @@ void CADScene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingPara
 				matrix[RendEnum::BIAS_VIEW_PROJ_MATRIX] = bias * _lights[i]->getCamera()->getViewProjMatrix();
 			}
 
-			if (rendParams->_showVoxelizedMesh)
-			{
-				multiInstanceShader->use();
-				multiInstanceShader->setUniform("materialScattering", rendParams->_materialScattering);
-				_lights[i]->applyLight(multiInstanceShader, matrix[RendEnum::VIEW_MATRIX]);
-				_lights[i]->applyShadowMapTexture(multiInstanceShader);
-				multiInstanceShader->applyActiveSubroutines();
+			shader->use();
+			shader->setUniform("materialScattering", rendParams->_materialScattering);
+			_lights[i]->applyLight(shader, matrix[RendEnum::VIEW_MATRIX]);
+			_lights[i]->applyShadowMapTexture(shader);
+			shader->applyActiveSubroutines();
 
-				this->drawSceneAsTriangles(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_SHADER, &matrix, rendParams);
-			}
-			else
-			{
-				if (rendParams->_showTriangleMesh or rendParams->_showFragmentsMarchingCubes)
-				{
-					shader->use();
-					shader->setUniform("materialScattering", rendParams->_materialScattering);
-					_lights[i]->applyLight(shader, matrix[RendEnum::VIEW_MATRIX]);
-					_lights[i]->applyShadowMapTexture(shader);
-					shader->applyActiveSubroutines();
-
-					this->drawSceneAsTriangles(shader, RendEnum::TRIANGLE_MESH_SHADER, &matrix, rendParams);
-				}
-				else
-				{
-					clusteringShader->use();
-					clusteringShader->setUniform("materialScattering", rendParams->_materialScattering);
-					_lights[i]->applyLight(clusteringShader, matrix[RendEnum::VIEW_MATRIX]);
-					_lights[i]->applyShadowMapTexture(clusteringShader);
-					clusteringShader->applyActiveSubroutines();
-
-					this->drawSceneAsTriangles(clusteringShader, RendEnum::CLUSTER_SHADER, &matrix, rendParams);
-				}
-			}
+			this->drawSceneAsTriangles(shader, shaderType, &matrix, rendParams);
 		}
 	}
 
@@ -576,12 +555,12 @@ void CADScene::drawSceneAsPoints(RenderingShader* shader, RendEnum::RendShaderTy
 {
 	if (_pointCloudRenderer)
 	{
-		if (rendParams->_useClusterColor)
+		if (rendParams->_pointCloudRendering == RenderingParameters::SAMPLED_POINT_CLOUD)
 			shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "clusterColor");
-		else if (rendParams->_useUniformPointColor)
+		else if (rendParams->_pointCloudRendering == RenderingParameters::ORIGINAL_MESH_PC)
 			shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "uniformColor");
 		else
-			shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "textureColor");
+			//shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "textureColor");
 		shader->applyActiveSubroutines();
 
 		_pointCloudRenderer->drawAsPoints(shader, shaderType, *matrix);
@@ -593,12 +572,15 @@ void CADScene::drawSceneAsPoints(RenderingShader* shader, RendEnum::RendShaderTy
 
 void CADScene::drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
-	//for (Group3D* group : _sceneGroup)
-	//	group->drawAsLines(shader, shaderType, *matrix);
-
-	for (Model3D* fractureMesh : _fractureMeshes)
+	if (rendParams->_pointCloudRendering == RenderingParameters::ORIGINAL_MESH_W)
 	{
-		fractureMesh->drawAsLines(shader, shaderType, *matrix);
+		for (Group3D* group : _sceneGroup)
+			group->drawAsLines(shader, shaderType, *matrix);
+	}
+	else if (rendParams->_pointCloudRendering == RenderingParameters::FRAGMENTED_MESH_W)
+	{
+		for (Model3D* fractureMesh : _fractureMeshes)
+			fractureMesh->drawAsLines(shader, shaderType, *matrix);
 	}
 }
 
@@ -606,12 +588,12 @@ void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShade
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_SHADER)
 	{
-		if (rendParams->_showTriangleMesh or !rendParams->_showFragmentsMarchingCubes)
+		if (rendParams->_triangleMeshRendering == RenderingParameters::ORIGINAL_MESH_T)
 		{
 			if (_mesh)
 				_mesh->drawAsTriangles(shader, shaderType, *matrix);
 		}
-		else if (rendParams->_showFragmentsMarchingCubes)
+		else if (rendParams->_triangleMeshRendering == RenderingParameters::FRAGMENTED_MESH_T)
 		{
 			for (Model3D* fractureMesh : _fractureMeshes)
 				fractureMesh->drawAsTriangles(shader, shaderType, *matrix);
@@ -619,11 +601,8 @@ void CADScene::drawSceneAsTriangles(RenderingShader* shader, RendEnum::RendShade
 	}
 	else if (shaderType == RendEnum::CLUSTER_SHADER)
 	{
-		if (!rendParams->_showFragmentsMarchingCubes)
-		{
-			if (_mesh)
-				_mesh->drawAsTriangles(shader, shaderType, *matrix);
-		}
+		if (_mesh)
+			_mesh->drawAsTriangles(shader, shaderType, *matrix);
 	}
 	else
 	{
@@ -638,62 +617,46 @@ void CADScene::drawSceneAsTriangles4Normal(RenderingShader* shader, RendEnum::Re
 {
 	if (shaderType == RendEnum::TRIANGLE_MESH_NORMAL_SHADER)
 	{
-		if (!rendParams->_showVoxelizedMesh)
+		if (rendParams->_triangleMeshRendering == RenderingParameters::ORIGINAL_MESH_T or rendParams->_triangleMeshRendering == RenderingParameters::CLUSTERED_MESH)
 		{
-			if (rendParams->_showTriangleMesh or !rendParams->_showFragmentsMarchingCubes)
-			{
-				if (_mesh)
-					_mesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
-			}
-			else if (rendParams->_showFragmentsMarchingCubes)
-			{
-				for (Model3D* fractureMesh : _fractureMeshes)
-					fractureMesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
-			}
+			if (_mesh)
+				_mesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		}
+		else if (rendParams->_triangleMeshRendering == RenderingParameters::FRAGMENTED_MESH_T)
+		{
+			for (Model3D* fractureMesh : _fractureMeshes)
+				fractureMesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
 		}
 	}
 	else
 	{
-		if (rendParams->_showVoxelizedMesh)
-		{
-			if (rendParams->_planeClipping)
-			{
-				shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
-			}
+		if (rendParams->_planeClipping)
+			shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
 
-			_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
-		}
+		_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
 	}
 }
 
 void CADScene::drawSceneAsTriangles4Position(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
-	if (shaderType == RendEnum::TRIANGLE_MESH_POSITION_SHADER || shaderType == RendEnum::SHADOWS_SHADER)
+	if (shaderType == RendEnum::TRIANGLE_MESH_POSITION_SHADER or shaderType == RendEnum::SHADOWS_SHADER)
 	{
-		if (!rendParams->_showVoxelizedMesh)
+		if (rendParams->_triangleMeshRendering == RenderingParameters::ORIGINAL_MESH_T or rendParams->_triangleMeshRendering == RenderingParameters::CLUSTERED_MESH)
 		{
-			if (rendParams->_showTriangleMesh or !rendParams->_showFragmentsMarchingCubes)
-			{
-				if (_mesh)
-					_mesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
-			}
-			else if (rendParams->_showFragmentsMarchingCubes)
-			{
-				for (Model3D* fractureMesh : _fractureMeshes)
-					fractureMesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
-			}
+			if (_mesh)
+				_mesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
+		}
+		else if (rendParams->_triangleMeshRendering == RenderingParameters::FRAGMENTED_MESH_T)
+		{
+			for (Model3D* fractureMesh : _fractureMeshes)
+				fractureMesh->drawAsTriangles4Shadows(shader, shaderType, *matrix);
 		}
 	}
 	else
 	{
-		if (rendParams->_showVoxelizedMesh)
-		{
-			if (rendParams->_planeClipping)
-			{
-				shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
-			}
+		if (rendParams->_planeClipping)
+			shader->setUniform("planeCoefficients", rendParams->_planeCoefficients);
 
-			_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
-		}
+		_aabbRenderer->drawAsTriangles4Shadows(shader, shaderType, *matrix);
 	}
 }

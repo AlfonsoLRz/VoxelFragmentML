@@ -190,11 +190,16 @@ void Scene::drawAsTriangles4Position(const mat4& mModel, RenderingParameters* re
 		matrix[RendEnum::VIEW_MATRIX] = activeCamera->getViewMatrix();
 		matrix[RendEnum::VIEW_PROJ_MATRIX] = activeCamera->getViewProjMatrix();
 
-		shader->use();
-		this->drawSceneAsTriangles4Position(shader, RendEnum::TRIANGLE_MESH_POSITION_SHADER, &matrix, rendParams);
-
-		multiInstanceShader->use();
-		this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_POSITION_SHADER, &matrix, rendParams);
+		if (rendParams->_triangleMeshRendering != RenderingParameters::VOXELIZATION)
+		{
+			shader->use();
+			this->drawSceneAsTriangles4Position(shader, RendEnum::TRIANGLE_MESH_POSITION_SHADER, &matrix, rendParams);
+		}
+		else
+		{
+			multiInstanceShader->use();
+			this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_POSITION_SHADER, &matrix, rendParams);
+		}
 	}
 }
 
@@ -210,11 +215,16 @@ void Scene::drawAsTriangles4Normal(const mat4& mModel, RenderingParameters* rend
 		matrix[RendEnum::VIEW_MATRIX] = activeCamera->getViewMatrix();
 		matrix[RendEnum::VIEW_PROJ_MATRIX] = activeCamera->getViewProjMatrix();
 
-		shader->use();
-		this->drawSceneAsTriangles4Normal(shader, RendEnum::TRIANGLE_MESH_NORMAL_SHADER, &matrix, rendParams);
-
-		multiInstanceShader->use();
-		this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_NORMAL_SHADER, &matrix, rendParams);
+		if (rendParams->_triangleMeshRendering != RenderingParameters::VOXELIZATION)
+		{
+			shader->use();
+			this->drawSceneAsTriangles4Normal(shader, RendEnum::TRIANGLE_MESH_NORMAL_SHADER, &matrix, rendParams);
+		}
+		else
+		{
+			multiInstanceShader->use();
+			this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_TRIANGLE_MESH_NORMAL_SHADER, &matrix, rendParams);
+		}
 	}
 }
 
@@ -250,11 +260,16 @@ void Scene::drawAsTriangles4Shadows(const mat4& mModel, RenderingParameters* ren
 
 			matrix[RendEnum::VIEW_PROJ_MATRIX] = light->getCamera()->getViewProjMatrix();
 
-			shader->use();
-			this->drawSceneAsTriangles4Position(shader, RendEnum::SHADOWS_SHADER, &matrix, rendParams);
-
-			multiInstanceShader->use();
-			this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_SHADOWS_SHADER, &matrix, rendParams);
+			if (rendParams->_triangleMeshRendering != RenderingParameters::VOXELIZATION)
+			{
+				shader->use();
+				this->drawSceneAsTriangles4Position(shader, RendEnum::SHADOWS_SHADER, &matrix, rendParams);
+			}
+			else
+			{
+				multiInstanceShader->use();
+				this->drawSceneAsTriangles4Position(multiInstanceShader, RendEnum::MULTI_INSTANCE_SHADOWS_SHADER, &matrix, rendParams);
+			}
 
 			//_computeShadowMap[i] = false;
 		}

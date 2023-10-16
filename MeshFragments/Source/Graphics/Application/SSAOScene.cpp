@@ -38,10 +38,10 @@ void SSAOScene::render(const mat4& mModel, RenderingParameters* rendParams)
 		_ssaoFBO->writeGBuffer(0);
 
 		_ssaoFBO->bindGBufferFBO(1);
-		if (rendParams->_showTriangleMesh and rendParams->_visualizationMode >= CGAppEnum::VIS_TRIANGLES) this->drawAsTriangles4Position(mModel, rendParams);
+		if (rendParams->_visualizationMode >= CGAppEnum::VIS_TRIANGLES) this->drawAsTriangles4Position(mModel, rendParams);
 
 		_ssaoFBO->bindGBufferFBO(2);
-		if (rendParams->_showTriangleMesh and rendParams->_visualizationMode >= CGAppEnum::VIS_TRIANGLES) this->drawAsTriangles4Normal(mModel, rendParams);
+		if (rendParams->_visualizationMode >= CGAppEnum::VIS_TRIANGLES) this->drawAsTriangles4Normal(mModel, rendParams);
 
 		_ssaoFBO->bindSSAOFBO();
 		this->drawSSAOScene();

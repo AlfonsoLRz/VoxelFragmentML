@@ -14,10 +14,14 @@
 struct RenderingParameters
 {
 public:
-	enum PointCloudType : int {
-		UNIFORM = 0,
-		HEIGHT = 1
-	};
+	enum PointCloudRendering : int { ORIGINAL_MESH_PC, SAMPLED_POINT_CLOUD, NUM_POINT_CLOUD_RENDERING_TYPES };
+	inline static const char* PointCloudRendering_STR[NUM_POINT_CLOUD_RENDERING_TYPES] = { "Starting mesh", "Sampled point cloud" };
+
+	enum WireframeRendering : int { ORIGINAL_MESH_W, FRAGMENTED_MESH_W, NUM_WIREFRAME_RENDERING_TYPES };
+	inline static const char* WireframeRendering_STR[NUM_WIREFRAME_RENDERING_TYPES] = { "Starting mesh", "Fragmented mesh" };
+
+	enum TriangleMeshRendering : int { ORIGINAL_MESH_T, VOXELIZATION, FRAGMENTED_MESH_T, CLUSTERED_MESH, NUM_TRIANGLE_MESH_RENDERING_TYPES };
+	inline static const char* TriangleMeshRendering_STR[NUM_TRIANGLE_MESH_RENDERING_TYPES] = { "Starting mesh", "Voxelization", "Fragmented mesh", "Clustered mesh" };
 
 public:
 	// Application
@@ -51,10 +55,9 @@ public:
 	// What to see		
 	bool							_planeClipping;							//!< 
 	vec4							_planeCoefficients;						//!< 
-	int								_pointCloudType;						//!< ID of the point cloud type which must be rendered
-	bool							_showFragmentsMarchingCubes;			//!<
-	bool							_showVoxelizedMesh;						//!< Renders mesh as a voxelized model
-	bool							_showTriangleMesh;						//!< Render original scene
+	int								_pointCloudRendering;					//!< ID of the point cloud type which must be rendered
+	int								_wireframeRendering;					//!<
+	int								_triangleMeshRendering;					//!<
 
 public:
 	/**
@@ -84,10 +87,9 @@ public:
 
 		_planeClipping(false),
 		_planeCoefficients(.0f),
-		_pointCloudType(PointCloudType::UNIFORM),
-		_showFragmentsMarchingCubes(false),
-		_showVoxelizedMesh(true),
-		_showTriangleMesh(true)
+		_pointCloudRendering(ORIGINAL_MESH_PC),
+		_wireframeRendering(ORIGINAL_MESH_W),
+		_triangleMeshRendering(VOXELIZATION)
 	{
 	}
 };

@@ -263,8 +263,7 @@ void GUI::showRenderingSettings()
 
 				ImGui::SliderFloat("Point Size", &_renderingParams->_scenePointSize, 0.1f, 50.0f);
 				ImGui::ColorEdit3("Point Cloud Color", &_renderingParams->_scenePointCloudColor[0]);
-				ImGui::Checkbox("Use Cluster Color", &_renderingParams->_useClusterColor);
-				ImGui::Checkbox("Use Uniform Color", &_renderingParams->_useUniformPointColor);
+				ImGui::Combo("Rendering type", &_renderingParams->_pointCloudRendering, _renderingParams->PointCloudRendering_STR, IM_ARRAYSIZE(_renderingParams->PointCloudRendering_STR));
 
 				ImGui::EndTabItem();
 			}
@@ -274,6 +273,7 @@ void GUI::showRenderingSettings()
 				this->leaveSpace(1);
 
 				ImGui::ColorEdit3("Wireframe Color", &_renderingParams->_wireframeColor[0]);
+				ImGui::Combo("Rendering type", &_renderingParams->_wireframeRendering, _renderingParams->WireframeRendering_STR, IM_ARRAYSIZE(_renderingParams->WireframeRendering_STR));
 
 				ImGui::EndTabItem();
 			}
@@ -282,9 +282,7 @@ void GUI::showRenderingSettings()
 			{
 				this->leaveSpace(1);
 
-				ImGui::Checkbox("Voxelized", &_renderingParams->_showVoxelizedMesh);
-				ImGui::Checkbox("Render Original Mesh", &_renderingParams->_showTriangleMesh);
-				ImGui::Checkbox("Marching Cube Fragments", &_renderingParams->_showFragmentsMarchingCubes);
+				ImGui::Combo("Rendering type", &_renderingParams->_triangleMeshRendering, _renderingParams->TriangleMeshRendering_STR, IM_ARRAYSIZE(_renderingParams->TriangleMeshRendering_STR));
 				ImGui::Checkbox("Plane Clipping", &_renderingParams->_planeClipping);
 				ImGui::SameLine(0, 20); ImGui::SliderFloat4("Coefficients", &_renderingParams->_planeCoefficients[0], -10.0f, 10.0f);
 
