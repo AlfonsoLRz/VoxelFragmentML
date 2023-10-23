@@ -46,3 +46,7 @@
 MeshFragments/Debug/*
 MeshFragments/Release/*
 MeshFragments/x64/*
+
+# Libraries
+MeshFragments/Libraries/surfrecon/src/eigen3/*
+MeshFragments/Libraries/surfrecon/include/eigen3/*
