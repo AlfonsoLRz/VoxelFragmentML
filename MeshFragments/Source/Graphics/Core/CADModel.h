@@ -1,5 +1,8 @@
 #pragma once
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 #include "Fracturer/Seeder.h"
 #include "Geometry/3D/PointCloud3D.h"
 #include "Geometry/3D/Triangle3D.h"
@@ -30,12 +33,14 @@ public:
 	const static std::string OBJ_EXTENSION;					//!< File extension for original OBJ models
 
 protected:
-	AABB			_aabb;									//!< Boundaries 
-	std::string		_filename;								//!< File path (without extension)
-	bool			_fuseComponents;						//!< Fuse all the components found in the cad model
-	bool			_fuseVertices;							//!< Fuse vertices which are too close
-	std::string		_textureFolder;							//!< Folder where model textures may be located
-	bool			_useBinary;								//!< Use binary file instead of original obj models
+	AABB				_aabb;									//!< Boundaries 
+	Assimp::Importer	_assimpImporter;						//!< Assimp importer
+	std::string			_filename;								//!< File path (without extension)
+	bool				_fuseComponents;						//!< Fuse all the components found in the cad model
+	bool				_fuseVertices;							//!< Fuse vertices which are too close
+	const aiScene*		_scene;									//!< Scene from assimp library	
+	std::string			_textureFolder;							//!< Folder where model textures may be located
+	bool				_useBinary;								//!< Use binary file instead of original obj models
 
 protected:
 	/**
@@ -47,11 +52,6 @@ protected:
 	*	@brief Creates a new material from the attributes of a model component.
 	*/
 	Material* createMaterial(ModelComponent* modelComp);
-
-	/**
-	*	@brief Initializes a model component with the content of a mesh.
-	*/
-	void createModelComponent(objl::Mesh* mesh);
 
 	/**
 	*	@brief Fuse components into a single one.
@@ -69,9 +69,14 @@ protected:
 	bool loadModelFromBinaryFile();
 
 	/**
-	*	@brief Generates geometry via GPU.
+	*	@brief Processes mesh as loaded by Assimp.
 	*/
-	bool loadModelFromOBJ(const mat4& modelMatrix);
+	Model3D::ModelComponent* processMesh(aiMesh* mesh, const aiScene* scene, const std::string& folder);
+
+	/**
+	*	@brief Process node from assimp load.
+	*/
+	void processNode(aiNode* node, const aiScene* scene, const std::string& folder);
 
 	/**
 	*	@brief Loads the CAD model from a binary file, if possible.
@@ -87,7 +92,7 @@ protected:
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
 	*	@return Success of writing process.
 	*/
-	bool writeToBinary();
+	bool writeBinary(const std::string& path);
 
 public:
 	/**
@@ -137,7 +142,7 @@ public:
 	*	@brief Loads the model data from file.
 	*	@return Success of operation.
 	*/
-	virtual bool load(const mat4& modelMatrix = mat4(1.0f));
+	virtual bool load();
 
 	/**
 	*	@brief Deleted assignment operator.

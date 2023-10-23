@@ -1,5 +1,6 @@
 #pragma once
 
+#include <assimp/material.h>
 #include "Graphics/Core/ComputeShader.h"
 #include "Graphics/Core/Image.h"
 #include "Graphics/Core/ShaderProgram.h"
@@ -19,7 +20,6 @@ public:
 	enum TextureTypes : uint16_t
 	{
 		BUMP_MAPPING_TEXTURE,
-		CUBEMAP_TEXTURE,
 		DISPLACEMENT_MAPPING_TEXTURE,
 		KAD_TEXTURE,
 		KS_TEXTURE,
@@ -35,7 +35,6 @@ protected:
 	const static GLuint MAG_FILTER;			//!<
 	const static GLuint WRAP_S;				//!<
 	const static GLuint WRAP_T;				//!<
-	const static GLuint WRAP_R;				//!< Cube map
 
 	const static std::unordered_map<uint16_t, std::string> SHADER_VARIABLE;		//!< Name of each variable related to a texture in a shader, so we can apply uniforms
 
@@ -79,12 +78,6 @@ public:
 			const GLuint magFilter = MAG_FILTER, const bool rgba8 = false);
 
 	/**
-	*	@brief Constructor from an image given by a float array. Made for Noise Library, which returns the images in such shape.
-	*/
-	Texture(std::vector<Image*> images, const int width, const int height, const GLuint wrapS = WRAP_S, const GLuint wrapT = WRAP_T, const GLuint wrapR = WRAP_R, 
-			const GLuint minFilter = MIN_FILTER, const GLuint magFilter = MAG_FILTER);
-
-	/**
 	*	@brief Constructor of single color texture.
 	*/
 	Texture(const vec4& color);
@@ -93,11 +86,6 @@ public:
 	*	@brief Destructor.
 	*/
 	virtual ~Texture();
-
-	/**
-	*	@brief Applies a cube map texture by declarating shader uniform variables.
-	*/
-	void applyCubeMap(ShaderProgram* shader);
 
 	/**
 	*	@brief Applies texture by declarating shader uniform variables.
@@ -121,6 +109,11 @@ public:
 	*	@param shaderVariable Texture name on shader (uniform variable).
 	*/
 	void applyTexture4ComputeShader(ComputeShader* shader, const GLint id, const std::string& shaderVariable, const GLuint readWrite = GL_READ_ONLY, const GLuint format = GL_RGBA32F);
+
+	/**
+	*	@brief Transforms the assimp texture's id into ours.
+	*/
+	static aiTextureType toAssimp(TextureTypes layer);
 
 	/// Getters
 

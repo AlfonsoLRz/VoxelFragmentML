@@ -143,7 +143,7 @@ Model3D::Model3D(const glm::mat4& modelMatrix, unsigned numComponents) :
 {
 	for (int i = 0; i < numComponents; ++i)
 	{
-		_modelComp[i] = new ModelComponent(this);
+		_modelComp[i] = new ModelComponent();
 	}
 }
 
@@ -431,8 +431,8 @@ void Model3D::renderTriangles4Shadows(RenderingShader* shader, const RendEnum::R
 
 /// [Public methods]
 
-Model3D::ModelComponent::ModelComponent(Model3D* root) :
-	_root(root), _id(-1), _enabled(true), _material(nullptr), _topologyIndicesLength(RendEnum::numIBOTypes()), _vao(nullptr), _geometrySSBO(UINT_MAX), _topologySSBO(UINT_MAX)
+Model3D::ModelComponent::ModelComponent() :
+	_id(-1), _enabled(true), _material(nullptr), _topologyIndicesLength(RendEnum::numIBOTypes()), _vao(nullptr), _geometrySSBO(UINT_MAX), _topologySSBO(UINT_MAX)
 {
 }
 
@@ -613,25 +613,5 @@ void Model3D::ModelComponent::setClusterIdx(const std::vector<float>& clusterIdx
 	{
 		if (createVBO) _vao->defineVBO(RendEnum::VBO_CLUSTER_ID, float(), GL_FLOAT);
 		_vao->setVBOData(RendEnum::VBO_CLUSTER_ID, clusterIdx);
-
-		//std::vector<std::unordered_set<unsigned>> numVertices(clusterIdx.size());
-		//std::vector<unsigned> numFaces(clusterIdx.size(), 0);
-
-		//for (int idx = 0; idx < clusterIdx.size(); ++idx)
-		//{
-		//	if (clusterIdx[idx] > .0f)
-		//	{
-		//		numVertices[clusterIdx[idx]].insert(_topology[idx]._vertices.x);
-		//		numVertices[clusterIdx[idx]].insert(_topology[idx]._vertices.y);
-		//		numVertices[clusterIdx[idx]].insert(_topology[idx]._vertices.z);
-		//		numFaces[clusterIdx[idx]] += 1;
-		//	}
-		//}
-
-		//for (int idx = 0; idx < clusterIdx.size(); ++idx)
-		//{
-		//	if (numVertices[idx].size())
-		//		std::cout << "Num. vertices: " << numVertices[idx].size() << ", num. faces: " << numFaces[idx] << std::endl;
-		//}
 	}
 }

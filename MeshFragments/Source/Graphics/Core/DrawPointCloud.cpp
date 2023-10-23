@@ -33,7 +33,7 @@ DrawPointCloud::~DrawPointCloud()
 {
 }
 
-bool DrawPointCloud::load(const mat4& modelMatrix)
+bool DrawPointCloud::load()
 {
 	return false;
 }

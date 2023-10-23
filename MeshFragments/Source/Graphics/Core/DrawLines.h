@@ -8,6 +8,6 @@ public:
 	DrawLines(const std::vector<vec3>& points);
 	virtual ~DrawLines();
 
-	virtual bool load(const mat4& modelMatrix = mat4(1.0f));
+	virtual bool load();
 };
 

@@ -7,7 +7,6 @@ const GLuint Texture::MAG_FILTER = GL_LINEAR;
 const GLuint Texture::MIN_FILTER = GL_LINEAR_MIPMAP_NEAREST;
 const GLuint Texture::WRAP_S = GL_MIRRORED_REPEAT;
 const GLuint Texture::WRAP_T = GL_MIRRORED_REPEAT;
-const GLuint Texture::WRAP_R = GL_MIRRORED_REPEAT;
 
 const std::unordered_map<uint16_t, std::string> Texture::SHADER_VARIABLE = std::unordered_map<uint16_t, std::string> ({
 		{KAD_TEXTURE, "texKadSampler"},
@@ -15,7 +14,6 @@ const std::unordered_map<uint16_t, std::string> Texture::SHADER_VARIABLE = std::
 		{SEMI_TRANSPARENT_TEXTURE, "texSemiTransparentSampler"},
 		{BUMP_MAPPING_TEXTURE, "texBumpSampler"},
 		{DISPLACEMENT_MAPPING_TEXTURE, "texDisplacementSampler"},
-		{CUBEMAP_TEXTURE, "texCubeMapSampler"}
 });
 
 /// [Public methods]
@@ -67,25 +65,6 @@ Texture::Texture(float* image, const int width, const int height, const GLuint w
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-Texture::Texture(std::vector<Image*> images, const int width, const int height, const GLuint wrapS, const GLuint wrapT, const GLuint wrapR, const GLuint minFilter, const GLuint magFilter)
-	: _id(-1)
-{
-	glGenTextures(1, &_id);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, _id);
-
-	for (int i = 0; i < 6; ++i)
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, images[i]->getWidth(), images[i]->getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, images[i]->bits());
-	}
-
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, minFilter);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, magFilter);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, wrapS);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, wrapT);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, wrapT);
-}
-
 Texture::Texture(const vec4& color)
 	: _id(-1)
 {
@@ -95,15 +74,6 @@ Texture::Texture(const vec4& color)
 Texture::~Texture()
 {
 	glDeleteTextures(1, &_id);
-}
-
-void Texture::applyCubeMap(ShaderProgram* shader)
-{
-	const int textureID = CUBEMAP_TEXTURE;
-
-	shader->setUniform(SHADER_VARIABLE.at(textureID), textureID);
-	glActiveTexture(GL_TEXTURE0 + textureID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, _id);
 }
 
 void Texture::applyTexture(ShaderProgram* shader, const TextureTypes textureType)
@@ -126,6 +96,25 @@ void Texture::applyTexture4ComputeShader(ComputeShader* shader, const GLint id, 
 {
 	glBindImageTexture(id, _id, 0, false, 0, readWrite, format);
 	shader->setImageUniform(id, shaderVariable);
+}
+
+aiTextureType Texture::toAssimp(TextureTypes layer)
+{
+	switch (layer)
+	{
+	case TextureTypes::KAD_TEXTURE:
+		return aiTextureType_DIFFUSE;
+	case TextureTypes::BUMP_MAPPING_TEXTURE:
+		return aiTextureType_NORMALS;
+	case TextureTypes::DISPLACEMENT_MAPPING_TEXTURE:
+		return aiTextureType_DISPLACEMENT;
+	case TextureTypes::SEMI_TRANSPARENT_TEXTURE:
+		return aiTextureType_OPACITY;
+	case TextureTypes::KS_TEXTURE:
+		return aiTextureType_DIFFUSE_ROUGHNESS;
+	}
+
+	return aiTextureType_AMBIENT;
 }
 
 /// [Protected methods]

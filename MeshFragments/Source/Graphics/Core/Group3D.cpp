@@ -189,12 +189,8 @@ Model3D::ModelComponent* Group3D::getModelComponent(unsigned id)
 bool Group3D::load(const mat4& modelMatrix)
 {
 	bool success = true;
-	const mat4& mMatrix = modelMatrix * _modelMatrix;
-
 	for (Model3D* model : _objects)
-	{
-		success &= model->load(mMatrix);
-	}
+		success &= model->load();
 
 	return success;
 }

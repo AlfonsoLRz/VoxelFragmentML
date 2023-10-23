@@ -92,7 +92,7 @@ Model3D::ModelComponent* Primitives::getCubeModelComponent()
 	};
 
 	// Build vertex data
-	Model3D::ModelComponent* cubeModel = new Model3D::ModelComponent(nullptr);
+	Model3D::ModelComponent* cubeModel = new Model3D::ModelComponent();
 	std::vector<Model3D::VertexGPUData> vertices;
 
 	for (int i = 0; i < 6; ++i)
@@ -245,7 +245,7 @@ VAO* Primitives::getNormalizedMeshVAO(unsigned numDivs, unsigned& numIndices)
 
 Model3D::ModelComponent* Primitives::getQuadModelComp()
 {
-	Model3D::ModelComponent* modelComp = new Model3D::ModelComponent(nullptr);
+	Model3D::ModelComponent* modelComp = new Model3D::ModelComponent();
 	Model3D::VertexGPUData vertex;
 	Model3D::FaceGPUData face;
 
@@ -296,7 +296,7 @@ VAO* Primitives::getQuadVAO()
 
 Model3D::ModelComponent* Primitives::getSphereModelComp(const unsigned sectors, const unsigned stacks, const float radius)
 {
-	Model3D::ModelComponent* modelComp = new Model3D::ModelComponent(nullptr);
+	Model3D::ModelComponent* modelComp = new Model3D::ModelComponent();
 	std::vector<Model3D::VertexGPUData> geometry;
 
 	vec3 position;                             

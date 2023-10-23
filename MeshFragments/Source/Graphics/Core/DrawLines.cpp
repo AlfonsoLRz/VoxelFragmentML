@@ -26,7 +26,7 @@ DrawLines::~DrawLines()
 {
 }
 
-bool DrawLines::load(const mat4& modelMatrix)
+bool DrawLines::load()
 {
 	return false;
 }

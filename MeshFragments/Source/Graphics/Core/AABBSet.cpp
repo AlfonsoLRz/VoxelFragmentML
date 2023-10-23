@@ -14,7 +14,7 @@ AABBSet::~AABBSet()
 {
 }
 
-bool AABBSet::load(const mat4& modelMatrix)
+bool AABBSet::load()
 {
 	if (!_loaded)
 	{

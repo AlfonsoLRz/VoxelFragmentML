@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Geometry/3D/AABB.h"
 #include "Graphics/Application/GraphicsAppEnumerations.h"
 #include "Graphics/Core/Camera.h"
 #include "Graphics/Core/ColorUtilities.h"
@@ -370,7 +371,7 @@ public:
 	*	@param modelMatrix Model matrix to be applied while generating geometry.
 	*	@return Success of operation.
 	*/
-	virtual bool load(const mat4& modelMatrix = mat4(1.0f)) = 0;
+	virtual bool load() = 0;
 
 	/**
 	*	@brief Assignment operator overriding.
@@ -427,36 +428,36 @@ class Model3D::ModelComponent
 {
 public:
 	// [Access variables]	
-	Model3D*					_root;										//!<
-	unsigned					_id;										//!<
+	unsigned						_id;										//!<
+	std::string						_name;										//!< Display name for GUI windows
 
 	// [Topology]
-	std::vector<GLuint>			_pointCloud;								//!<
-	std::vector<GLuint>			_triangleMesh;								//!<
-	std::vector<GLuint>			_wireframe;									//!<
-	std::vector<unsigned>		_topologyIndicesLength;						//!<
+	std::vector<GLuint>				_pointCloud;								//!<
+	std::vector<GLuint>				_triangleMesh;								//!<
+	std::vector<GLuint>				_wireframe;									//!<
+	std::vector<unsigned>			_topologyIndicesLength;						//!<
 
 	// [GPU Data]
-	std::vector<VertexGPUData>	_geometry;									//!<
-	std::vector<FaceGPUData>	_topology;									//!<
-	GLuint						_geometrySSBO;								//!<
-	GLuint						_topologySSBO;
+	std::vector<VertexGPUData>		_geometry;									//!<
+	std::vector<FaceGPUData>		_topology;									//!<
+	GLuint							_geometrySSBO;								//!<
+	GLuint							_topologySSBO;
 				
 	// [GPU storage]
-	VAO*						_vao;										//!<
+	VAO*							_vao;										//!<
 			
 	// [Additional info]
-	bool						_enabled;									//!<
-	Material*					_material;									//!< As many vector as material types for different shaders
-	ModelComponentDescription	_modelDescription;							//!<
-	std::string					_name;										//!< Display name for GUI windows
+	AABB							_aabb;										//!<		
+	bool							_enabled;									//!<
+	Material*						_material;									//!< As many vector as material types for different shaders
+	Material::MaterialDescription	_materialDescription;
 
 public:
 	/**
 	*	@brief Default constructor.
 	*	@param root Model where this component is located.
 	*/
-	ModelComponent(Model3D* root);
+	ModelComponent();
 	
 	/**
 	*	@brief Deleted copy constructor.

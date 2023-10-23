@@ -39,6 +39,6 @@ public:
 	*	@param modelMatrix Model matrix to be applied while generating geometry.
 	*	@return Success of operation.
 	*/
-	virtual bool load(const mat4& modelMatrix = mat4(1.0f));
+	virtual bool load();
 };
 

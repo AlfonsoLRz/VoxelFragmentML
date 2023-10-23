@@ -9,6 +9,6 @@ public:
 	DrawPointCloud(PointCloud3D* pointCloud);
 	virtual ~DrawPointCloud();
 
-	virtual bool load(const mat4& modelMatrix = mat4(1.0f));
+	virtual bool load();
 };
 

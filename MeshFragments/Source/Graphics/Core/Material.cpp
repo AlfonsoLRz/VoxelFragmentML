@@ -3,13 +3,13 @@
 
 // [Static members initialization]
 
-const float Material::DISP_FACTOR	= 0.1f;
+const float Material::DISPLACEMENT	= 0.1f;
 const float Material::SHININESS		= 2.0f;
 
 /// [Public methods]
 
 Material::Material()
-	: _displacementFactor(DISP_FACTOR), _shininess(SHININESS)
+	: _displacementFactor(DISPLACEMENT), _shininess(SHININESS)
 {
 	for (int i = 0; i < Texture::NUM_TEXTURE_TYPES; ++i)
 	{
@@ -77,48 +77,6 @@ void Material::applyMaterial(RenderingShader* shader)
 	shader->applyActiveSubroutines();
 }
 
-void Material::applyAlphaTexture(RenderingShader* shader)
-{
-	if (_texture[Texture::SEMI_TRANSPARENT_TEXTURE])
-	{
-		shader->setSubroutineUniform(GL_FRAGMENT_SHADER, "semiTransparentUniform", "semiTransparentTexture");
-
-		_texture[Texture::SEMI_TRANSPARENT_TEXTURE]->applyTexture(shader, Texture::SEMI_TRANSPARENT_TEXTURE);
-	}
-	else
-	{
-		shader->setSubroutineUniform(GL_FRAGMENT_SHADER, "semiTransparentUniform", "noSemiTransparentTexture");
-	}
-}
-
-void Material::applyMaterial4ColouredPoints(RenderingShader* shader)
-{
-	if (_texture[Texture::KAD_TEXTURE])
-	{
-		_texture[Texture::KAD_TEXTURE]->applyTexture(shader, Texture::KAD_TEXTURE);
-	}
-
-	if (_texture[Texture::KS_TEXTURE])
-	{
-		shader->setUniform("shininess", _shininess);
-
-		_texture[Texture::KS_TEXTURE]->applyTexture(shader, Texture::KS_TEXTURE);
-	}
-
-	if (_texture[Texture::SEMI_TRANSPARENT_TEXTURE])
-	{
-		shader->setSubroutineUniform(GL_VERTEX_SHADER, "semiTransparentUniform", "semiTransparentTexture");
-
-		_texture[Texture::SEMI_TRANSPARENT_TEXTURE]->applyTexture(shader, Texture::SEMI_TRANSPARENT_TEXTURE);
-	}
-	else
-	{
-		shader->setSubroutineUniform(GL_VERTEX_SHADER, "semiTransparentUniform", "noSemiTransparentTexture");
-	}
-
-	shader->applyActiveSubroutines();
-}
-
 void Material::applyMaterial4ComputeShader(ComputeShader* shader, bool applyBump)
 {
 	if (_texture[Texture::BUMP_MAPPING_TEXTURE] && applyBump)
@@ -141,31 +99,6 @@ void Material::applyMaterial4ComputeShader(ComputeShader* shader, bool applyBump
 	shader->applyActiveSubroutines();
 }
 
-void Material::applyMaterial4UniformColor(RenderingShader* shader)
-{
-	if (_texture[Texture::BUMP_MAPPING_TEXTURE] && !_texture[Texture::DISPLACEMENT_MAPPING_TEXTURE])
-	{
-		shader->setSubroutineUniform(GL_VERTEX_SHADER, "displacementUniform", "bumpMappingDisplacement");
-		shader->setSubroutineUniform(GL_FRAGMENT_SHADER, "displacementUniform", "bumpMappingDisplacement");
-
-		_texture[Texture::BUMP_MAPPING_TEXTURE]->applyTexture(shader, Texture::BUMP_MAPPING_TEXTURE);
-	}
-	else if (_texture[Texture::BUMP_MAPPING_TEXTURE] && _texture[Texture::DISPLACEMENT_MAPPING_TEXTURE])
-	{
-		shader->setSubroutineUniform(GL_VERTEX_SHADER, "displacementUniform", "displacementMapping");
-		shader->setSubroutineUniform(GL_FRAGMENT_SHADER, "displacementUniform", "displacementMapping");
-
-		_texture[Texture::BUMP_MAPPING_TEXTURE]->applyTexture(shader, Texture::BUMP_MAPPING_TEXTURE);
-	}
-	else
-	{
-		shader->setSubroutineUniform(GL_VERTEX_SHADER, "displacementUniform", "noDisplacement");
-		shader->setSubroutineUniform(GL_FRAGMENT_SHADER, "displacementUniform", "noDisplacement");
-	}
-
-	shader->applyActiveSubroutines();
-}
-
 bool Material::applyTexture(ShaderProgram* shader, const Texture::TextureTypes textureType)
 {
 	if (_texture[textureType])
@@ -175,6 +108,48 @@ bool Material::applyTexture(ShaderProgram* shader, const Texture::TextureTypes t
 	}
 
 	return false;
+}
+
+Material::MaterialDescription Material::getMaterialDescription(aiMaterial* material, const std::string& folder)
+{
+	MaterialDescription description{};
+
+	aiColor4D color;
+	vec4 glmColor;
+	aiString path;
+
+	description._rootFolder = folder;
+	description._name = material->GetName().C_Str();
+	aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &description._ns);
+	description._ns;
+
+	for (int textureLayer = 0; textureLayer < Texture::NUM_TEXTURE_TYPES; textureLayer += 1)
+	{
+		Texture::TextureTypes textureType = static_cast<Texture::TextureTypes>(textureLayer);
+		aiTextureType assimpTextureType = Texture::toAssimp(textureType);
+
+		if (material->GetTextureCount(assimpTextureType) && material->GetTexture(Texture::toAssimp(textureType), 0, &path) == AI_SUCCESS)
+		{
+			description.setTexturePath(textureType, folder + path.C_Str());
+		}
+		else
+		{
+			description.setTexturePath(textureType, "");
+
+			if (textureType == Texture::KAD_TEXTURE && aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
+			{
+				glmColor = vec4(color.r, color.g, color.b, color.a);
+				description.setTextureColor(textureType, glmColor);
+			}
+			else if (textureType == Texture::KS_TEXTURE && aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &color) == AI_SUCCESS)
+			{
+				glmColor = vec4(color.r, color.g, color.b, color.a);
+				description.setTextureColor(textureType, glmColor);
+			}
+		}
+	}
+
+	return description;
 }
 
 void Material::setDisplacementFactor(const float dispFactor)

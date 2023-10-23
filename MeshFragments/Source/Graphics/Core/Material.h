@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assimp/scene.h"
 #include "Graphics/Application/GraphicsAppEnumerations.h"
 #include "Graphics/Core/ComputeShader.h"
 #include "Graphics/Core/GraphicsCoreEnumerations.h"
@@ -18,8 +19,47 @@
 class Material
 {
 protected:
-	const static float DISP_FACTOR;
+	const static float DISPLACEMENT;
 	const static float SHININESS;
+
+public:
+	struct MaterialDescription
+	{
+		std::string					_rootFolder;
+		std::string					_name;
+		std::vector<std::string>	_textureImage;
+		std::vector<vec4>			_textureColor;
+		float						_ns;
+
+		MaterialDescription() : _textureImage(Texture::NUM_TEXTURE_TYPES), _textureColor(Texture::NUM_TEXTURE_TYPES), _rootFolder(""), _ns(1.0f)
+		{
+			for (size_t idx = 0; idx < _textureColor.size(); ++idx) _textureColor[idx] = vec4(-1.0f);
+		}
+
+		void setRootFolder(const std::string& path)
+		{
+			_rootFolder = path;
+		}
+
+		void setTextureColor(Texture::TextureTypes texture, const vec4& color)
+		{
+			_textureColor[texture] = color;
+		}
+
+		void setTexturePath(Texture::TextureTypes texture, const std::string& path)
+		{
+			_textureImage[texture] = path;
+		}
+
+		bool operator==(const MaterialDescription& other) const
+		{
+			bool equal = _rootFolder == other._rootFolder && _name == other._name && glm::epsilonEqual<float>(_ns, other._ns, glm::epsilon<float>());
+			for (size_t idx = 0; idx < _textureColor.size(); ++idx) equal &= glm::distance(_textureColor[idx], other._textureColor[idx]) < glm::epsilon<float>();
+			for (size_t idx = 0; idx < _textureImage.size(); ++idx) equal &= _textureImage[idx] == other._textureImage[idx];
+
+			return equal;
+		}
+	};
 
 protected:
 	Texture*	_texture[Texture::NUM_TEXTURE_TYPES];						//!< Texture pointer for each type. Noone of them should exclude others
@@ -61,30 +101,17 @@ public:
 	*	@brief Specifies the values of uniform variables from the shader.
 	*	@param shader Destiny of values to be specified.
 	*/
-	void applyAlphaTexture(RenderingShader* shader);
-
-	/**
-	*	@brief Specifies the values of uniform variables from the shader.
-	*	@param shader Destiny of values to be specified.
-	*/
-	void applyMaterial4ColouredPoints(RenderingShader* shader);
-
-	/**
-	*	@brief Specifies the values of uniform variables from the shader.
-	*	@param shader Destiny of values to be specified.
-	*/
 	void applyMaterial4ComputeShader(ComputeShader* shader, bool applyBump = false);
-
-	/**
-	*	@brief Specifies the values of uniform variables from the shader.
-	*	@param shader Destiny of values to be specified.
-	*/
-	void applyMaterial4UniformColor(RenderingShader* shader);
 
 	/**
 	*	@brief Applies individual textures. 
 	*/
 	bool applyTexture(ShaderProgram* shader, const Texture::TextureTypes textureType);
+
+	/**
+	*	@brief Transforms the assimp material into our representation.
+	*/
+	static MaterialDescription getMaterialDescription(aiMaterial* material, const std::string& folder);
 
 	/**
 	*	@brief Modifies the displacement along the points tangents.

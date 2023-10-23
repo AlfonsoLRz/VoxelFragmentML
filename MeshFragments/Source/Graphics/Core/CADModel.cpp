@@ -32,7 +32,7 @@ CADModel::CADModel(const std::string& filename, const std::string& textureFolder
 }
 
 CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory, const mat4& modelMatrix) :
-	Model3D(modelMatrix, 1), _useBinary(false)
+	Model3D(modelMatrix, 1), _useBinary(false), _fuseComponents(false), _fuseVertices(false)
 {
 	for (const Triangle3D& triangle : triangles)
 	{
@@ -103,61 +103,60 @@ void CADModel::insert(vec4* vertices, unsigned numVertices, uvec4* faces, unsign
 		modelComponent->_topology.push_back(Model3D::FaceGPUData{ uvec3(faces[idx].x + baseIndex, faces[idx].y + baseIndex, faces[idx].z + baseIndex) });
 }
 
-bool CADModel::load(const mat4& modelMatrix)
+bool CADModel::load()
 {
-	if (!_loaded)
+	std::string binaryFile = _filename.substr(0, _filename.find_last_of('.')) + BINARY_EXTENSION;
+
+	if (_useBinary && std::filesystem::exists(binaryFile))
 	{
-		bool success = false, binaryExists = false;
+		this->loadModelFromBinaryFile();
+	}
+	else
+	{
+		_scene = _assimpImporter.ReadFile(_filename, aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_GenSmoothNormals);
 
-		if (_useBinary && (binaryExists = std::filesystem::exists(_filename + BINARY_EXTENSION)))
+		if (!_scene || _scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !_scene->mRootNode)
 		{
-			success = this->loadModelFromBinaryFile();
+			std::cout << "ERROR::ASSIMP::" << _assimpImporter.GetErrorString() << std::endl;
+			return this;
 		}
-			
-		if (!success)
+
+		std::string shortName = _scene->GetShortFilename(_filename.c_str());
+		std::string folder = _filename.substr(0, _filename.length() - shortName.length());
+
+		this->processNode(_scene->mRootNode, _scene, folder);
+
+		if (_fuseComponents and _modelComp.size() > 1)
+			this->fuseComponents();
+
+		if (_fuseVertices)
 		{
-			success = this->loadModelFromOBJ(modelMatrix);
-			if (success and _fuseComponents and _modelComp.size() > 1)
-				this->fuseComponents();
-
-			//this->subdivide(0.0001f);
-
-			if (_fuseVertices)
+			for (Model3D::ModelComponent* modelComp : _modelComp)
 			{
-				for (Model3D::ModelComponent* modelComp : _modelComp)
-				{
-					std::vector<int> mapping (_modelComp[0]->_geometry.size());
-					std::iota(mapping.begin(), mapping.end(), 0);
+				std::vector<int> mapping(_modelComp[0]->_geometry.size());
+				std::iota(mapping.begin(), mapping.end(), 0);
 
-					this->fuseVertices(mapping);
-					this->remapVertices(_modelComp[0], mapping);
-				}
+				this->fuseVertices(mapping);
+				this->remapVertices(_modelComp[0], mapping);
 			}
 		}
 
-		if (!binaryExists && success)
-		{
-			this->writeToBinary();
-		}
-
-		for (ModelComponent* modelComponent : _modelComp)
-		{
-			modelComponent->buildTriangleMeshTopology();
-			//modelComponent->buildPointCloudTopology();
-			//modelComponent->buildWireframeTopology();
-		}
-		this->setVAOData();
-		
-		for (ModelComponent* modelComponent : _modelComp)
-		{
-			modelComponent->releaseMemory(false, false);
-			modelComponent->updateSSBO();
-		}
-
-		return _loaded = true;
+		this->writeBinary(binaryFile);
 	}
 
-	return false;
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		modelComponent->buildTriangleMeshTopology();
+		//modelComponent->buildPointCloudTopology();
+		//modelComponent->buildWireframeTopology();
+	}
+	this->setVAOData();
+		
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		modelComponent->releaseMemory(false, false);
+		modelComponent->updateSSBO();
+	}
 }
 
 void CADModel::reload()
@@ -398,10 +397,10 @@ Material* CADModel::createMaterial(ModelComponent* modelComp)
 	static const std::string nullMaterialName = "None";
 
 	Material* material = MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE);
-	Model3D::ModelComponentDescription* modelDescription = &modelComp->_modelDescription;
-	std::string name = std::string(modelDescription->_materialName);
-	std::string mapKd = std::string(modelDescription->_mapKd);
-	std::string mapKs = std::string(modelDescription->_mapKs);
+	Material::MaterialDescription& materialDescription = modelComp->_materialDescription;
+	std::string name = std::string(materialDescription._name);
+	std::string mapKd = std::string(materialDescription._textureImage[Texture::KAD_TEXTURE]);
+	std::string mapKs = std::string(materialDescription._textureImage[Texture::KS_TEXTURE]);
 
 	if (!name.empty() && name != nullMaterialName)
 	{
@@ -418,7 +417,7 @@ Material* CADModel::createMaterial(ModelComponent* modelComp)
 			}
 			else
 			{
-				kad = new Texture(vec4(modelDescription->_kd, 1.0f));
+				kad = new Texture(materialDescription._textureColor[Texture::KAD_TEXTURE]);
 			}
 
 			if (!mapKs.empty())
@@ -427,8 +426,8 @@ Material* CADModel::createMaterial(ModelComponent* modelComp)
 			}
 			else
 			{
-				ks = new Texture(vec4(modelDescription->_ks, 1.0f));
-				material->setShininess(modelDescription->_ns);
+				ks = new Texture(materialDescription._textureColor[Texture::KS_TEXTURE]);
+				material->setShininess(materialDescription._ns);
 			}
 
 			material->setTexture(Texture::KAD_TEXTURE, kad);
@@ -447,88 +446,9 @@ Material* CADModel::createMaterial(ModelComponent* modelComp)
 	return material;
 }
 
-void CADModel::createModelComponent(objl::Mesh* mesh)
-{
-	const GLuint maxVertices	= ComputeShader::getMaxSSBOSize(sizeof(VertexGPUData)) / 3;
-	const GLuint maxFaces		= ComputeShader::getMaxSSBOSize(sizeof(FaceGPUData));
-	VertexGPUData vertexData;
-
-	// Defined number of splits of the mesh
-	const unsigned firstModelComp	= _modelComp.size();
-	unsigned leftVertices			= mesh->Vertices.size(), currentNumVertices = 0, thresholdVertex = 0;
-	unsigned startVertexIdx			= 0, startFaceIdx = UINT_MAX, k = 0, startingK = 0;
-	uvec3 vertices;
-
-	while (leftVertices > 0)
-	{
-		ModelComponent* modelComp	= new ModelComponent(this);
-		currentNumVertices			= std::min(leftVertices, maxVertices);
-		thresholdVertex				= startVertexIdx + currentNumVertices;
-
-		for (int j = startVertexIdx; j < thresholdVertex && j < mesh->Vertices.size(); j++)
-		{
-			vertexData._position	= vec3(mesh->Vertices[j].Position.X, mesh->Vertices[j].Position.Y, mesh->Vertices[j].Position.Z);
-			vertexData._normal		= vec3(mesh->Vertices[j].Normal.X, mesh->Vertices[j].Normal.Y, mesh->Vertices[j].Normal.Z);
-			vertexData._textCoord	= vec2(mesh->Vertices[j].TextureCoordinate.X, mesh->Vertices[j].TextureCoordinate.Y);
-
-			_aabb.update(vertexData._position);
-			modelComp->_geometry.push_back(vertexData);
-		}
-
-		startVertexIdx = thresholdVertex;
-
-		for (; k < mesh->Indices.size(); k += 3)
-		{
-			vertices = uvec3(mesh->Indices[k], mesh->Indices[k + 1], mesh->Indices[k + 2]);
-
-			if (vertices.x < thresholdVertex && vertices.y < thresholdVertex && vertices.z < thresholdVertex)
-			{
-				modelComp->_topology.push_back(Model3D::FaceGPUData());
-				modelComp->_topology[(k - startingK) / 3]._vertices = uvec3(mesh->Indices[k], mesh->Indices[k + 1], mesh->Indices[k + 2]) - uvec3(startVertexIdx - currentNumVertices);
-				modelComp->_topology[(k - startingK) / 3]._modelCompID = modelComp->_id;
-			}
-			else
-			{
-				if (vertices.x < thresholdVertex)
-				{
-					startVertexIdx	= std::min(vertices.x, startVertexIdx);
-					startFaceIdx	= std::min(k, startFaceIdx);
-				}
-				else if (vertices.y < thresholdVertex)
-				{
-					startVertexIdx	= std::min(vertices.y, startVertexIdx);
-					startFaceIdx	= std::min(k, startFaceIdx);
-				}
-				else if (vertices.z < thresholdVertex)
-				{
-					startVertexIdx	= std::min(vertices.z, startVertexIdx);
-					startFaceIdx	= std::min(k, startFaceIdx);
-				}
-				else
-				{
-					break;			// All indices are above the threshold
-				}
-			}
-		}
-
-		k = startingK = std::min(k, startFaceIdx);
-		startFaceIdx = UINT_MAX;
-
-		if (!modelComp->_material)
-		{
-			modelComp->_modelDescription	= Model3D::ModelComponentDescription(mesh);
-			modelComp->_material			= this->createMaterial(modelComp);
-			modelComp->setName(modelComp->_modelDescription._modelName);
-		}
-
-		_modelComp.push_back(modelComp);
-		leftVertices = mesh->Vertices.size() - startVertexIdx;
-	}
-}
-
 void CADModel::fuseComponents()
 {
-	Model3D::ModelComponent* newModelComponent = new Model3D::ModelComponent(this);
+	Model3D::ModelComponent* newModelComponent = new Model3D::ModelComponent();
 	unsigned numVertices = 0;
 
 	for (Model3D::ModelComponent* modelComponent : _modelComp)
@@ -577,92 +497,150 @@ bool CADModel::loadModelFromBinaryFile()
 		for (ModelComponent* modelComp : _modelComp)
 		{
 			modelComp->_material = this->createMaterial(modelComp);
-			modelComp->setName(modelComp->_modelDescription._modelName);
+			modelComp->setName(modelComp->_name);
 		}
 	}
 
 	return success;
 }
 
-bool CADModel::loadModelFromOBJ(const mat4& modelMatrix)
+Model3D::ModelComponent* CADModel::processMesh(aiMesh* mesh, const aiScene* scene, const std::string& folder)
 {
-	objl::Loader loader;
-	bool success = loader.LoadFile(_filename + OBJ_EXTENSION);
+	std::vector<Model3D::VertexGPUData> vertices(mesh->mNumVertices);
+	std::vector<Model3D::FaceGPUData> faces(mesh->mNumFaces);
+	AABB aabb;
+	Material* material = nullptr;
+	Material::MaterialDescription description;
+	aiMaterial* aiMaterial = nullptr;
 
-	if (success)
+	// Vertices
+	int numVertices = static_cast<int>(mesh->mNumVertices);
+
+#pragma omp parallel for
+	for (int i = 0; i < numVertices; i++)
 	{
-		std::string modelName, currentModelName;
+		Model3D::VertexGPUData vertex;
+		vertex._position = vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+		vertex._normal = vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
 
-		if (loader.LoadedMeshes.size())
-		{
-			unsigned index = 0;
+		if (mesh->mTangents) vertex._tangent = vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+		if (mesh->mTextureCoords[0]) vertex._textCoord = vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 
-			while (index < loader.LoadedMeshes.size() && modelName.empty())
-			{
-				modelName = loader.LoadedMeshes[0].MeshName;
-				++index;
-			}
-		}
+		vertices[i] = vertex;
 
-		for (int i = 0; i < loader.LoadedMeshes.size(); i++)
-		{
-			unsigned modelCompIdx = _modelComp.size();
-			
-			this->createModelComponent(&(loader.LoadedMeshes[i]));
-			while (modelCompIdx < _modelComp.size())
-			{
-				this->computeMeshData(_modelComp[modelCompIdx]);
-				++modelCompIdx;
-			}
-		}
+#pragma omp critical
+		aabb.update(vertex._position);
 	}
 
-	return success;
+	// Indices
+#pragma omp parallel for
+	for (int i = 0; i < mesh->mNumFaces; i++)
+	{
+		aiFace& face = mesh->mFaces[i];
+		faces[i] = Model3D::FaceGPUData{ uvec3(face.mIndices[0], face.mIndices[1], face.mIndices[2]) };
+	}
+
+	// Material
+	if (mesh->mMaterialIndex >= 0)
+	{
+		aiMaterial = scene->mMaterials[mesh->mMaterialIndex];
+		std::string materialName = aiMaterial->GetName().C_Str();
+		MaterialList* materialList = MaterialList::getInstance();
+
+		description = std::move(Material::getMaterialDescription(aiMaterial, folder));
+	}
+
+	ModelComponent* component = new ModelComponent;
+	component->_geometry = std::move(vertices);
+	component->_topology = std::move(faces);
+	component->_aabb = std::move(aabb);
+	component->_materialDescription = description;
+	component->_material = createMaterial(component);
+	component->_name = component->_materialDescription._name;
+
+	return component;
+}
+
+void CADModel::processNode(aiNode* node, const aiScene* scene, const std::string& folder)
+{
+	for (unsigned int i = 0; i < node->mNumMeshes; i++)
+	{
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+		_modelComp.push_back(this->processMesh(mesh, scene, folder));
+		_aabb.update(_modelComp[_modelComp.size() - 1]->_aabb);
+	}
+
+	for (unsigned int i = 0; i < node->mNumChildren; i++)
+	{
+		this->processNode(node->mChildren[i], scene, folder);
+	}
 }
 
 bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D::ModelComponent*>& modelComp)
 {
 	std::ifstream fin(filename, std::ios::in | std::ios::binary);
-	if (!fin.is_open())
-	{
-		return false;
-	}
+	if (!fin.is_open()) return false;
 
 	size_t numModelComps, numVertices, numTriangles, numIndices;
 
 	fin.read((char*)&numModelComps, sizeof(size_t));
 	while (_modelComp.size() < numModelComps)
 	{
-		_modelComp.push_back(new ModelComponent(this));
+		_modelComp.push_back(new ModelComponent());
 	}
 
-	for (Model3D::ModelComponent* model : modelComp)
+	for (Model3D::ModelComponent* component : modelComp)
 	{
 		fin.read((char*)&numVertices, sizeof(size_t));
-		model->_geometry.resize(numVertices);
-		fin.read((char*)&model->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
+		component->_geometry.resize(numVertices);
+		fin.read((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
 
 		fin.read((char*)&numTriangles, sizeof(size_t));
-		model->_topology.resize(numTriangles);
-		fin.read((char*)&model->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
+		component->_topology.resize(numTriangles);
+		fin.read((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
 
 		fin.read((char*)&numIndices, sizeof(size_t));
-		model->_triangleMesh.resize(numIndices);
-		fin.read((char*)&model->_triangleMesh[0], numIndices * sizeof(GLuint));
+		component->_triangleMesh.resize(numIndices);
+		fin.read((char*)&component->_triangleMesh[0], numIndices * sizeof(GLuint));
 
 		fin.read((char*)&numIndices, sizeof(size_t));
-		model->_pointCloud.resize(numIndices);
-		fin.read((char*)&model->_pointCloud[0], numIndices * sizeof(GLuint));
+		component->_pointCloud.resize(numIndices);
+		fin.read((char*)&component->_pointCloud[0], numIndices * sizeof(GLuint));
 
 		fin.read((char*)&numIndices, sizeof(size_t));
-		model->_wireframe.resize(numIndices);
-		fin.read((char*)&model->_wireframe[0], numIndices * sizeof(GLuint));
+		component->_wireframe.resize(numIndices);
+		fin.read((char*)&component->_wireframe[0], numIndices * sizeof(GLuint));
 
-		fin.read((char*)&model->_modelDescription, sizeof(Model3D::ModelComponentDescription));
+		size_t length;
+		fin.read((char*)&length, sizeof(size_t));
+		component->_name.resize(length);
+		fin.read((char*)&component->_name[0], length);
+
+		fin.read((char*)&component->_aabb, sizeof(AABB));
+
+		// Recover material description
+		fin.read((char*)&length, sizeof(size_t));
+		component->_materialDescription._rootFolder.resize(length);
+		fin.read((char*)&component->_materialDescription._rootFolder[0], length);
+
+		fin.read((char*)&length, sizeof(size_t));
+		component->_materialDescription._name.resize(length);
+		fin.read((char*)&component->_materialDescription._name[0], length);
+
+		for (int textureLayer = 0; textureLayer < Texture::NUM_TEXTURE_TYPES; textureLayer += 1)
+		{
+			fin.read((char*)&length, sizeof(size_t));
+			component->_materialDescription._textureImage[textureLayer].resize(length);
+			if (length) fin.read((char*)&component->_materialDescription._textureImage[textureLayer][0], length);
+			fin.read((char*)&component->_materialDescription._textureColor[textureLayer], sizeof(vec4));
+		}
+		fin.read((char*)&component->_materialDescription._ns, sizeof(float));
+
+		component->_material = this->createMaterial(component);
+		_aabb.update(component->_aabb);
 	}
 
 	fin.read((char*)&_aabb, sizeof(AABB));
-
 	fin.close();
 
 	return true;
@@ -693,9 +671,9 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vecto
 	}
 }
 
-bool CADModel::writeToBinary()
+bool CADModel::writeBinary(const std::string& path)
 {
-	std::ofstream fout(_filename + ".bin", std::ios::out | std::ios::binary);
+	std::ofstream fout(path, std::ios::out | std::ios::binary);
 	if (!fout.is_open())
 	{
 		return false;
@@ -705,29 +683,51 @@ bool CADModel::writeToBinary()
 	const size_t numModelComps = _modelComp.size();
 	fout.write((char*)&numModelComps, sizeof(size_t));
 
-	for (Model3D::ModelComponent* model : _modelComp)
+	for (Model3D::ModelComponent* component : _modelComp)
 	{
-		const size_t numVertices = model->_geometry.size();
+		const size_t numVertices = component->_geometry.size();
 		fout.write((char*)&numVertices, sizeof(size_t));
-		fout.write((char*)&model->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
+		fout.write((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
 
-		const size_t numTriangles = model->_topology.size();
+		const size_t numTriangles = component->_topology.size();
 		fout.write((char*)&numTriangles, sizeof(size_t));
-		fout.write((char*)&model->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
+		fout.write((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
 
-		numIndices = model->_triangleMesh.size();
+		numIndices = component->_triangleMesh.size();
 		fout.write((char*)&numIndices, sizeof(size_t));
-		fout.write((char*)&model->_triangleMesh[0], numIndices * sizeof(GLuint));
+		fout.write((char*)&component->_triangleMesh[0], numIndices * sizeof(GLuint));
 
-		numIndices = model->_pointCloud.size();
+		numIndices = component->_pointCloud.size();
 		fout.write((char*)&numIndices, sizeof(size_t));
-		fout.write((char*)&model->_pointCloud[0], numIndices * sizeof(GLuint));
+		fout.write((char*)&component->_pointCloud[0], numIndices * sizeof(GLuint));
 
-		numIndices = model->_wireframe.size();
+		numIndices = component->_wireframe.size();
 		fout.write((char*)&numIndices, sizeof(size_t));
-		fout.write((char*)&model->_wireframe[0], numIndices * sizeof(GLuint));
+		fout.write((char*)&component->_wireframe[0], numIndices * sizeof(GLuint));
 
-		fout.write((char*)&model->_modelDescription, sizeof(Model3D::ModelComponentDescription));
+		size_t nameLength = component->_name.size();
+		fout.write((char*)&nameLength, sizeof(size_t));
+		fout.write((char*)&component->_name[0], nameLength);
+
+		fout.write((char*)(&component->_aabb), sizeof(AABB));
+
+		// Write material description
+		size_t rootFolderLength = component->_materialDescription._rootFolder.size(), length;
+		fout.write((char*)&rootFolderLength, sizeof(size_t));
+		fout.write((char*)&component->_materialDescription._rootFolder[0], rootFolderLength);
+
+		nameLength = component->_materialDescription._name.size();
+		fout.write((char*)&nameLength, sizeof(size_t));
+		fout.write((char*)&component->_materialDescription._name[0], nameLength);
+
+		for (int textureLayer = 0; textureLayer < Texture::NUM_TEXTURE_TYPES; textureLayer += 1)
+		{
+			length = component->_materialDescription._textureImage[textureLayer].size();
+			fout.write((char*)&length, sizeof(size_t));
+			if (length) fout.write((char*)&component->_materialDescription._textureImage[textureLayer][0], length);
+			fout.write((char*)&component->_materialDescription._textureColor[textureLayer], sizeof(vec4));
+		}
+		fout.write((char*)&component->_materialDescription._ns, sizeof(float));
 	}
 
 	fout.write((char*)&_aabb, sizeof(AABB));

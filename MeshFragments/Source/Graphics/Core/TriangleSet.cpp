@@ -33,7 +33,7 @@ void TriangleSet::insertFaces(std::vector<VertexGPUData>* vertices, std::vector<
 	}
 }
 
-bool TriangleSet::load(const mat4& modelMatrix)
+bool TriangleSet::load()
 {
 	this->setVAOData();
 
