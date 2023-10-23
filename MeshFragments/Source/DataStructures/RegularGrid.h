@@ -2,6 +2,7 @@
 
 #include "Geometry/3D/AABB.h"
 #include "Graphics/Core/FractureParameters.h"
+#include "Graphics/Core/FragmentationProcedure.h"
 #include "Graphics/Core/Image.h"
 #include "Graphics/Core/Model3D.h"
 #include "Graphics/Core/Texture.h"
@@ -46,11 +47,16 @@ protected:
 	*	@brief Builds a 3D grid. 
 	*/
 	void buildGrid();
+
+	/**
+	*	@brief Cleans the current grid.
+	*/
+	void cleanGrid();
 	
 	/**
 	*	@return Number of different values in grid.
 	*/
-	size_t countValues(std::unordered_set<uint16_t>& values);
+	size_t countValues(std::unordered_map<uint16_t, unsigned>& values);
 	
 	/**
 	*	@return Index of grid cell to be filled.
@@ -77,7 +83,7 @@ public:
 	/**
 	*	@brief Constructor which specifies the area and the number of divisions of such area.
 	*/
-	RegularGrid(const AABB& aabb, uvec3 subdivisions);
+	RegularGrid(const AABB& aabb, int subdivisions);
 
 	/**
 	*	@brief Constructor of an abstract regular grid with no notion of space size.
@@ -160,9 +166,9 @@ public:
 	void queryCluster(std::vector<vec4>* points, std::vector<float>& clusterIdx);
 
 	/**
-	*	@brief Substitutes current grid with new values. 
+	*	@brief Modifies the bounding box of the scenario while maintaining the grid.
 	*/
-	void swap(const std::vector<CellGrid>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }
+	void setAABB(const AABB& aabb, bool reset = false);
 
 	/**
 	*	@return Compute shader's buffer.
@@ -170,9 +176,14 @@ public:
 	GLuint ssbo() { return _ssbo; }
 
 	/**
+	*	@brief Substitutes current grid with new values.
+	*/
+	void swap(const std::vector<CellGrid>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }
+
+	/**
 	*	@brief Transforms the regular grid into a triangle mesh per value.
 	*/
-	std::vector<Model3D*> toTriangleMesh(int subdivisions);
+	std::vector<Model3D*> toTriangleMesh(int subdivisions, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata);
 
 	/**
 	*	@brief Undo the detection of boundaries, thus removing the included mask.

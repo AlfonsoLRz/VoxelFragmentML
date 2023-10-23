@@ -3,15 +3,12 @@
 
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Face_count_stop_predicate.h>
-#include <CGAL/Polygon_mesh_processing/smooth_mesh.h>
 #include "CGALInterface.h"
 #include <filesystem>
 #include "Graphics/Application/MaterialList.h"
 #include "Graphics/Core/ShaderList.h"
 #include "Graphics/Core/VAO.h"
 #include "Simplify.h"
-#include "tinymesh.h"
-#include "core/vec.h"
 #include "Utilities/FileManagement.h"
 #include "Utilities/ChronoUtilities.h"
 
@@ -80,9 +77,7 @@ void CADModel::endBatch(bool releaseMemory)
 {
 	ModelComponent* modelComponent = _modelComp[0];
 
-	//this->removeNonManifoldVertices();
 	this->simplify(5000);
-	//this->smooth();
 	this->computeMeshData(modelComponent, true);
 
 	for (ModelComponent* modelComponent : _modelComp)
@@ -125,7 +120,7 @@ bool CADModel::load(const mat4& modelMatrix)
 			if (success and _fuseComponents and _modelComp.size() > 1)
 				this->fuseComponents();
 
-			this->subdivide(0.0001f);
+			//this->subdivide(0.0001f);
 
 			if (_fuseVertices)
 			{
@@ -331,59 +326,9 @@ void CADModel::simplify(unsigned numFaces)
 
 			for (const Simplify::Triangle& triangle : Simplify::triangles)
 				modelComponent->_topology.push_back(Model3D::FaceGPUData{uvec3(triangle.v[0], triangle.v[1], triangle.v[2])});
-#else
-			std::vector<Vec3> vertices (modelComponent->_geometry.size());
-			std::vector<uint32_t> indices (modelComponent->_topology.size() * 3);
-
-			for (int i = 0; i < modelComponent->_geometry.size(); ++i)
-			{
-				vertices[i][0] = modelComponent->_geometry[i]._position.x;
-				vertices[i][1] = modelComponent->_geometry[i]._position.y;
-				vertices[i][2] = modelComponent->_geometry[i]._position.z;
-			}
-
-			for (int i = 0; i < modelComponent->_topology.size(); ++i)
-			{
-				indices[i * 3 + 0] = modelComponent->_topology[i]._vertices[0];
-				indices[i * 3 + 1] = modelComponent->_topology[i]._vertices[1];
-				indices[i * 3 + 2] = modelComponent->_topology[i]._vertices[2];
-			}
-
-			std::cout << *std::max_element(indices.data(), indices.data() + indices.size()) << std::endl;
-
-			tinymesh::Mesh mesh(vertices, indices);
-
-			mesh.fillHoles();
-			tinymesh::simplifyQEM(mesh, numFaces, 10, true);
-			tinymesh::remeshTriangular(mesh, 0.0, 1e6);
-
-			modelComponent->_topology.clear();
-
-			vertices = mesh.getVertices();
-			modelComponent->_geometry.resize(vertices.size());
-
-			for (int i = 0; i < vertices.size(); ++i)
-			{
-				modelComponent->_geometry[i]._position = vec3(vertices[i][0], vertices[i][1], vertices[i][2]);
-			}
-
-			indices = mesh.getVertexIndices();
-			modelComponent->_topology.resize(indices.size() / 3);
-
-			for (int i = 0; i < indices.size(); i += 3)
-			{
-				modelComponent->_topology[i / 3]._vertices = uvec3(indices[i + 0], indices[i + 1], indices[i + 2]);
-			}
 #endif
 		}
 	}
-}
-
-void CADModel::smooth()
-{
-	Mesh* mesh = CGALInterface::translateMesh(_modelComp[0]);
-	CGAL::Polygon_mesh_processing::smooth_mesh(*mesh, CGAL::parameters::number_of_iterations(10).use_safety_constraints(false));
-	CGALInterface::translateMesh(mesh, _modelComp[0]);
 }
 
 bool CADModel::subdivide(float maxArea)

@@ -11,22 +11,10 @@
 
 /// Public methods
 
-RegularGrid::RegularGrid(const AABB& aabb, uvec3 subdivisions) :
+RegularGrid::RegularGrid(const AABB& aabb, int subdivisions) :
 	_aabb(aabb), _numDivs(subdivisions)
 {
-	vec3 aabbSize = _aabb.size();
-	float maxDimension = glm::max(glm::max(aabbSize.x, aabbSize.y), aabbSize.z);
-	vec3 scale = vec3(maxDimension) / aabbSize;
-	aabbSize *= scale;
-	_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
-	_cellSize = _aabb.size() / vec3(_numDivs);
-
-	//_cellSize = vec3((_aabb.max().x - _aabb.min().x) / float(subdivisions.x), (_aabb.max().y - _aabb.min().y) / float(subdivisions.y), (_aabb.max().z - _aabb.min().z) / float(subdivisions.z));
-	//float minCellSize = glm::min(_cellSize.x, glm::min(_cellSize.y, _cellSize.z));
-	//vec3 scale = _cellSize / minCellSize;
-	//_cellSize = vec3(minCellSize);
-	//_numDivs = glm::ceil(vec3(_numDivs) * scale);
-
+	this->setAABB(aabb);
 	this->buildGrid();
 }
 
@@ -331,7 +319,7 @@ void RegularGrid::queryCluster(
 	ComputeShader* countVoxelTriangle = ShaderList::getInstance()->getComputeShader(RendEnum::COUNT_VOXEL_TRIANGLE);
 	ComputeShader* pickVoxelTriangle = ShaderList::getInstance()->getComputeShader(RendEnum::SELECT_VOXEL_TRIANGLE);
 
-	std::unordered_set<uint16_t> values;
+	std::unordered_map<uint16_t, unsigned> values;
 	faceClusterOccupancy.resize(faces.size());
 
 	size_t numFragments = this->countValues(values);
@@ -358,47 +346,6 @@ void RegularGrid::queryCluster(
 	const GLuint clusterSSBO = ComputeShader::setReadBuffer(clusterIdx, GL_DYNAMIC_DRAW);
 
 	size_t numProcessedFaces = 0;
-
-	//for (const Model3D::FaceGPUData& face : faces)
-	//{
-	//	std::fill(count, count + numFragments, 0);
-
-	//	for (int idx = 0; idx < numSamples; ++idx)
-	//	{
-	//		vec3 v1 = vertices[face._vertices.x]._position, v2 = vertices[face._vertices.y]._position, v3 = vertices[face._vertices.z]._position;
-	//		vec3 u = v2 - v1, v = v3 - v1;
-	//		vec2 randomFactors = vec2(noiseBuffer[idx * 2 + 0], noiseBuffer[idx * 2 + 1]);
-
-	//		if (randomFactors.x + randomFactors.y >= 1.0f)
-	//		{
-	//			randomFactors = 1.0f - randomFactors;
-	//		}
-
-	//		vec3 point = v1 + u * randomFactors.x + v * randomFactors.y;
-	//		point.y = ((face._minPoint + face._maxPoint) / 2.0f).y;
-	//		uvec3 gridIndex = getPositionIndex(point);
-	//		unsigned gridIndexFlat = getPositionIndex(gridIndex.x, gridIndex.y, gridIndex.z);
-
-	//		if (_grid[gridIndexFlat]._value > VOXEL_FREE)
-	//			count[_grid[gridIndexFlat]._value] += 1.0f;
-	//	}
-
-	//	int maxCount = 0, id = 0;
-
-	//	for (int i = 0; i < numFragments; ++i)
-	//	{
-	//		if (count[i] > maxCount)
-	//		{
-	//			maxCount = count[i];
-	//			id = i;
-	//		}
-	//	}
-
-	//	clusterIdx[numProcessedFaces] = id;
-
-	//	++numProcessedFaces;
-	//}
-
 	while (numProcessedFaces < faces.size())
 	{
 		unsigned currentNumFaces = std::min(faces.size() - numProcessedFaces, maxFaces);
@@ -496,20 +443,49 @@ void RegularGrid::queryCluster(std::vector<vec4>* points, std::vector<float>& cl
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 }
 
-std::vector<Model3D*> RegularGrid::toTriangleMesh(int subdivisions)
+void RegularGrid::setAABB(const AABB& aabb, bool reset)
+{
+	vec3 aabbSize = _aabb.size();
+	float maxDimension = glm::max(glm::max(aabbSize.x, aabbSize.y), aabbSize.z);
+	vec3 scale = vec3(maxDimension) / aabbSize;
+	aabbSize *= scale;
+	_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
+	_cellSize = _aabb.size() / vec3(_numDivs);
+
+	if (reset)
+		this->cleanGrid();
+}
+
+std::vector<Model3D*> RegularGrid::toTriangleMesh(int subdivisions, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata)
 {
 	std::vector<Model3D*> meshes;
-	std::unordered_set<uint16_t> valuesSet;
+	std::unordered_map<uint16_t, unsigned> valuesSet;
 	std::vector<uint16_t> values;
+	unsigned globalCount = 0;
 
 	this->countValues(valuesSet);
 	meshes.resize(valuesSet.size());
 
 	values.reserve(valuesSet.size());
+	fragmentMetadata.resize(valuesSet.size());
 	for (auto it = valuesSet.begin(); it != valuesSet.end(); ) 
 	{
-		values.push_back(std::move(valuesSet.extract(it++).value()));
+		fragmentMetadata[it->first - (VOXEL_FREE + 1)]._voxels = it->second;
+
+		globalCount += it->second;
+		values.push_back(std::move(valuesSet.extract(it++).key()));
 	}
+
+#pragma omp parallel for
+	for (int idx = 0; idx < values.size(); ++idx)
+	{
+		fragmentMetadata[idx]._id = idx;
+		fragmentMetadata[idx]._percentage = fragmentMetadata[idx]._voxels / static_cast<float>(globalCount);
+		fragmentMetadata[idx]._occupiedVoxels = globalCount;
+		fragmentMetadata[idx]._voxelizationSize = _numDivs.x;
+	}
+
+	std::sort(values.begin(), values.end());
 
 	MarchingCubes mCubes(*this, subdivisions, _numDivs, 5);
 	vec3 scale = (_aabb.size()) / vec3(_numDivs + uvec3(2));
@@ -598,13 +574,20 @@ void RegularGrid::buildGrid()
 {	
 	_grid = std::vector<CellGrid>(_numDivs.x * _numDivs.y * _numDivs.z);
 	std::fill(_grid.begin(), _grid.end(), CellGrid());
-
 	_ssbo = ComputeShader::setReadBuffer(_grid.data(), _grid.size(), GL_DYNAMIC_DRAW);
 }
 
-size_t RegularGrid::countValues(std::unordered_set<uint16_t>& values)
+void RegularGrid::cleanGrid()
+{
+	std::fill(_grid.begin(), _grid.end(), CellGrid());
+	ComputeShader::updateReadBuffer(_ssbo, _grid.data(), _grid.size(), GL_DYNAMIC_DRAW);
+}
+
+size_t RegularGrid::countValues(std::unordered_map<uint16_t, unsigned>& values)
 {
 	unsigned index;
+	uint16_t value;
+	auto it = values.begin();
 
 	for (unsigned int x = 0; x < _numDivs.x; ++x)
 		for (unsigned int y = 0; y < _numDivs.y; ++y)
@@ -612,7 +595,15 @@ size_t RegularGrid::countValues(std::unordered_set<uint16_t>& values)
 			{
 				index = this->getPositionIndex(x, y, z);
 				if (_grid[index]._value > VOXEL_FREE)
-					values.insert(this->unmask(_grid[index]._value));
+				{
+					value = this->unmask(_grid[index]._value);
+
+					it = values.find(value);
+					if (it != values.end())
+						++it->second;
+					else
+						values.insert(std::make_pair(value, 1));
+				}
 			}
 
 	return values.size();

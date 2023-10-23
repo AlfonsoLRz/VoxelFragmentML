@@ -35,6 +35,11 @@ namespace FileManagement
 	*	@brief Saves an image (array of bytes) in a system file, given the string filename.
 	*/
 	bool saveImage(const std::string& filename, std::vector<GLubyte>* image, const unsigned int width, const unsigned int height);
+
+	/**
+	*	@brief Searchs for files in a given folder, with a given extension.
+	*/
+	void searchFiles(const std::string& folder, const std::string& extension, std::vector<std::string>& files);
 };
 
 inline void FileManagement::clearTokens(std::vector<std::string>& stringTokens, std::vector<float>& floatTokens)
@@ -83,4 +88,15 @@ inline bool FileManagement::saveImage(const std::string& filename, std::vector<G
 	}
 
 	return false;
+}
+
+inline void FileManagement::searchFiles(const std::string& folder, const std::string& extension, std::vector<std::string>& files)
+{
+	for (auto& assetFile : std::filesystem::recursive_directory_iterator(folder))
+	{
+		if (!assetFile.is_directory() && assetFile.path().generic_string().find(extension) != std::string::npos)
+		{
+			files.push_back(assetFile.path().generic_string());
+		}
+	}
 }

@@ -8,6 +8,7 @@
 #include "Graphics/Application/CADScene.h"
 #include "Graphics/Application/Renderer.h"
 #include "Graphics/Application/RenderingParameters.h"
+#include "Graphics/Core/FragmentationProcedure.h"
 #include "imgizmo/ImGuizmo.h"
 #include "Utilities/Singleton.h"
 
@@ -27,7 +28,8 @@ class GUI: public Singleton<GUI>
 	friend class Singleton<GUI>;
 
 protected:
-	FractureParameters*				_fractureParameters;
+	FractureParameters*				_fractureParameters;				//!< Fracture parameters
+	FragmentMetadataBuffer			_fragmentMetadata;					//!< Metadata of the current fragmentation procedure
 	ModelComponentBuffer			_modelComponents;					//!< Model component active on the scene
 	Renderer*						_renderer;							//!< Access to current scene
 	RenderingParameters*			_renderingParams;					//!< Reference to rendering parameters
@@ -36,7 +38,8 @@ protected:
 	// GUI state
 	bool							_showAboutUs;						//!< About us window
 	bool							_showControls;						//!< Shows application controls
-	bool							_showFractureSettings;
+	bool							_showFractureSettings;				//!< Displays the settings of the fragmentation process
+	bool							_showFragmentList;					//!< Shows a list with the metadata of the last generated fragments//
 	bool							_showFileDialog;					//!< Shows a file dialog that allows opening a point cloud in .ply format
 	bool							_showRenderingSettings;				//!< Displays a window which allows the user to modify the rendering parameters
 	bool							_showSceneSettings;					//!< Displays a window with all the model components and their variables
@@ -77,6 +80,11 @@ protected:
 	static void renderHelpMarker(const char* message);
 
 	/**
+	*	@brief Renders ImGui text with two concatenated strings.
+	*/
+	static void renderText(const std::string& title, const std::string& content, char delimiter = ':');
+
+	/**
 	*	@brief Shows a window where some information about the project is displayed.
 	*/
 	void showAboutUsWindow();
@@ -90,6 +98,11 @@ protected:
 	*	@brief Displays a file dialog to open a new point cloud (.ply).
 	*/
 	void showFileDialog();
+
+	/**
+	*	@brief Shows a list displaying the metadata of the last generated fragments.
+	*/
+	void showFractureList();
 
 	/**
 	*	@brief Shows settings for fracturing the currently displayed models. 

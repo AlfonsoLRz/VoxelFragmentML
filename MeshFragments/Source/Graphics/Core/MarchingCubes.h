@@ -108,5 +108,10 @@ public:
     *   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
     */
     CADModel* triangulateFieldGPU(GLuint gridSSBO, float targetValue, const mat4& modelMatrix);
+
+    /**
+    *   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
+    */
+    CADModel* triangulateFieldExtendedCPU(float targetValue, const mat4& modelMatrix);
 };
 

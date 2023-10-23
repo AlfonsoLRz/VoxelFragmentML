@@ -1,5 +1,3 @@
-#define _USE_MATH_DEFINES
-
 // [Libraries]
 
 #include "GL/glew.h"								// Don't swap order between GL and GLFW includes!

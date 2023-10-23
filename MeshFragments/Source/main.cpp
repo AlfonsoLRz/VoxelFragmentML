@@ -1,6 +1,12 @@
 #include "stdafx.h"
+
+#include "Graphics/Application/CADScene.h"
+#include "Graphics/Application/Renderer.h"
+#include "Graphics/Core/FragmentationProcedure.h"
 #include "Interface/Window.h"
 #include <windows.h>						// DWORD is undefined otherwise
+
+#define DATASET_GENERATION false
 
 // Laptop support. Use NVIDIA graphic card instead of Intel
 extern "C" {
@@ -26,7 +32,14 @@ int main(int argc, char *argv[])
 	{
 		if (const bool success = window->load(title, width, height))
 		{
+#if !DATASET_GENERATION
+			Renderer::getInstance()->getCurrentScene()->load();
 			window->startRenderingCycle();
+#else
+			FragmentationProcedure procedure;
+			CADScene* scene = dynamic_cast<CADScene*>(Renderer::getInstance()->getCurrentScene());
+			scene->generateDataset(procedure, procedure._folder, ".obj", procedure._destinationFolder);
+#endif
 
 			std::cout << "__ Finishing LiDAR Simulator __" << std::endl;
 		}

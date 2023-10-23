@@ -40,12 +40,13 @@ public:
 	bool	_fillShape;
 	int		_fractureAlgorithm;
 	int		_distanceFunction;
-	ivec3	_gridSubdivisions;
+	int		_gridSubdivisions;
 	bool	_launchGPU;
 	int		_marchingCubesSubdivisions;
 	int		_mergeSeedsDistanceFunction;
-	int		_numSeeds;
 	int		_numExtraSeeds;
+	int		_numSeeds;
+	int		_numTriangleSamples;
 	int		_pointCloudSeedingRandom;
 	bool	_removeIsolatedRegions;
 	int		_seed;
@@ -62,7 +63,7 @@ public:
 	*	@brief Default constructor.
 	*/
 	FractureParameters() :
-		_biasSeeds(1),
+		_biasSeeds(0),
 		_boundarySize(1),
 		_computeMCFragments(false),
 		_erode(false),
@@ -78,8 +79,9 @@ public:
 		_launchGPU(true),
 		_marchingCubesSubdivisions(1),
 		_mergeSeedsDistanceFunction(MANHATTAN),
-		_numSeeds(64),
 		_numExtraSeeds(200),
+		_numSeeds(64),
+		_numTriangleSamples(10000),
 		_pointCloudSeedingRandom(HALTON),
 		_removeIsolatedRegions(true),
 		_seed(80),

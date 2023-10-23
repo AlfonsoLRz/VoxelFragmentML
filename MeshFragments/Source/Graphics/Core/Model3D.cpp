@@ -511,7 +511,8 @@ void Model3D::ModelComponent::buildWireframeTopology()
 		}
 	}
 
-	_wireframe.resize(countLines);
+	if (countLines >= 0)
+		_wireframe.resize(countLines);
 
 	_topologyIndicesLength[RendEnum::IBO_WIREFRAME] = _wireframe.size();
 }

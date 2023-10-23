@@ -11,6 +11,8 @@
 #include "Graphics/Core/DrawLines.h"
 #include "Graphics/Core/DrawPointCloud.h"
 #include "Graphics/Core/FractureParameters.h"
+#include "Graphics/Core/FragmentationProcedure.h"
+#include "Utilities/FileManagement.h"
 
 #define NEW_LIGHT "!"
 
@@ -53,7 +55,7 @@ protected:
 	const static std::string SCENE_LIGHTS_FILE;				//!<
 
 	// Meshes to be tested
-	const static std::string MESH_1_PATH;					//!< Location of the first mesh in the file system
+	const static std::string VESSEL_PATH;					//!< Location of the first mesh in the file system
 
 protected:
 	AABBSet*				_aabbRenderer;					//!< Buffer of voxels
@@ -61,6 +63,7 @@ protected:
 	FractureParameters		_fractParameters;				//!< 
 	std::vector<Model3D*>	_fractureMeshes;				//!<
 	std::vector<Material*>	_fragmentMaterials;				//!< Material for each fragment, built with marching cubes
+	FragmentMetadataBuffer	_fragmentMetadata;				//!< Metadata of the current fragmentation procedure
 	std::vector<Texture*>	_fragmentTextures;				//!< Texture for each fragment, built with marching cubes
 	CADModel*				_mesh;							//!< Jar mesh
 	RegularGrid*			_meshGrid;						//!< Mesh regular grid
@@ -74,9 +77,14 @@ protected:
 	void eraseFragmentContent();
 
 	/**
+	*	@brief 
+	*/
+	void exportMetadata(FragmentationProcedure* datasetProcedure, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize);
+
+	/**
 	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm. 
 	*/
-	std::string fractureModel();
+	std::string fractureModel(FractureParameters& fractParameters);
 
 	/**
 	*	@brief Loads a camera with code-defined values.
@@ -106,7 +114,7 @@ protected:
 	/**
 	*	@brief Updates the scene content.
 	*/
-	void prepareScene();
+	void prepareScene(FractureParameters& fractureParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FragmentationProcedure* datasetProcedure = nullptr);
 
 	/**
 	*	@brief Loads camera values from a file, if possible.
@@ -117,6 +125,11 @@ protected:
 	*	@brief Load lights from a file, if possible.
 	*/
 	bool readLightsFromSettings();
+
+	/**
+	*	@brief Rebuilds the whole grid to adapt it to a different number of subdivisions.
+	*/
+	void rebuildGrid(FractureParameters& fractParameters);
 
 	// ------------- Rendering ----------------
 
@@ -189,24 +202,29 @@ public:
 	void exportGrid();
 
 	/**
+	*	@brief Fractures voxelized model.
+	*/
+	std::string fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata);
+
+	/**
 	*	@brief Fractures voxelized model. 
 	*/
-	std::string fractureGrid();
+	std::string fractureGrid(const std::string& path, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata);
+
+	/**
+	*	@brief Generates a dataset of fractured models.
+	*/
+	void generateDataset(FragmentationProcedure& fractureProcedure, const std::string& folder, const std::string& extension, const std::string& destinationFolder);
+
+	/**
+	*	@return Buffer with information of split fragments.
+	*/
+	std::vector<FragmentationProcedure::FragmentMetadata> getFragmentMetadata() { return _fragmentMetadata; }
 
 	/**
 	*	@brief Loads a new model for fractures.
 	*/
 	void loadModel(const std::string& path);
-
-	/**
-	*	@brief Rebuilds the whole grid to adapt it to a different number of subdivisions. 
-	*/
-	void rebuildGrid();
-
-	/**
-	*	@brief Recalculates grid size according to the scene aabb and the last modified voxel dimension.
-	*/
-	void recalculateGridSize(ivec3& voxelDimensions, uint8_t lastIndex);
 
 	/**
 	*	@brief Draws the scene as the rendering parameters specifies.

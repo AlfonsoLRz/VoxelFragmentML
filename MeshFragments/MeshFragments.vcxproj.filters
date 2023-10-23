@@ -259,6 +259,12 @@
     <Filter Include="Archivos de encabezado\ImportedLibraries\simplify">
       <UniqueIdentifier>{23952825-26c7-4b35-8c15-ede0f344def9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Archivos de origen\ImportedLibraries\surfrecon">
+      <UniqueIdentifier>{50f8d69b-3d6b-4ba3-a1c5-41e8087b4f57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\ImportedLibraries\surfrecon">
+      <UniqueIdentifier>{24a77040-4c8c-426d-a8a5-6dc15830877f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Geometry\2D\Vector2.h">
@@ -595,6 +601,9 @@
       <Filter>Archivos de encabezado\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\Core\DrawLines.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\FragmentationProcedure.h">
       <Filter>Archivos de encabezado\Graphics\Core</Filter>
     </ClInclude>
   </ItemGroup>

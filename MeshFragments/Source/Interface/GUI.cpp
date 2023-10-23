@@ -25,7 +25,7 @@ void GUI::createMenu()
 
 	if (_showRenderingSettings)		showRenderingSettings();
 	if (_showScreenshotSettings)	showScreenshotSettings();
-	if (_showSceneSettings)			showSceneSettings();
+	if (_showFragmentList)			showFractureList();	
 	if (_showFractureSettings)		showFractureSettings();
 	if (_showAboutUs)				showAboutUsWindow();
 	if (_showControls)				showControls();
@@ -39,6 +39,7 @@ void GUI::createMenu()
 			ImGui::MenuItem(ICON_FA_IMAGE "Screenshot", NULL, &_showScreenshotSettings);
 			ImGui::MenuItem(ICON_FA_TREE "Scene", NULL, &_showSceneSettings);
 			ImGui::MenuItem(ICON_FA_HEART_BROKEN "Fracture", NULL, &_showFractureSettings);
+			ImGui::MenuItem(ICON_FA_UTENSILS "Fracture List", NULL, &_showFragmentList);
 			ImGui::EndMenu();
 		}
 
@@ -77,6 +78,12 @@ void GUI::renderHelpMarker(const char* message)
 		ImGui::PopTextWrapPos();
 		ImGui::EndTooltip();
 	}
+}
+
+void GUI::renderText(const std::string& title, const std::string& content, char delimiter)
+{
+	std::string txt = title + (title.empty() ? "" : ": ") + content;
+	ImGui::Text(txt.c_str());
 }
 
 void GUI::showAboutUsWindow()
@@ -138,6 +145,56 @@ void GUI::showFileDialog()
 	}
 }
 
+void GUI::showFractureList()
+{
+	if (_fragmentMetadata.empty()) _fragmentMetadata = _scene->getFragmentMetadata();
+
+	ImGui::SetNextWindowSize(ImVec2(480, 440), ImGuiCond_FirstUseEver);
+
+	if (ImGui::Begin("Fragments", &_showFragmentList, ImGuiWindowFlags_None))
+	{
+		this->leaveSpace(2);
+
+		// Left
+		static int selectedFragment = 0;
+
+		ImGui::BeginChild("Fragments", ImVec2(200, 0), true);
+
+		for (int i = 0; i < _fragmentMetadata.size(); ++i)
+		{
+			const std::string name = "Fragment " + std::to_string(i + 1);
+			if (ImGui::Selectable(name.c_str(), selectedFragment == i))
+				selectedFragment = i;
+		}
+
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+
+		// Right
+		ImGui::BeginGroup();
+		ImGui::BeginChild("Fragment View", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));		// Leave room for 1 line below us
+
+		const std::string name = "Fragment " + std::to_string(selectedFragment + 1);
+		ImGui::Text(name.c_str());
+		ImGui::Separator();
+
+		this->leaveSpace(1);
+
+		const FragmentationProcedure::FragmentMetadata& metadata = _fragmentMetadata[selectedFragment];
+		this->renderText("File name: ", metadata._vesselName);
+		this->renderText("Number of voxels: ", std::to_string(metadata._voxels));
+		this->renderText("Number of voxels (percentage): ", std::to_string(metadata._percentage));
+		this->renderText("Number of occupied voxels in vessel: ", std::to_string(metadata._occupiedVoxels));
+		this->renderText("Voxelization size: ", std::to_string(metadata._voxelizationSize));
+
+		ImGui::EndChild();
+		ImGui::EndGroup();
+	}
+
+	ImGui::End();
+}
+
 void GUI::showFractureSettings()
 {
 	if (ImGui::Begin("Fracture Settings", &_showFractureSettings))
@@ -146,7 +203,8 @@ void GUI::showFractureSettings()
 		
 		if (ImGui::Button("Launch Algorithm"))
 		{
-			_fractureText = _scene->fractureGrid();
+			_fragmentMetadata.clear();
+			_fractureText = _scene->fractureGrid(_fragmentMetadata);
 		}
 
 		ImGui::SameLine(0, 10);
@@ -158,25 +216,7 @@ void GUI::showFractureSettings()
 		
 		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);	
 		
-		static uvec3 gridSubdivisions = _fractureParameters->_gridSubdivisions;
-		static unsigned changedIndex = 0;
-		if (ImGui::SliderInt3("Grid Subdivisions", &_fractureParameters->_gridSubdivisions[0], 1, 500))
-		{
-			for (int i = 0; i < 3; ++i)
-				if (_fractureParameters->_gridSubdivisions[i] != gridSubdivisions[i]) changedIndex = i;
-			gridSubdivisions = _fractureParameters->_gridSubdivisions;
-		}
-		ImGui::SameLine(0, 20);
-		if (ImGui::Button("Rebuild Grid"))
-		{
-			_scene->rebuildGrid();
-		}
-		ImGui::SameLine(0, 20);
-		if (ImGui::Button("Recalculate"))
-		{
-			_scene->recalculateGridSize(_fractureParameters->_gridSubdivisions, changedIndex);
-			gridSubdivisions = _fractureParameters->_gridSubdivisions;
-		}
+		ImGui::SliderInt("Grid Subdivisions", &_fractureParameters->_gridSubdivisions, 1, 1024);
 
 		ImGui::PushItemWidth(150.0f);
 		{

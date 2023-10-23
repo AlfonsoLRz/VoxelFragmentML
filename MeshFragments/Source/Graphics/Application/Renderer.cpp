@@ -55,7 +55,6 @@ void Renderer::prepareOpenGL(const uint16_t width, const uint16_t height)
 	// [Scenes]
 	
 	_scene = std::unique_ptr<SSAOScene>(new CADScene);
-	_scene->load();
 
 	// [Framebuffers]
 

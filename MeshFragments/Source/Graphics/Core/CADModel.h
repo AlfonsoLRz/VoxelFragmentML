@@ -166,11 +166,6 @@ public:
 	void simplify(unsigned numFaces);
 
 	/**
-	*	@brief Smooths the mesh.
-	*/
-	void smooth();
-
-	/**
 	*	@brief Subdivides mesh with the specified maximum area.
 	*/
 	bool subdivide(float maxArea);
