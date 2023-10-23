@@ -492,9 +492,6 @@
     <ClInclude Include="Source\Utilities\RandomUtilities.h">
       <Filter>Archivos de encabezado\Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\tinyply\tinyply.h">
-      <Filter>Archivos de encabezado\ImportedLibraries\tinyply</Filter>
-    </ClInclude>
     <ClInclude Include="Libraries\objloader\OBJ_Loader.h">
       <Filter>Archivos de encabezado\ImportedLibraries\objloader</Filter>
     </ClInclude>
@@ -808,9 +805,6 @@
     </ClCompile>
     <ClCompile Include="Libraries\imgui\imgui_tables.cpp">
       <Filter>Archivos de origen\ImportedLibraries\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\tinyply\tinyply.cpp">
-      <Filter>Archivos de origen\ImportedLibraries\tinyply</Filter>
     </ClCompile>
     <ClCompile Include="Source\Geometry\Animation\CatmullRom.cpp">
       <Filter>Archivos de origen\Geometry\Animation</Filter>
@@ -1163,6 +1157,21 @@
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
     <None Include="Assets\Shaders\Compute\Fracturer\countQuadrantOccupancy-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\finishLaplacianSmoothing-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\laplacianSmoothing-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\resetLaplacianBuffer-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\voxelMask.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\markBoundaryTriangles-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>

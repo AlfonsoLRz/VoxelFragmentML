@@ -31,6 +31,9 @@ public:
 	};
 
 protected:
+	const unsigned MASK_POSITION = 15;
+
+protected:
 	std::vector<CellGrid>	_grid;									//!< Color index of regular grid
 
 	AABB					_aabb;									//!< Bounding box of the scene
@@ -58,6 +61,11 @@ protected:
 	*	@return Index in grid array of a non-real position.
 	*/
 	unsigned getPositionIndex(int x, int y, int z) const;
+
+	/**
+	*	@return 
+	*/
+	uint16_t unmask(uint16_t value) const;
 
 public:	
 	/**
@@ -165,6 +173,11 @@ public:
 	*	@brief Transforms the regular grid into a triangle mesh per value.
 	*/
 	std::vector<Model3D*> toTriangleMesh(int subdivisions);
+
+	/**
+	*	@brief Undo the detection of boundaries, thus removing the included mask.
+	*/
+	void undoMask();
 
 	/**
 	*	@brief Updates SSBO content with the CPU's one.

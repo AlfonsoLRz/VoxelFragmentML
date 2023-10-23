@@ -63,7 +63,7 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(1),
-		_boundarySize(2),
+		_boundarySize(1),
 		_computeMCFragments(false),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
@@ -74,9 +74,9 @@ public:
 		_fillShape(true),
 		_fractureAlgorithm(FLOOD),
 		_distanceFunction(MANHATTAN),
-		_gridSubdivisions(512),
+		_gridSubdivisions(128),
 		_launchGPU(true),
-		_marchingCubesSubdivisions(2),
+		_marchingCubesSubdivisions(1),
 		_mergeSeedsDistanceFunction(MANHATTAN),
 		_numSeeds(64),
 		_numExtraSeeds(200),

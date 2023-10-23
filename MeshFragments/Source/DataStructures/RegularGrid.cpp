@@ -6,7 +6,7 @@
 #include "Graphics/Core/OpenGLUtilities.h"
 #include "Graphics/Core/ShaderList.h"
 #include "Graphics/Core/MarchingCubes.h"
-#include "tinyply/tinyply.h"
+#include "tinyply.h"
 #include "VoxWriter.h"
 
 /// Public methods
@@ -91,7 +91,6 @@ void RegularGrid::detectBoundaries(int boundarySize)
 void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint8_t numIterations, float erosionProbability, float erosionThreshold)
 {
 	ComputeShader* erodeShader = ShaderList::getInstance()->getComputeShader(RendEnum::ERODE_GRID);
-	ComputeShader* undoMaskShader = ShaderList::getInstance()->getComputeShader(RendEnum::UNDO_MASK_SHADER);
 
 	if (!(convolutionSize % 2))
 		++convolutionSize;
@@ -153,12 +152,6 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 		erodeShader->setUniform("erosionThreshold", erosionThreshold);
 		erodeShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 	}
-
-	undoMaskShader->bindBuffers(std::vector<GLuint>{ _ssbo, maskSSBO, noiseSSBO });
-	undoMaskShader->use();
-	undoMaskShader->setUniform("numCells", numCells);
-	undoMaskShader->setUniform("position", unsigned(15));
-	undoMaskShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
 	_grid = std::vector<CellGrid>(gridData, gridData + numCells);
@@ -531,6 +524,23 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh(int subdivisions)
 	return meshes;
 }
 
+void RegularGrid::undoMask()
+{
+	ComputeShader* undoMaskShader = ShaderList::getInstance()->getComputeShader(RendEnum::UNDO_MASK_SHADER);
+
+	uvec3 numDivs = this->getNumSubdivisions();
+	unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
+	unsigned numGroups = ComputeShader::getNumGroups(numCells);
+
+	undoMaskShader->bindBuffers(std::vector<GLuint>{ _ssbo });
+	undoMaskShader->use();
+	undoMaskShader->setUniform("numCells", numCells);
+	undoMaskShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
+	_grid = std::vector<CellGrid>(gridData, gridData + numCells);
+}
+
 void RegularGrid::updateSSBO()
 {
 	ComputeShader::updateReadBuffer(_ssbo, _grid.data(), _grid.size(), GL_DYNAMIC_DRAW);
@@ -602,7 +612,7 @@ size_t RegularGrid::countValues(std::unordered_set<uint16_t>& values)
 			{
 				index = this->getPositionIndex(x, y, z);
 				if (_grid[index]._value > VOXEL_FREE)
-					values.insert(_grid[index]._value);
+					values.insert(this->unmask(_grid[index]._value));
 			}
 
 	return values.size();
@@ -619,6 +629,11 @@ uvec3 RegularGrid::getPositionIndex(const vec3& position)
 unsigned RegularGrid::getPositionIndex(int x, int y, int z) const
 {
 	return x * _numDivs.y * _numDivs.z + y * _numDivs.z + z;
+}
+
+uint16_t RegularGrid::unmask(uint16_t value) const
+{
+	return value & uint16_t(~(1 << MASK_POSITION));
 }
 
 unsigned RegularGrid::getPositionIndex(int x, int y, int z, const uvec3& numDivs)

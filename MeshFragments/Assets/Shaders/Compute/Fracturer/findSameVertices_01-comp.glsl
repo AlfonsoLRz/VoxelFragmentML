@@ -28,7 +28,7 @@ void main()
 	if (index == 0 || distance(points[indices[index]].xyz, points[indices[previousIndex]].xyz) > EPSILON)
 	{
 		uint vertexIndex = atomicAdd(vertexCount, 1);
-		vertexData[vertexIndex] = modelMatrix * vec4(points[indices[index]].xyz, 1.0f);
+		vertexData[vertexIndex] = vec4((modelMatrix * vec4(points[indices[index]].xyz, 1.0f)).xyz, points[indices[index]].w);
 		indices2[index] = vertexIndex;
 	}
 }

@@ -10,6 +10,7 @@ layout (local_size_variable) in;
 layout (std430, binding = 0) buffer GridBuffer		{ CellGrid		grid[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelMask.glsl>
 
 uniform int		boundarySize;
 uniform uint	numCells;
@@ -31,12 +32,12 @@ void main()
 		{
 			for (int z = gridIndex_minusOne.z; z <= gridIndex_plusOne.z && !boundary; ++z)
 			{
-				value = grid[getPositionIndex(uvec3(x, y, z))].value;
+				value = unmasked(grid[getPositionIndex(uvec3(x, y, z))].value);
 				boundary = boundary || (value > VOXEL_FREE && value != grid[index].value);
 			}
 		}
 	}
 
 	if (boundary)
-		grid[index].value |= uint16_t(1 << 15);
+		grid[index].value = masked(grid[index].value);
 }

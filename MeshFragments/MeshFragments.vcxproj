@@ -116,7 +116,6 @@
     <ClInclude Include="Source\Graphics\Core\VAO.h" />
     <ClInclude Include="Source\Graphics\Core\ImageUtilities.h" />
     <ClInclude Include="Libraries\objloader\OBJ_Loader.h" />
-    <ClInclude Include="Libraries\tinyply\tinyply.h" />
     <ClInclude Include="Source\Graphics\Core\Voronoi.h" />
     <ClInclude Include="Source\Interface\Fonts\font_awesome.hpp" />
     <ClInclude Include="Source\Interface\Fonts\IconsFontAwesome5.h" />
@@ -209,12 +208,6 @@
     </ClCompile>
     <ClCompile Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Libraries\tinyply\tinyply.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Source\DataStructures\FragmentGraph.cpp" />
@@ -322,14 +315,19 @@
     <None Include="Assets\Shaders\Compute\Fracturer\fillRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices_01-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices_02-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\finishLaplacianSmoothing-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\laplacianSmoothing-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\marchingCubes-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\markBoundaryTriangles-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\resetBuffer-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\resetLaplacianBuffer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\selectVoxelTriangle-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\undoMask-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\voxel.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\voxelMask.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\voxelStructs.glsl" />
     <None Include="Assets\Shaders\Compute\Generic\resetBufferIndex-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\computeFaceAABB-comp.glsl" />
@@ -535,7 +533,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer;Libraries/simplify</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer;Libraries/simplify;Libraries/tinymesh/src/tinymesh/</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>
@@ -545,8 +543,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%userprofile%/Desktop/Libraries/glew/lib/Release/x64;%userprofile%/Desktop/Libraries/glfw/lib-vc2019;%userprofile%/Desktop/Libraries/FastNoise2/lib;D:\PDAL-master\build\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glew32.lib;glfw3.lib;FastNoise.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%userprofile%/Desktop/Libraries/glew/lib/Release/x64;%userprofile%/Desktop/Libraries/glfw/lib-vc2019;%userprofile%/Desktop/Libraries/FastNoise2/lib;D:\PDAL-master\build\lib\Debug;Libraries/tinymesh/build/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;glew32.lib;glfw3.lib;tinymesh.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

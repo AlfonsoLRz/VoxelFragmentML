@@ -16,6 +16,7 @@ layout (std430, binding = 4) buffer ConfigTable		{ int		configurationTable[]; };
 layout (std430, binding = 5) buffer SupportBuffer	{ vec4		vertexList[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelMask.glsl>
 
 uniform float	isolevel;
 uniform uvec3	localSize;
@@ -107,7 +108,7 @@ void march(in uint index, in ivec3 cellIndices)
 	for (int i = 0; i < 8; ++i)
 	{
 		// Sample the volume texture at this neighbor's coordinates
-		values[i] = float(int(grid[getPositionIndex(cellIndices + neighbors[i])]) == targetValue);
+		values[i] = float(unmasked_f(grid[getPositionIndex(cellIndices + neighbors[i])]) == targetValue);
 
 		// Compare the sampled value to the user-specified isolevel
 		if (values[i] < isolevel)
@@ -145,6 +146,11 @@ void march(in uint index, in ivec3 cellIndices)
 				vertexData[offset + 1].xyz = vertexData[offset + 2].xyz;
 				vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
 			}
+
+			float isBoundary = isBoundary_f(grid[getPositionIndex(cellIndices)]);
+			vertexData[offset + 0].w = isBoundary;
+			vertexData[offset + 1].w = isBoundary;
+			vertexData[offset + 2].w = isBoundary;
 		}
 	}
 }

@@ -14,6 +14,7 @@
 
 #define COMMENT_CHAR "#"
 #define CGAL_SIMPLIFICATION false
+#define SIMPLIFY_SIMPLIFICATION true
 
 /**
 *	@brief Model loaded from an OBJ file.
@@ -150,6 +151,11 @@ public:
 	void reload();
 
 	/**
+	*	@brief Removes non-manifold vertices.
+	*/
+	void removeNonManifoldVertices();
+
+	/**
 	*	@brief Samples the mesh as a set of points.
 	*/
 	PointCloud3D* sample(unsigned maxSamples, int randomFunction);
@@ -158,6 +164,11 @@ public:
 	*	@brief 
 	*/
 	void simplify(unsigned numFaces);
+
+	/**
+	*	@brief Smooths the mesh.
+	*/
+	void smooth();
 
 	/**
 	*	@brief Subdivides mesh with the specified maximum area.

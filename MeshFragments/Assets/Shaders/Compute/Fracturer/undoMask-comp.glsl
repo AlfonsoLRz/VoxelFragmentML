@@ -6,6 +6,7 @@
 layout (local_size_variable) in;
 
 #include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelMask.glsl>
 
 layout (std430, binding = 0) buffer GridBuffer		{ CellGrid		grid[]; };
 
@@ -17,5 +18,5 @@ void main()
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= numCells) return;
 
-	grid[index].value = grid[index].value & uint16_t(~(1 << position));
+	grid[index].value = unmasked(grid[index].value);
 }

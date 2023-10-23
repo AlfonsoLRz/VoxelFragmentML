@@ -32,6 +32,9 @@ protected:
     ComputeShader*  _marchingCubesShader;
     ComputeShader*  _resetBufferShader;
 
+    ComputeShader*  _finishLaplacianShader, *_laplacianShader, *_resetLaplacianShader;
+    ComputeShader*  _markBoundaryTrianglesShader;
+
     // SSBOs
     GLuint          _edgeTableSSBO;
     GLuint          _gridSSBO;
@@ -52,6 +55,8 @@ protected:
     GLuint          _vertexSSBO;
     GLuint          _faceSSBO;
 
+    GLuint  	    _laplacianSSBO;
+
 protected:
     /**
     *   @brief Builds faces with fused vertices.
@@ -69,9 +74,19 @@ protected:
     unsigned fuseSimilarVertices(unsigned numVertices, const mat4& modelMatrix);
 
     /**
+    *   @brief Marks triangles as boundary or not.
+    */
+    void markBoundaryTriangles(unsigned numFaces);
+
+    /**
     *   @brief Resets counter for number of vertices in the GPU.
     */
     void resetCounter(GLuint ssbo);
+
+    /**
+    *   @brief Smooths the surface using the Laplacian operator.
+    */
+    void smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations);
 
     /**
     *   @brief Sorts previously computed Morton codes.

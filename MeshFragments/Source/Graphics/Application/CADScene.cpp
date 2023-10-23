@@ -188,9 +188,9 @@ std::string CADScene::fractureModel()
 		_meshGrid->updateSSBO();
 	}
 
+	_meshGrid->detectBoundaries(_fractParameters._boundarySize);
 	if (_fractParameters._erode)
 	{
-		_meshGrid->detectBoundaries(_fractParameters._boundarySize);
 		_meshGrid->erode(static_cast<FractureParameters::ErosionType>(
 			_fractParameters._erosionConvolution), _fractParameters._erosionSize, _fractParameters._erosionIterations,
 			_fractParameters._erosionProbability, _fractParameters._erosionThreshold);
@@ -277,6 +277,24 @@ void CADScene::loadModels()
 
 void CADScene::prepareScene()
 {
+	Texture* whiteTexture = TextureList::getInstance()->getTexture(CGAppEnum::TEXTURE_WHITE);
+	_fractureMeshes = _meshGrid->toTriangleMesh(_fractParameters._marchingCubesSubdivisions);
+
+	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
+	{
+		Material* material = new Material;
+		Texture* kad = new Texture(vec4(ColorUtilities::HSVtoRGB(ColorUtilities::getHueValue(idx), 1.0f, 1.0f), 1.0f));
+		material->setTexture(Texture::KAD_TEXTURE, kad);
+		material->setTexture(Texture::KS_TEXTURE, whiteTexture);
+		material->setShininess(500.0f);
+		_fractureMeshes[idx]->setMaterial(material);
+
+		_fragmentMaterials.push_back(material);
+		_fragmentTextures.push_back(kad);
+	}
+
+	_meshGrid->undoMask();
+
 	if (_fractParameters._renderGrid)
 	{
 		std::vector<AABB> aabbs;
@@ -284,18 +302,6 @@ void CADScene::prepareScene()
 		_meshGrid->getAABBs(aabbs);
 		_aabbRenderer->load(aabbs);
 		_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
-	}
-
-	_fractureMeshes = _meshGrid->toTriangleMesh(_fractParameters._marchingCubesSubdivisions);
-	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
-	{
-		Material* material = new Material;
-		Texture* kad = new Texture(vec4(ColorUtilities::HSVtoRGB(ColorUtilities::getHueValue(idx), 1.0f, 1.0f), 1.0f));
-		material->setTexture(Texture::KAD_TEXTURE, kad);
-		_fractureMeshes[idx]->setMaterial(material);
-
-		_fragmentMaterials.push_back(material);
-		_fragmentTextures.push_back(kad);
 	}
 
 	if (_fractParameters._renderPointCloud)

@@ -326,6 +326,11 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_resetPositionShader = ShaderList::getInstance()->getComputeShader(RendEnum::RESET_LAST_POSITION_PREFIX_SCAN);
 	_reallocatePositionShader = ShaderList::getInstance()->getComputeShader(RendEnum::REALLOCATE_RADIX_SORT);
 
+    _finishLaplacianShader = ShaderList::getInstance()->getComputeShader(RendEnum::FINISH_LAPLACIAN_SMOOTHING);
+    _laplacianShader = ShaderList::getInstance()->getComputeShader(RendEnum::LAPLACIAN_SMOOTHING);
+    _markBoundaryTrianglesShader = ShaderList::getInstance()->getComputeShader(RendEnum::MARK_BOUNDARY_TRIANGLES);
+    _resetLaplacianShader = ShaderList::getInstance()->getComputeShader(RendEnum::RESET_LAPLACIAN_SMOOTHING);
+
     // Buffers 
     _verticesSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints, GL_DYNAMIC_DRAW);
     _supportVerticesSSBO = ComputeShader::setWriteBuffer(vec4(), _numThreads * 12, GL_DYNAMIC_DRAW);
@@ -346,6 +351,8 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints, GL_DYNAMIC_DRAW);
 	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), maxNumPoints / 3, GL_DYNAMIC_DRAW);
 
+    _laplacianSSBO = ComputeShader::setWriteBuffer(ivec4(), maxNumPoints, GL_DYNAMIC_DRAW);
+
     float* gridData = (float*) malloc(sizeof(float) * _numDivs.x * _numDivs.y * _numDivs.z);
     for (int x = 0; x < _numDivs.x; ++x)
         for (int y = 0; y < _numDivs.y; ++y)
@@ -365,7 +372,7 @@ MarchingCubes::~MarchingCubes()
 {
     GLuint buffers[] = { 
 		_verticesSSBO, _edgeTableSSBO, _triangleTableSSBO, _supportVerticesSSBO, _nonUpdatedVerticesSSBO, _numVerticesSSBO, _mortonCodeSSBO,
-		_indicesBufferID_1, _indicesBufferID_2, _pBitsBufferID, _nBitsBufferID, _positionBufferID, _vertexSSBO, _faceSSBO
+		_indicesBufferID_1, _indicesBufferID_2, _pBitsBufferID, _nBitsBufferID, _positionBufferID, _vertexSSBO, _faceSSBO, _laplacianSSBO
 	};
     glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 
@@ -378,6 +385,9 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, float targetValue,
 
     CADModel* model = new CADModel();
     unsigned numSteps = _gridSubdivisions * _gridSubdivisions * _gridSubdivisions, stepIdx = 0;
+
+    std::vector<vec4> triangleVertices;
+    std::vector<uvec4> triangleIndices;
 
     for (int x = 0; x < _numDivs.x; x += _steps.x)
     {
@@ -408,15 +418,37 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, float targetValue,
                     this->sortMortonCodes(numVertices);
                     unsigned newNumVertices = this->fuseSimilarVertices(numVertices, modelMatrix);
                     this->buildMarchingCubesFaces(numVertices);
+                    this->markBoundaryTriangles(numVertices / 3);
+                    this->smoothSurface(newNumVertices, numVertices / 3, 5);
 
                     vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
                     uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * numVertices / 3);
 
+                    //triangleVertices.insert(triangleVertices.end(), vertices, vertices + newNumVertices);
+                    //triangleIndices.insert(triangleIndices.end(), faces, faces + numVertices / 3);
                     model->insert(vertices, newNumVertices, faces, numVertices / 3);
                 }
             }
         }
     }
+
+    //if (_gridSubdivisions > 1)
+    //{
+    //    ComputeShader::updateReadBuffer(_verticesSSBO, triangleVertices.data(), triangleVertices.size(), GL_DYNAMIC_DRAW);
+    //    ComputeShader::updateReadBuffer(_faceSSBO, triangleIndices.data(), triangleIndices.size(), GL_DYNAMIC_DRAW);
+
+    //    unsigned numVertices = triangleVertices.size();
+
+    //    this->calculateMortonCodes(numVertices);
+    //    this->sortMortonCodes(numVertices);
+    //    unsigned newNumVertices = this->fuseSimilarVertices(numVertices, modelMatrix);
+    //    this->buildMarchingCubesFaces(numVertices);
+
+    //    vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
+    //    uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * triangleVertices.size() / 3);
+
+    //    model->insert(vertices, newNumVertices, faces, numVertices / 3);
+    //}
 
     model->endBatch(true);
 
@@ -506,6 +538,58 @@ void MarchingCubes::resetCounter(GLuint ssbo)
 {
 	unsigned zero = 0;
 	ComputeShader::updateReadBuffer(ssbo, &zero, 1, GL_DYNAMIC_DRAW);
+}
+
+void MarchingCubes::markBoundaryTriangles(unsigned numFaces)
+{
+    _markBoundaryTrianglesShader->bindBuffers(std::vector<GLuint> { _vertexSSBO, _faceSSBO });
+    _markBoundaryTrianglesShader->use();
+    _markBoundaryTrianglesShader->setUniform("numFaces", numFaces);
+    _markBoundaryTrianglesShader->execute(ComputeShader::getNumGroups(numFaces), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+ //   uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4());
+ //   std::vector<uvec4> buffer = std::vector<uvec4>(faces, faces + numFaces);
+
+ //   unsigned count = 0;
+ //   for (const uvec4& face : buffer)
+ //   {
+	//	if (face.w == 1)
+	//		++count;
+	//}
+
+ //   std::cout << count << std::endl;
+}
+
+void MarchingCubes::smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations)
+{
+    for (int i = 0; i < numIterations; ++i)
+    {
+        _resetLaplacianShader->bindBuffers(std::vector<GLuint> { _laplacianSSBO });
+        _resetLaplacianShader->use();
+        _resetLaplacianShader->setUniform("numVertices", numVertices);
+        _resetLaplacianShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+        _laplacianShader->bindBuffers(std::vector<GLuint> { _vertexSSBO, _faceSSBO, _laplacianSSBO });
+        _laplacianShader->use();
+        _laplacianShader->setUniform("numFaces", numFaces);
+        _laplacianShader->execute(ComputeShader::getNumGroups(numFaces), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+        //vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, numVertices);
+        //std::vector<vec4> buffer2 = std::vector<vec4>(vertices, vertices + numVertices);
+
+        _finishLaplacianShader->bindBuffers(std::vector<GLuint> { _vertexSSBO, _laplacianSSBO });
+        _finishLaplacianShader->use();
+        _finishLaplacianShader->setUniform("numVertices", numVertices);
+        _finishLaplacianShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+        //ivec4* data = ComputeShader::readData(_laplacianSSBO, ivec4());
+        //std::vector<ivec4> buffer = std::vector<ivec4>(data, data + numVertices);
+
+        //vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, numVertices);
+        //buffer2 = std::vector<vec4>(vertices, vertices + numVertices);
+
+        //std::cout << std::endl;
+    }
 }
 
 void MarchingCubes::sortMortonCodes(unsigned numVertices)
