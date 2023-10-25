@@ -52,6 +52,7 @@ public:
 	int		_seed;
 	int		_seedingRandom;
 	int		_spreading;
+	int		_targetTriangles;
 
 	// Rendering during the build procedure
 	bool	_renderGrid;
@@ -79,17 +80,18 @@ public:
 		_launchGPU(true),
 		_marchingCubesSubdivisions(1),
 		_mergeSeedsDistanceFunction(MANHATTAN),
-		_numExtraSeeds(200),
-		_numSeeds(64),
+		_numExtraSeeds(20),
+		_numSeeds(2),
 		_numTriangleSamples(10000),
-		_pointCloudSeedingRandom(HALTON),
+		_pointCloudSeedingRandom(STD_UNIFORM),
 		_removeIsolatedRegions(true),
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),
 		_spreading(5),
+		_targetTriangles(500),
 
 		_renderGrid(true),
-		_renderMesh(false),
+		_renderMesh(true),
 		_renderPointCloud(false)
 	{
 	}

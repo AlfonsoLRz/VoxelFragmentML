@@ -35,6 +35,7 @@
     <ClInclude Include="Libraries\imgui\imstb_truetype.h" />
     <ClInclude Include="Libraries\lodepng\lodepng.h" />
     <ClInclude Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.h" />
+    <ClInclude Include="Libraries\progressbar.hpp" />
     <ClInclude Include="Libraries\simplify\Simplify.h" />
     <ClInclude Include="Source\DataStructures\FragmentGraph.h" />
     <ClInclude Include="Source\DataStructures\Octree.h" />

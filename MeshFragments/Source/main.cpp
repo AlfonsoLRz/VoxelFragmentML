@@ -6,7 +6,7 @@
 #include "Interface/Window.h"
 #include <windows.h>						// DWORD is undefined otherwise
 
-#define DATASET_GENERATION false
+#define DATASET_GENERATION true
 
 // Laptop support. Use NVIDIA graphic card instead of Intel
 extern "C" {
@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
 {
 	srand(time(nullptr));
 	
-	std::cout << "__ Starting LiDAR Simulator __" << std::endl;
+	std::cout << "__ Starting fragmentation __" << std::endl;
 
-	const std::string title = "LiDAR Simulator";
+	const std::string title = "Vessel fragmentation";
 	const uint16_t width = 1050, height = 650;
 	const auto window = Window::getInstance();
 	
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 #else
 			FragmentationProcedure procedure;
 			CADScene* scene = dynamic_cast<CADScene*>(Renderer::getInstance()->getCurrentScene());
-			scene->generateDataset(procedure, procedure._folder, ".obj", procedure._destinationFolder);
+			scene->generateDataset(procedure, procedure._folder, procedure._extension, procedure._destinationFolder);
 #endif
 
 			std::cout << "__ Finishing LiDAR Simulator __" << std::endl;

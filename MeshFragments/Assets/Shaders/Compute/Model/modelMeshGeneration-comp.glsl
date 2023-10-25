@@ -6,12 +6,11 @@ layout (local_size_variable) in;
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
 
 layout (std430, binding = 0) buffer InputBufferA	{ VertexGPUData vertexData[]; };
-layout (std430, binding = 1) buffer OutputBufferA	{ FaceGPUData meshData[]; };
+layout (std430, binding = 1) buffer OutputBufferA	{ FaceGPUData	meshData[]; };
 
 #include <Assets/Shaders/Compute/Model/computeNormals-comp.glsl>			// Needs input buffers
 
-uniform int size;
-uniform uint restartPrimitiveIndex;
+uniform int		size;
 
 
 // ********* FUNCTIONS ************
@@ -33,7 +32,6 @@ void main()
 	if (index >= size)
 		return;
 
-	// Boundaries and location data for BVH
 	computeAABB(index);
 	meshData[index].normal = computeNormal(index);
 }

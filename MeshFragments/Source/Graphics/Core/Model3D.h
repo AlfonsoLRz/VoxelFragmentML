@@ -143,76 +143,6 @@ public:
 		unsigned	_padding2;
 	};
 
-	struct ModelComponentDescription
-	{
-		char		_modelName[40];
-
-		// Material
-		char		_materialName[40];
-		vec3		_kd, _ks;
-		float		_ns;
-		char		_mapKd[60], _mapKs[60];
-
-		/**
-		*	@brief Default constructor for the initialization of a model component.
-		*/
-		ModelComponentDescription()
-		{
-			std::string emptyString = "";
-
-			_kd = vec3(.0f);
-			_ks = vec3(.0f);
-			_ns = .0f;
-
-			strcpy(_modelName, emptyString.c_str());
-			strcpy(_materialName, emptyString.c_str());
-			strcpy(_mapKd, emptyString.c_str());
-			strcpy(_mapKs, emptyString.c_str());
-		}
-
-		/**
-		*	@brief Construction of description from the loading process.
-		*/
-		ModelComponentDescription(objl::Mesh* mesh)
-		{
-			if (!mesh->MeshName.empty())
-			{
-				strcpy(_modelName, mesh->MeshName.c_str());
-			}
-			else if (!mesh->MeshMaterial.name.empty())
-			{
-				strcpy(_modelName, mesh->MeshMaterial.name.c_str());
-			}
-
-			objl::Material* material = &mesh->MeshMaterial;
-
-			_kd = vec3(material->Kd.X, material->Kd.Y, material->Kd.Z);
-			_ks = vec3(material->Ks.X, material->Ks.Y, material->Ks.Z);
-			_ns = material->Ns;
-
-			strcpy(_materialName, material->name.c_str());
-			strcpy(_mapKd, material->map_Kd.c_str());
-			strcpy(_mapKs, material->map_Ks.c_str());
-		}
-
-		/**
-		*	@brief Assignment operator overriding.
-		*/
-		ModelComponentDescription& operator=(const ModelComponentDescription& description)
-		{
-			_kd = description._kd;
-			_ks = description._ks;
-			_ns = description._ns;
-
-			strcpy(_modelName, description._modelName);
-			strcpy(_materialName, description._materialName);
-			strcpy(_mapKd, description._mapKd);
-			strcpy(_mapKs, description._mapKs);
-
-			return *this;
-		}
-	};
-
 public:
 	// [Rendering]
 	const static GLuint		RESTART_PRIMITIVE_INDEX;		//!< Index which marks the end of a primitive
@@ -399,6 +329,16 @@ public:
 	*	@return Model transformation matrix.
 	*/
 	mat4 getModelMatrix() { return _modelMatrix; }
+
+	/**
+	*	@brief Returns the number of faces comprised in this model.
+	*/
+	unsigned getNumFaces();
+
+	/**
+	*	@return Number of vertices comprised in this model.
+	*/
+	unsigned getNumVertices();
 
 	// -------------- Setters ------------------
 

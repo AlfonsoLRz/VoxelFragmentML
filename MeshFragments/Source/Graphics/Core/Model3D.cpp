@@ -142,17 +142,13 @@ Model3D::Model3D(const glm::mat4& modelMatrix, unsigned numComponents) :
 	_loaded(false), _modelMatrix(modelMatrix),  _modelComp(numComponents)
 {
 	for (int i = 0; i < numComponents; ++i)
-	{
 		_modelComp[i] = new ModelComponent();
-	}
 }
 
 Model3D::~Model3D()
 {
 	for (auto& it : _modelComp)
-	{
 		delete it;
-	}
 
 	glDeleteTextures(1, &_ssaoKernelTextureID);
 	glDeleteTextures(1, &_ssaoNoiseTextureID);
@@ -185,6 +181,26 @@ void Model3D::registerModelComponentGroup(Group3D* group)
 	{
 		group->registerModelComponent(modelComp);
 	}
+}
+
+unsigned Model3D::getNumFaces()
+{
+	unsigned numFaces = 0;
+
+	for (ModelComponent* modelComp : _modelComp)
+		numFaces += modelComp->_topology.size();
+
+	return numFaces;
+}
+
+unsigned Model3D::getNumVertices()
+{
+	unsigned numVertices = 0;
+
+	for (ModelComponent* modelComp : _modelComp)
+		numVertices += modelComp->_geometry.size();
+
+	return numVertices;
 }
 
 void Model3D::setName(const std::string& name, const unsigned int compIndex)

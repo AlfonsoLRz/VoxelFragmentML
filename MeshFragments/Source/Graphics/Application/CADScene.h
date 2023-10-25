@@ -79,7 +79,7 @@ protected:
 	/**
 	*	@brief 
 	*/
-	void exportMetadata(FragmentationProcedure* datasetProcedure, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize);
+	void exportMetadata(const std::string& filename, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize);
 
 	/**
 	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm. 
@@ -110,6 +110,11 @@ protected:
 	*	@brief Loads the models which are necessary to render the scene.
 	*/
 	virtual void loadModels();
+
+	/**
+	*	@brief Replaces the currently loaded model.
+	*/
+	void loadModel(const std::string& path);
 
 	/**
 	*	@brief Updates the scene content.
@@ -204,12 +209,12 @@ public:
 	/**
 	*	@brief Fractures voxelized model.
 	*/
-	std::string fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata);
+	std::string fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters);
 
 	/**
 	*	@brief Fractures voxelized model. 
 	*/
-	std::string fractureGrid(const std::string& path, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata);
+	std::string fractureGrid(const std::string& path, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters);
 
 	/**
 	*	@brief Generates a dataset of fractured models.
@@ -220,11 +225,6 @@ public:
 	*	@return Buffer with information of split fragments.
 	*/
 	std::vector<FragmentationProcedure::FragmentMetadata> getFragmentMetadata() { return _fragmentMetadata; }
-
-	/**
-	*	@brief Loads a new model for fractures.
-	*/
-	void loadModel(const std::string& path);
 
 	/**
 	*	@brief Draws the scene as the rendering parameters specifies.

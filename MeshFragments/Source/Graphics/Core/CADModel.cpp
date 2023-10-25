@@ -17,17 +17,15 @@ std::unordered_map<std::string, std::unique_ptr<Material>> CADModel::_cadMateria
 std::unordered_map<std::string, std::unique_ptr<Texture>> CADModel::_cadTextures;
 
 const std::string CADModel::BINARY_EXTENSION = ".bin";
-const std::string CADModel::OBJ_EXTENSION = ".obj";
 
 /// [Public methods]
 
-CADModel::CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary, const bool fuseComponents, const bool mergeVertices) : 
+CADModel::CADModel(const std::string& filename, const bool useBinary, const bool fuseComponents, const bool mergeVertices) : 
 	Model3D(mat4(1.0f), 0)
 {
 	_filename = filename;
 	_fuseComponents = fuseComponents;
 	_fuseVertices = mergeVertices;
-	_textureFolder = textureFolder;
 	_useBinary = useBinary;
 }
 
@@ -73,22 +71,36 @@ CADModel::~CADModel()
 {
 }
 
-void CADModel::endBatch(bool releaseMemory)
+void CADModel::endBatch(bool releaseMemory, bool buildVao, int targetFaces)
 {
 	ModelComponent* modelComponent = _modelComp[0];
 
-	this->simplify(5000);
-	this->computeMeshData(modelComponent, true);
+	if (targetFaces > 0)
+		this->simplify(500);
 
-	for (ModelComponent* modelComponent : _modelComp)
+	if (buildVao)
 	{
-		modelComponent->buildTriangleMeshTopology();
-		modelComponent->buildWireframeTopology();
+		this->computeMeshData(modelComponent, true);
+
+		for (ModelComponent* modelComponent : _modelComp)
+		{
+			modelComponent->buildTriangleMeshTopology();
+			modelComponent->buildWireframeTopology();
+		}
+
+		Model3D::setVAOData();
 	}
 
-	Model3D::setVAOData();
 	for (ModelComponent* modelComponent : _modelComp)
 		modelComponent->releaseMemory(releaseMemory, releaseMemory);
+}
+
+std::string CADModel::getShortName() const
+{
+	const size_t barPosition = _filename.find_last_of('/');
+	const size_t dotPosition = _filename.find_last_of('.');
+
+	return _filename.substr(barPosition + 1, dotPosition - barPosition - 1);
 }
 
 void CADModel::insert(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned numFaces, bool updateIndices)
@@ -109,7 +121,7 @@ bool CADModel::load()
 
 	if (_useBinary && std::filesystem::exists(binaryFile))
 	{
-		this->loadModelFromBinaryFile();
+		this->loadModelFromBinaryFile(binaryFile);
 	}
 	else
 	{
@@ -156,6 +168,21 @@ bool CADModel::load()
 	{
 		modelComponent->releaseMemory(false, false);
 		modelComponent->updateSSBO();
+	}
+
+	return true;
+}
+
+void CADModel::modifyVertices(const mat4& mMatrix)
+{
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		#pragma omp parallel for
+		for (int idx = 0; idx < modelComponent->_geometry.size(); ++idx)
+		{
+			modelComponent->_geometry[idx]._position = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._position, 1.0f));
+			modelComponent->_geometry[idx]._normal = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._normal, 0.0f));
+		}
 	}
 }
 
@@ -286,6 +313,76 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 	return pointCloud;
 }
 
+bool CADModel::save(const std::string& filename)
+{
+	aiScene scene;
+	scene.mRootNode = new aiNode();
+
+	scene.mMaterials = new aiMaterial * [1];
+	scene.mMaterials[0] = nullptr;
+	scene.mNumMaterials = 1;
+
+	scene.mMaterials[0] = new aiMaterial();
+
+	scene.mMeshes = new aiMesh * [1];
+	scene.mMeshes[0] = nullptr;
+	scene.mNumMeshes = 1;
+
+	scene.mMeshes[0] = new aiMesh();
+	scene.mMeshes[0]->mMaterialIndex = 0;
+
+	scene.mRootNode->mMeshes = new unsigned int[1];
+	scene.mRootNode->mMeshes[0] = 0;
+	scene.mRootNode->mNumMeshes = 1;
+
+	auto pMesh = scene.mMeshes[0];
+
+	// Retrieving info from the model
+	glm::uint geometrySize = 0;
+	std::vector<glm::vec3> vertices;	
+	std::vector<ivec3> faces;
+
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		for (VertexGPUData& vertex : modelComponent->_geometry)
+			vertices.push_back(vertex._position);
+
+		for (FaceGPUData& face : modelComponent->_topology)
+			faces.push_back(ivec3(face._vertices.x + geometrySize, face._vertices.y + geometrySize, face._vertices.z + geometrySize));
+
+		geometrySize += modelComponent->_geometry.size();
+	}
+
+	// Vertex generation
+	const auto& assimpVertices = vertices;
+
+	pMesh->mVertices = new aiVector3D[assimpVertices.size()];
+	pMesh->mNumVertices = assimpVertices.size();
+
+	int j = 0;
+	for (auto itr = assimpVertices.begin(); itr != assimpVertices.end(); ++itr)
+	{
+		pMesh->mVertices[itr - assimpVertices.begin()] = aiVector3D(assimpVertices[j].x, assimpVertices[j].y, assimpVertices[j].z);
+		++j;
+	}
+
+	// Index generation
+	pMesh->mFaces = new aiFace[faces.size()];
+	pMesh->mNumFaces = static_cast<unsigned>(faces.size());
+
+	for (size_t i = 0; i < faces.size(); i++)
+	{
+		aiFace& face = pMesh->mFaces[i];
+		face.mIndices = new unsigned int[3];
+		face.mNumIndices = 3;
+		face.mIndices[0] = faces[i].x;
+		face.mIndices[1] = faces[i].y;
+		face.mIndices[2] = faces[i].z;
+	}
+
+	return _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
+}
+
 void CADModel::simplify(unsigned numFaces)
 {
 	for (Model3D::ModelComponent* modelComponent : _modelComp)
@@ -413,7 +510,7 @@ Material* CADModel::createMaterial(ModelComponent* modelComp)
 
 			if (!mapKd.empty())
 			{
-				kad = new Texture(_textureFolder + mapKd);
+				kad = new Texture(mapKd);
 			}
 			else
 			{
@@ -422,7 +519,7 @@ Material* CADModel::createMaterial(ModelComponent* modelComp)
 
 			if (!mapKs.empty())
 			{
-				ks = new Texture(_textureFolder + mapKs);
+				ks = new Texture(mapKs);
 			}
 			else
 			{
@@ -488,11 +585,11 @@ void CADModel::fuseVertices(std::vector<int>& mapping)
 	}
 }
 
-bool CADModel::loadModelFromBinaryFile()
+bool CADModel::loadModelFromBinaryFile(const std::string& binaryFile)
 {
 	bool success;
 
-	if (success = this->readBinary(_filename +  BINARY_EXTENSION, _modelComp))
+	if (success = this->readBinary(binaryFile, _modelComp))
 	{
 		for (ModelComponent* modelComp : _modelComp)
 		{
@@ -637,7 +734,6 @@ bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D
 		fin.read((char*)&component->_materialDescription._ns, sizeof(float));
 
 		component->_material = this->createMaterial(component);
-		_aabb.update(component->_aabb);
 	}
 
 	fin.read((char*)&_aabb, sizeof(AABB));

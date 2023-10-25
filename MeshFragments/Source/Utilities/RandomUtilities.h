@@ -15,72 +15,77 @@ typedef std::uniform_real_distribution<float>	DoubleUniformDistribution;
 *	@brief Set of utilities to retrieve random values.
 *	@author Alfonso López Ruiz.
 */
-namespace RandomUtilities
+class RandomUtilities
 {
+protected:
+	static inline RandomNumberGenerator generator;
+	static inline DoubleUniformDistribution distribution = DoubleUniformDistribution(.0f, 1.0f);
+
+public:
 	/**
-	*	@brief Initializes the seed of the current distribution. 
+	*	@brief Initializes the seed of the current distribution.
 	*/
-	void initSeed(int seed);
-	
+	static void initSeed(int seed);
+
 	/**
 	*	@return Random of length up to distanceSquared.
 	*/
-	vec3 getRandomToSphere(float radius, float distanceSquared);
+	static vec3 getRandomToSphere(float radius, float distanceSquared);
 
 	/**
 	*	@return New random value retrieved from a random uniform distribution.
 	*/
-	float getUniformRandom();
+	static float getUniformRandom();
 
 	/**
 	*	@return New random value retrieved from a random uniform distribution. Note that this value is not in [0, 1].
 	*/
-	float getUniformRandom(float min, float max);
+	static float getUniformRandom(float min, float max);
 
 	/**
 	*	@brief Generates a random color in [0, 1] by using getUniformRandom function for each channel.
 	*/
-	vec3 getUniformRandomColor();
+	static vec3 getUniformRandomColor();
 
 	/**
 	*	@brief Generates a random color by using getUniformRandom function for each channel.
 	*/
-	vec3 getUniformRandomColor(float min, float max);
+	static vec3 getUniformRandomColor(float min, float max);
 
 	/**
 	*	@return Random hemisphere vector aligned to Z axis.
 	*/
-	vec3 getUniformRandomCosineDirection();
+	static vec3 getUniformRandomCosineDirection();
 
 	/**
 	*	@return Random point in unit sphere.
 	*/
-	vec3 getUniformRandomInHemisphere(const vec3& normal);
+	static vec3 getUniformRandomInHemisphere(const vec3& normal);
 
 	/**
 	*	@return Random single integer value.
 	*/
-	int getUniformRandomInt(int min, int max);
+	static int getUniformRandomInt(int min, int max);
 
 	/**
 	*	@return Random single integer value biased towards the middle value.
 	*/
-	int getBiasedRandomInt(int min, int max, int divs);
-	
+	static int getBiasedRandomInt(int min, int max, int divs);
+
 	/**
 	*	@return Random point in unit disk.
 	*/
-	vec3 getUniformRandomInUnitDisk();
+	static vec3 getUniformRandomInUnitDisk();
 
 	/**
 	*	@return Random point in unit sphere.
 	*/
-	vec3 getUniformRandomInUnitSphere();
-}
+	static vec3 getUniformRandomInUnitSphere();
+};
 
 inline void RandomUtilities::initSeed(int seed)
 {
-	static RandomNumberGenerator generator ( seed );
+	generator = RandomNumberGenerator(seed);
 }
 
 inline vec3 RandomUtilities::getRandomToSphere(float radius, float distanceSquared)
@@ -97,9 +102,6 @@ inline vec3 RandomUtilities::getRandomToSphere(float radius, float distanceSquar
 
 inline float RandomUtilities::getUniformRandom()
 {
-	static RandomNumberGenerator generator;
-	static DoubleUniformDistribution distribution(.0f, 1.0f);
-
 	return distribution(generator);
 }
 
@@ -112,6 +114,7 @@ inline vec3 RandomUtilities::getUniformRandomColor()
 {
 	return vec3(RandomUtilities::getUniformRandom(), RandomUtilities::getUniformRandom(), RandomUtilities::getUniformRandom());
 }
+
 inline vec3 RandomUtilities::getUniformRandomColor(float min, float max)
 {
 	return vec3(RandomUtilities::getUniformRandom(min, max), RandomUtilities::getUniformRandom(min, max), RandomUtilities::getUniformRandom(min, max));

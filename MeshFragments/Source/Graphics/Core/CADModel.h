@@ -1,5 +1,6 @@
 #pragma once
 
+#include <assimp/Exporter.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -29,17 +30,16 @@ protected:
 	static std::unordered_map<std::string, std::unique_ptr<Texture>> _cadTextures;
 
 public:
-	const static std::string BINARY_EXTENSION;				//!< File extension for binary models
-	const static std::string OBJ_EXTENSION;					//!< File extension for original OBJ models
+	const static std::string BINARY_EXTENSION;					//!< File extension for binary models
 
 protected:
 	AABB				_aabb;									//!< Boundaries 
 	Assimp::Importer	_assimpImporter;						//!< Assimp importer
+	Assimp::Exporter	_assimpExporter;						//!< 
 	std::string			_filename;								//!< File path (without extension)
 	bool				_fuseComponents;						//!< Fuse all the components found in the cad model
 	bool				_fuseVertices;							//!< Fuse vertices which are too close
 	const aiScene*		_scene;									//!< Scene from assimp library	
-	std::string			_textureFolder;							//!< Folder where model textures may be located
 	bool				_useBinary;								//!< Use binary file instead of original obj models
 
 protected:
@@ -66,7 +66,7 @@ protected:
 	/**
 	*	@brief Fills the content of model component with binary file data.
 	*/
-	bool loadModelFromBinaryFile();
+	bool loadModelFromBinaryFile(const std::string& binaryFile);
 
 	/**
 	*	@brief Processes mesh as loaded by Assimp.
@@ -100,7 +100,7 @@ public:
 	*	@param filename Path where the model is located.
 	*	@param useBinary Use of previously written binary files.
 	*/
-	CADModel(const std::string& filename, const std::string& textureFolder, const bool useBinary, const bool fuseComponents, const bool fuseVertices);
+	CADModel(const std::string& filename, const bool useBinary, const bool fuseComponents, const bool fuseVertices);
 
 	/**
 	*	@brief Model 3D constructor for a triangle mesh.
@@ -126,12 +126,17 @@ public:
 	/**
 	*	@brief Sends geometry & topology to GPU.
 	*/
-	void endBatch(bool releaseMemory = true);
+	void endBatch(bool releaseMemory = true, bool buildVao = true, int targetFaces = -1);
 
 	/**
 	*	@return Bounding box of the model.
 	*/
 	AABB getAABB() { return _aabb; }
+
+	/**
+	*	@brief Returns the name of the model.
+	*/
+	std::string getShortName() const;
 
 	/**
 	*	@brief Appends new geometry & topology.
@@ -143,6 +148,11 @@ public:
 	*	@return Success of operation.
 	*/
 	virtual bool load();
+
+	/**
+	*	@brief Transforms the vertices of the model.
+	*/
+	void modifyVertices(const mat4& mMatrix);
 
 	/**
 	*	@brief Deleted assignment operator.
@@ -164,6 +174,11 @@ public:
 	*	@brief Samples the mesh as a set of points.
 	*/
 	PointCloud3D* sample(unsigned maxSamples, int randomFunction);
+
+	/**
+	*	@brief Saves the model using assimp.
+	*/
+	bool save(const std::string& filename);
 
 	/**
 	*	@brief 

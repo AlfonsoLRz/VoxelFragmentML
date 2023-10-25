@@ -136,7 +136,9 @@ void GUI::showFileDialog()
 		{
 			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 			_modelFilePath = filePathName.substr(0, filePathName.find_last_of("."));
-			_scene->loadModel(_modelFilePath);
+
+			_fragmentMetadata.clear();
+			_scene->fractureGrid(_modelFilePath, _fragmentMetadata, *_fractureParameters);
 		}
 
 		// Close
@@ -204,7 +206,7 @@ void GUI::showFractureSettings()
 		if (ImGui::Button("Launch Algorithm"))
 		{
 			_fragmentMetadata.clear();
-			_fractureText = _scene->fractureGrid(_fragmentMetadata);
+			_fractureText = _scene->fractureGrid(_fragmentMetadata, *_fractureParameters);
 		}
 
 		ImGui::SameLine(0, 10);

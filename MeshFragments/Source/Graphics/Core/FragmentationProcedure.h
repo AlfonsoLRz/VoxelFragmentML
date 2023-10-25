@@ -6,14 +6,15 @@
 struct FragmentationProcedure
 {
 	bool				_exportFragments	= true;	
-	bool				_exportMetadata		= false;
+	bool				_exportMetadata		= true;
 	std::string			_currentDestinationFolder = "";
 
-	ivec2				_fragmentInterval	= ivec2(2, 20);
-	ivec2				_iterationInterval = ivec2(8, 18);
-	std::string			_folder				= "Assets/Models/Modelos Vasijas OBJ (completo)-20211117T102301Z-001/Modelos OBJ (completo)/";
-	std::string			_destinationFolder  = "Dataset/";
 	FractureParameters	_fractureParameters;
+	ivec2				_fragmentInterval	= ivec2(2, 12);
+	ivec2				_iterationInterval	= ivec2(15, 5);
+	std::string			_folder				= "Assets/Models/STL_vessels/";
+	std::string			_extension			= ".stl";
+	std::string			_destinationFolder  = "Dataset/";
 	bool				_saveScreenshots	= false;
 
 	struct FragmentMetadata
@@ -21,12 +22,13 @@ struct FragmentationProcedure
 		uint16_t	_id;
 		std::string _vesselName;
 
+		uint32_t	_numVertices, _numFaces;
 		glm::uint	_occupiedVoxels;
 		float		_percentage;
 		glm::uint	_voxels;
 		glm::uint16 _voxelizationSize;
 
-		FragmentMetadata() : _id(0), _vesselName(""), _occupiedVoxels(0), _percentage(0.0f), _voxels(0), _voxelizationSize(0) {}
+		FragmentMetadata() : _id(0), _vesselName(""), _occupiedVoxels(0), _percentage(0.0f), _voxels(0), _voxelizationSize(0), _numFaces(0), _numVertices(0) {}
 	};
 
 	FragmentationProcedure()

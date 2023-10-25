@@ -9,7 +9,7 @@ layout (local_size_variable) in;
 #include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
 
 layout (std430, binding = 0) buffer GridBuffer	{ CellGrid	grid[]; };
-layout (std430, binding = 1) buffer Counter		{ uint		counter; };
+layout (std430, binding = 1) buffer Counter		{ uint		counter[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
@@ -23,33 +23,24 @@ const ivec3 direction[6] =
 	ivec3(0, -1, 0)
 };
 
+uniform uint directionIdx;
 uniform uint numVoxels;
-
 
 void main()
 {
 	const uint index = gl_GlobalInvocationID.x;
-	if (index >= numVoxels)
-	{
-		return;
-	}
-
-	if (grid[index].value == VOXEL_FREE)
+	if (index >= numVoxels || grid[index].value == VOXEL_FREE || counter[index] < directionIdx)
 		return;
 
-	ivec3 startingPosition = ivec3(getPosition(index));
-	uint positionIndex, count = 0;
-
-	for (int directionIdx = 0; directionIdx < 6 && count == directionIdx; ++directionIdx)
+	uint positionIndex;
+	ivec3 position = ivec3(getPosition(index));
 	{
-		ivec3 position = startingPosition;
-
 		while (position.x >= 0 && position.y >= 0 && position.z >= 0 && position.x < gridDims.x && position.y < gridDims.y && position.z < gridDims.z)
 		{
 			positionIndex = getPositionIndex(position);
-			if (grid[positionIndex].value == VOXEL_FREE)
+			if (grid[positionIndex].value >= VOXEL_FREE)
 			{
-				count += 1;
+				counter[index] += 1;
 				break;
 			}
 
@@ -57,9 +48,6 @@ void main()
 		}
 	}
 
-	if (count == 6)
-	{
-		atomicAdd(counter, 1);
+	if (counter[index] == 6)
 		grid[index].value = VOXEL_FREE;
-	}
 }

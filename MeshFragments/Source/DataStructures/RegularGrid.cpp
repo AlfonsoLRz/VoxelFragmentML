@@ -12,19 +12,20 @@
 /// Public methods
 
 RegularGrid::RegularGrid(const AABB& aabb, int subdivisions) :
-	_aabb(aabb), _numDivs(subdivisions)
+	_aabb(aabb), _marchingCubes(nullptr), _numDivs(subdivisions)
 {
 	this->setAABB(aabb);
 	this->buildGrid();
 }
 
-RegularGrid::RegularGrid(uvec3 subdivisions) : _cellSize(.0f), _numDivs(subdivisions), _ssbo(-1)
+RegularGrid::RegularGrid(uvec3 subdivisions) : _cellSize(.0f), _marchingCubes(nullptr), _numDivs(subdivisions), _ssbo(-1)
 {
-	
 }
 
 RegularGrid::~RegularGrid()
 {
+	delete _marchingCubes;
+	glDeleteBuffers(1, &_countSSBO);
 	glDeleteBuffers(1, &_ssbo);
 }
 
@@ -223,11 +224,15 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 	// Fill grid once the boundaries are established
 	if (fill)
 	{
-		fillShader->use();
-		fillShader->bindBuffers(std::vector<GLuint>{_ssbo});
-		fillShader->setUniform("gridDims", numDivs);
-		fillShader->setUniform("numVoxels", numCells);
-		fillShader->execute(numGroups2, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+		for (unsigned directionIdx = 0; directionIdx < 6; ++directionIdx)
+		{
+			fillShader->use();
+			fillShader->bindBuffers(std::vector<GLuint>{_ssbo, _countSSBO});
+			fillShader->setUniform("directionIdx", directionIdx);
+			fillShader->setUniform("gridDims", numDivs);
+			fillShader->setUniform("numVoxels", numCells);
+			fillShader->execute(numGroups2, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+		}
 	}
 
 	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
@@ -456,7 +461,7 @@ void RegularGrid::setAABB(const AABB& aabb, bool reset)
 		this->cleanGrid();
 }
 
-std::vector<Model3D*> RegularGrid::toTriangleMesh(int subdivisions, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata)
+std::vector<Model3D*> RegularGrid::toTriangleMesh(FractureParameters& fractParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata)
 {
 	std::vector<Model3D*> meshes;
 	std::unordered_map<uint16_t, unsigned> valuesSet;
@@ -487,15 +492,19 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh(int subdivisions, std::vector<
 
 	std::sort(values.begin(), values.end());
 
-	MarchingCubes mCubes(*this, subdivisions, _numDivs, 5);
-	vec3 scale = (_aabb.size()) / vec3(_numDivs + uvec3(2));
+	if (!_marchingCubes)
+		_marchingCubes = new MarchingCubes(*this, fractParameters._marchingCubesSubdivisions, _numDivs, 5);
+	_marchingCubes->setGrid(*this);
+
+	vec3 scale = (_aabb.size()) / vec3(_numDivs);
 	vec3 minPoint = _aabb.min();
 	mat4 transformationMatrix = glm::translate(glm::mat4(1.0f), -vec3(1.0f) * scale) * glm::translate(glm::mat4(1.0f), minPoint) * glm::scale(glm::mat4(1.0f), scale);
 
 	for (int idx = 0; idx < values.size(); ++idx)
-	{
-		meshes[idx] = mCubes.triangulateFieldGPU(_ssbo, values[idx], transformationMatrix);
-	}
+		meshes[idx] = _marchingCubes->triangulateFieldGPU(_ssbo, values[idx], fractParameters, transformationMatrix);
+
+	delete _marchingCubes;
+	_marchingCubes = nullptr;
 
 	return meshes;
 }
@@ -574,6 +583,8 @@ void RegularGrid::buildGrid()
 {	
 	_grid = std::vector<CellGrid>(_numDivs.x * _numDivs.y * _numDivs.z);
 	std::fill(_grid.begin(), _grid.end(), CellGrid());
+	_zeroCounter = std::vector<unsigned>(_numDivs.x * _numDivs.y * _numDivs.z, 0);
+	_countSSBO = ComputeShader::setReadBuffer(_zeroCounter, GL_DYNAMIC_DRAW);
 	_ssbo = ComputeShader::setReadBuffer(_grid.data(), _grid.size(), GL_DYNAMIC_DRAW);
 }
 
@@ -581,6 +592,7 @@ void RegularGrid::cleanGrid()
 {
 	std::fill(_grid.begin(), _grid.end(), CellGrid());
 	ComputeShader::updateReadBuffer(_ssbo, _grid.data(), _grid.size(), GL_DYNAMIC_DRAW);
+	ComputeShader::updateReadBuffer(_countSSBO, _zeroCounter.data(), _zeroCounter.size(), GL_DYNAMIC_DRAW);
 }
 
 size_t RegularGrid::countValues(std::unordered_map<uint16_t, unsigned>& values)

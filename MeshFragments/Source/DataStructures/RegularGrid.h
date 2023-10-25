@@ -14,6 +14,8 @@
 *	@date 09/02/2020
 */
 
+class MarchingCubes;
+
 #define VOXEL_EMPTY 0
 #define VOXEL_FREE 1
 
@@ -39,8 +41,11 @@ protected:
 
 	AABB					_aabb;									//!< Bounding box of the scene
 	vec3					_cellSize;								//!< Size of each grid cell
+	GLuint					_countSSBO;								//!< GPU buffer to save the number of occupied voxels per cell		
+	MarchingCubes*			_marchingCubes;							//!< Marching cubes algorithm
 	uvec3					_numDivs;								//!< Number of subdivisions of space between mininum and maximum point
 	GLuint					_ssbo;									//!< GPU buffer to save the grid
+	std::vector<unsigned>	_zeroCounter;							//!< CPU buffer to save the number of occupied voxels per cell		
 
 protected:
 	/**
@@ -183,7 +188,7 @@ public:
 	/**
 	*	@brief Transforms the regular grid into a triangle mesh per value.
 	*/
-	std::vector<Model3D*> toTriangleMesh(int subdivisions, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata);
+	std::vector<Model3D*> toTriangleMesh(FractureParameters& fractParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata);
 
 	/**
 	*	@brief Undo the detection of boundaries, thus removing the included mask.

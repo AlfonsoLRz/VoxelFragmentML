@@ -141,11 +141,11 @@ void march(in uint index, in ivec3 cellIndices)
 			vertexData[offset + 1].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
 			vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 2)]].xyz;
 
-			if (!ccw(offset))
-			{
-				vertexData[offset + 1].xyz = vertexData[offset + 2].xyz;
-				vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
-			}
+			//if (!ccw(offset))
+			//{
+			//	vertexData[offset + 1].xyz = vertexData[offset + 2].xyz;
+			//	vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
+			//}
 
 			float isBoundary = isBoundary_f(grid[getPositionIndex(cellIndices)]);
 			vertexData[offset + 0].w = isBoundary;

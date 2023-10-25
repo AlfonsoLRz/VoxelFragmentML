@@ -86,7 +86,7 @@ protected:
     /**
     *   @brief Smooths the surface using the Laplacian operator.
     */
-    void smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations);
+    void smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations, unsigned boundaryIterations);
 
     /**
     *   @brief Sorts previously computed Morton codes.
@@ -105,9 +105,14 @@ public:
     virtual ~MarchingCubes();
 
     /**
+    *   @brief Modifies the content related to the grid.
+    */
+    void setGrid(RegularGrid& regularGrid);
+
+    /**
     *   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
     */
-    CADModel* triangulateFieldGPU(GLuint gridSSBO, float targetValue, const mat4& modelMatrix);
+    CADModel* triangulateFieldGPU(GLuint gridSSBO, float targetValue, FractureParameters& fractureParams, const mat4& modelMatrix);
 
     /**
     *   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.

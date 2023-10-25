@@ -9,6 +9,7 @@
 #include "Graphics/Core/Light.h"
 #include "Graphics/Core/OpenGLUtilities.h"
 #include "Graphics/Core/Voronoi.h"
+#include "progressbar.hpp"
 #include "Utilities/ChronoUtilities.h"
 
 /// Initialization of static attributes
@@ -18,20 +19,24 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::VESSEL_PATH = "Assets/Models/Modelos Vasijas OBJ (completo)-20211117T102301Z-001/Modelos OBJ (completo)/BO#_#/BO4_2/BO4_2.obj";
+const std::string CADScene::VESSEL_PATH = "Assets/Models/STL_vessels/AL_03A.stl";
 
 // [Public methods]
 
-CADScene::CADScene() : _aabbRenderer(nullptr), _mesh(nullptr), _meshGrid(nullptr), _pointCloud(nullptr), _pointCloudRenderer(nullptr)
+CADScene::CADScene() : _aabbRenderer(nullptr), _fragmentBoundaries(nullptr), _mesh(nullptr), _meshGrid(nullptr), _pointCloud(nullptr), _pointCloudRenderer(nullptr)
 {
 	_aabbRenderer = new AABBSet();
 	_aabbRenderer->load();
 	_aabbRenderer->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_BLUE));
+
+	srand(_fractParameters._seed);
+	RandomUtilities::initSeed(_fractParameters._seed);
 }
 
 CADScene::~CADScene()
 {
 	delete _aabbRenderer;
+	delete _fragmentBoundaries;
 	delete _mesh;
 	delete _meshGrid;
 	delete _pointCloud;
@@ -44,31 +49,33 @@ void CADScene::exportGrid()
 		_meshGrid->exportGrid(_pointCloud->getAABB());
 }
 
-std::string CADScene::fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata)
+std::string CADScene::fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters)
 {
 	this->eraseFragmentContent();
-	this->rebuildGrid(_fractParameters);
-	std::string result = this->fractureModel(_fractParameters);
-	this->prepareScene(_fractParameters, fragmentMetadata);
+	this->rebuildGrid(fractureParameters);
+	std::string result = this->fractureModel(fractureParameters);
+	this->prepareScene(fractureParameters, fragmentMetadata);
 
 	return result;
 }
 
-std::string CADScene::fractureGrid(const std::string& path, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata)
+std::string CADScene::fractureGrid(const std::string& path, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters)
 {
 	this->eraseFragmentContent();
 
 	if (!path.empty())
-	{
-		delete _mesh;
-		_mesh = new CADModel(path, path.substr(0, path.find_last_of("/") + 1), false, true, true);
-		_mesh->load();
-		_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
-	}
+		this->loadModel(path);
 
-	this->rebuildGrid(_fractParameters);
-	std::string result = this->fractureModel(_fractParameters);
-	this->prepareScene(_fractParameters, fragmentMetadata);
+	this->rebuildGrid(fractureParameters);
+	std::string result = this->fractureModel(fractureParameters);
+	this->prepareScene(fractureParameters, fragmentMetadata);
+
+	delete _meshGrid;
+	_meshGrid = nullptr;
+
+	this->rebuildGrid(fractureParameters);
+	this->fractureModel(fractureParameters);
+	this->prepareScene(fractureParameters, fragmentMetadata);
 
 	return result;
 }
@@ -84,37 +91,56 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 	for (const std::string& path : fileList)
 	{
-		const size_t extensionBarIndex = path.find_last_of("/");
-		const std::string modelPath = path.substr(0, extensionBarIndex + 1);
+		std::vector<FragmentationProcedure::FragmentMetadata> modelMetadata;
+		this->loadModel(path);
+
+		const std::string modelName = _mesh->getShortName();
+		const std::string meshFolder = fractureProcedure._currentDestinationFolder + modelName + "/";
+		const std::string meshFile = meshFolder + modelName + "_";
+		if (!std::filesystem::exists(meshFolder)) std::filesystem::create_directory(meshFolder);
 
 		for (int numFragments = fractureProcedure._fragmentInterval.x; numFragments <= fractureProcedure._fragmentInterval.y; ++numFragments)
 		{
-			std::string fragmentFolder = fractureProcedure._currentDestinationFolder + std::to_string(numFragments) + "/";
-			if (!std::filesystem::exists(fragmentFolder)) std::filesystem::create_directory(fragmentFolder);
+			const std::string fragmentFile = meshFile + std::to_string(numFragments) + "f_";
+			fractureProcedure._fractureParameters._numSeeds = numFragments;
+			const int numIterations = glm::mix(
+				fractureProcedure._iterationInterval.x, fractureProcedure._iterationInterval.y, 
+				static_cast<float>(numFragments - fractureProcedure._fragmentInterval.x) / (fractureProcedure._fragmentInterval.y - fractureProcedure._fragmentInterval.x));
 
-			for (int iteration = fractureProcedure._fragmentInterval.x; iteration < fractureProcedure._iterationInterval.y; ++iteration)
+			std::cout << modelName << " - " << numFragments << " fragments ";
+			progressbar bar(numIterations);
+
+			for (int iteration = 0; iteration < numIterations; ++iteration)
 			{
-				std::string itFolder = fragmentFolder + std::to_string(iteration) + "it/";
-				if (!std::filesystem::exists(itFolder)) std::filesystem::create_directory(itFolder);
+				bar.update();
 
-				this->fractureGrid(path, fragmentMetadata);
+				unsigned idx = 0;
+				const std::string itFile = fragmentFile + std::to_string(iteration) + "it";
 
-				break;
+				this->fractureGrid(fragmentMetadata, fractureProcedure._fractureParameters);
+
+				for (Model3D* fracture : _fractureMeshes)
+				{
+					const std::string filename = itFile + "_" + std::to_string(idx) + fractureProcedure._extension;
+					fragmentMetadata[idx]._vesselName = filename;
+					fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
+					fragmentMetadata[idx]._numFaces = fracture->getNumFaces();
+
+					dynamic_cast<CADModel*>(fracture)->save(filename);
+
+					++idx;
+				}
+
+				modelMetadata.insert(modelMetadata.end(), fragmentMetadata.begin(), fragmentMetadata.end());
+				fragmentMetadata.clear();
 			}
 
-			break;
+			std::cout << std::endl;
 		}
 
-		break;
+		if (fractureProcedure._exportMetadata)
+			this->exportMetadata(meshFile + "metadata.txt", modelMetadata);
 	}
-}
-
-void CADScene::loadModel(const std::string& path)
-{
-	_fragmentMetadata.clear();
-
-	this->fractureGrid(VESSEL_PATH, _fragmentMetadata);
-	this->loadDefaultCamera(_cameraManager->getActiveCamera());
 }
 
 void CADScene::render(const mat4& mModel, RenderingParameters* rendParams)
@@ -141,14 +167,13 @@ void CADScene::eraseFragmentContent()
 	_fragmentTextures.clear();
 }
 
-void CADScene::exportMetadata(FragmentationProcedure* datasetProcedure, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize)
+void CADScene::exportMetadata(const std::string& filename, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize)
 {
-	std::string filename = datasetProcedure->_currentDestinationFolder + "metadata.txt";
 	std::ofstream outputStream(filename.c_str());
 
 	if (outputStream.fail()) return;
 
-	outputStream << "Filename\tFragment id\tVoxelization size\tVoxels\tOccupied voxels\tPercentage" << std::endl;
+	outputStream << "Filename\tFragment id\tVoxelization size\tVoxels\tOccupied voxels\tPercentage\tVertices\tFaces" << std::endl;
 
 	for (int idx = 0; idx < fragmentSize.size(); ++idx)
 	{
@@ -157,8 +182,10 @@ void CADScene::exportMetadata(FragmentationProcedure* datasetProcedure, std::vec
 			fragmentSize[idx]._id << "\t" <<
 			fragmentSize[idx]._voxelizationSize << "\t" << 
 			fragmentSize[idx]._voxels << "\t" << 
-			fragmentSize[idx]._occupiedVoxels << "\t" << 
-			fragmentSize[idx]._percentage << std::endl;
+			//fragmentSize[idx]._occupiedVoxels << "\t" << 
+			fragmentSize[idx]._percentage << "\t" <<
+			fragmentSize[idx]._numVertices << "\t" <<
+			fragmentSize[idx]._numFaces << std::endl;
 	}
 
 	outputStream.close();	
@@ -166,9 +193,6 @@ void CADScene::exportMetadata(FragmentationProcedure* datasetProcedure, std::vec
 
 std::string CADScene::fractureModel(FractureParameters& fractParameters)
 {
-	srand(fractParameters._seed);
-	RandomUtilities::initSeed(fractParameters._seed);
-
 	fracturer::DistanceFunction dfunc = static_cast<fracturer::DistanceFunction>(fractParameters._distanceFunction);
 	
 	std::vector<uvec4> seeds;
@@ -302,30 +326,40 @@ void CADScene::loadLights()
 
 void CADScene::loadModels()
 {
-	this->loadModel(VESSEL_PATH);
+	_fragmentMetadata.clear();
+
+	this->fractureGrid(VESSEL_PATH, _fragmentMetadata, _fractParameters);
+	this->loadDefaultCamera(_cameraManager->getActiveCamera());
+}
+
+void CADScene::loadModel(const std::string& path)
+{
+	delete _mesh;
+	_mesh = new CADModel(path, true, true, true);
+	_mesh->load();
+	//_mesh->modifyVertices(glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f, .0f, .0f)));
+	_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
 }
 
 void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FragmentationProcedure* datasetProcedure)
 {
 	Texture* whiteTexture = TextureList::getInstance()->getTexture(CGAppEnum::TEXTURE_WHITE);
-	_fractureMeshes = _meshGrid->toTriangleMesh(fractParameters._marchingCubesSubdivisions, fragmentMetadata);
+	_fractureMeshes = _meshGrid->toTriangleMesh(fractParameters, fragmentMetadata);
 
-	if (datasetProcedure && datasetProcedure->_exportMetadata)
+	if (fractParameters._renderMesh)
 	{
-		this->exportMetadata(datasetProcedure, fragmentMetadata);
-	}
+		for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
+		{
+			Material* material = new Material;
+			Texture* kad = new Texture(vec4(ColorUtilities::HSVtoRGB(ColorUtilities::getHueValue(idx), 1.0f, 1.0f), 1.0f));
+			material->setTexture(Texture::KAD_TEXTURE, kad);
+			material->setTexture(Texture::KS_TEXTURE, whiteTexture);
+			material->setShininess(500.0f);
+			_fractureMeshes[idx]->setMaterial(material);
 
-	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
-	{
-		Material* material = new Material;
-		Texture* kad = new Texture(vec4(ColorUtilities::HSVtoRGB(ColorUtilities::getHueValue(idx), 1.0f, 1.0f), 1.0f));
-		material->setTexture(Texture::KAD_TEXTURE, kad);
-		material->setTexture(Texture::KS_TEXTURE, whiteTexture);
-		material->setShininess(500.0f);
-		_fractureMeshes[idx]->setMaterial(material);
-
-		_fragmentMaterials.push_back(material);
-		_fragmentTextures.push_back(kad);
+			_fragmentMaterials.push_back(material);
+			_fragmentTextures.push_back(kad);
+		}
 	}
 
 	_meshGrid->undoMask();
@@ -545,14 +579,14 @@ bool CADScene::readLightsFromSettings()
 	return true;
 }
 
-void CADScene::rebuildGrid(FractureParameters& fractParameters)
+void CADScene::rebuildGrid(FractureParameters& fractureParameters)
 {
 	if (!_meshGrid)
-		_meshGrid = new RegularGrid(_mesh->getAABB(), _fractParameters._gridSubdivisions);
+		_meshGrid = new RegularGrid(_mesh->getAABB(), fractureParameters._gridSubdivisions);
 	else
 		_meshGrid->setAABB(_mesh->getAABB(), true);
 
-	_meshGrid->fill(_mesh->getModelComponent(0), _fractParameters._fillShape, fractParameters._numTriangleSamples);
+	_meshGrid->fill(_mesh->getModelComponent(0), fractureParameters._fillShape, fractureParameters._numTriangleSamples);
 }
 
 // [Rendering]

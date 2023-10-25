@@ -606,6 +606,9 @@
     <ClInclude Include="Source\Graphics\Core\FragmentationProcedure.h">
       <Filter>Archivos de encabezado\Graphics\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\progressbar.hpp">
+      <Filter>Archivos de encabezado\ImportedLibraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">

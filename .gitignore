@@ -8,6 +8,9 @@
 *.jpg
 *.png
 *.tiff
+*.stl
+*_metadata.txt
+*errors.txt
 
 # Prerequisites
 *.d

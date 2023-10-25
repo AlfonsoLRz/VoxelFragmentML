@@ -148,7 +148,7 @@ namespace fracturer
         while (seeds.size() != nseeds) {
             // Check attempt number
             if (attempt == MAX_TRIES)
-                throw SeederSearchError("Max number of tries surpassed (" + std::to_string(MAX_TRIES) + ")");
+                throw SeederSearchError("Max. number of tries surpassed (" + std::to_string(MAX_TRIES) + ")");
 
             // Generate random seed
             int x = _randomFunction[randomSeedFunction](0, numDivs.x + 1, attempt, 0);
