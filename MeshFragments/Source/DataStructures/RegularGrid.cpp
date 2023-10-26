@@ -7,6 +7,7 @@
 #include "Graphics/Core/ShaderList.h"
 #include "Graphics/Core/MarchingCubes.h"
 #include "tinyply.h"
+#include "Utilities/ChronoUtilities.h"
 #include "VoxWriter.h"
 
 /// Public methods
@@ -18,7 +19,7 @@ RegularGrid::RegularGrid(const AABB& aabb, int subdivisions) :
 	this->buildGrid();
 }
 
-RegularGrid::RegularGrid(uvec3 subdivisions) : _cellSize(.0f), _marchingCubes(nullptr), _numDivs(subdivisions), _ssbo(-1)
+RegularGrid::RegularGrid(uvec3 subdivisions) : _cellSize(.0f), _marchingCubes(nullptr), _numDivs(subdivisions), _ssbo(-1), _countSSBO(-1)
 {
 }
 
@@ -185,6 +186,9 @@ void RegularGrid::exportGrid(const AABB& aabb)
 
 float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples)
 {
+	ChronoUtilities::initChrono();
+
+#if !TETRAVOXELIZER
 	ComputeShader* boundaryShader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_REGULAR_GRID);
 	ComputeShader* fillShader = ShaderList::getInstance()->getComputeShader(RendEnum::FILL_REGULAR_GRID_VOXEL);
 
@@ -240,8 +244,40 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 
 	GLuint buffers[] = { noiseSSBO };
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+
+	std::cout << "Tetravoxelizer time: " << ChronoUtilities::getDuration() << std::endl;
 	
 	return maxArea;
+#else
+	unsigned char* voxelModel = new unsigned char[_numDivs.x * _numDivs.y * _numDivs.z];
+
+	Tetravoxelizer tetravoxelizer;
+	tetravoxelizer.initialize(_numDivs.x);
+	tetravoxelizer.initializeModel(modelComponent->_geometry, modelComponent->_topology);
+	tetravoxelizer.compute(voxelModel);
+	tetravoxelizer.deleteModelResources();
+	tetravoxelizer.deleteResources();
+
+	for (int y = 0; y < _numDivs.y; ++y)
+	{
+		glm::uint positionIndex;
+		for (int x = 0; x < _numDivs.x; ++x)
+		{
+			for (int z = 0; z < _numDivs.z; ++z)
+			{
+				positionIndex = y * _numDivs.x * _numDivs.z + z * _numDivs.x + x;
+				if (voxelModel[positionIndex] == 1)
+					this->set(x, y, z, VOXEL_FREE);
+			}
+		}
+	}
+
+	delete[] voxelModel;
+
+	std::cout << "Tetravoxelizer time: " << ChronoUtilities::getDuration() << std::endl;
+
+	return .0f;
+#endif
 }
 
 void RegularGrid::fill(const Voronoi& voronoi)

@@ -609,6 +609,9 @@
     <ClInclude Include="Libraries\progressbar.hpp">
       <Filter>Archivos de encabezado\ImportedLibraries</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\Core\Tetravoxelizer.h">
+      <Filter>Archivos de encabezado\Graphics\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -879,6 +882,9 @@
       <Filter>Archivos de origen\DataStructures</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Core\DrawLines.cpp">
+      <Filter>Archivos de origen\Graphics\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Core\Tetravoxelizer.cpp">
       <Filter>Archivos de origen\Graphics\Core</Filter>
     </ClCompile>
   </ItemGroup>

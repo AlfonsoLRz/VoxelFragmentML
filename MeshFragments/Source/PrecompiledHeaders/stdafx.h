@@ -6,6 +6,7 @@
 #include "glm/gtc/constants.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/epsilon.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/norm.hpp"
 
 // [Image]
@@ -16,6 +17,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 #include <chrono>
 #include <climits>
 #include <cstdint>
@@ -31,10 +33,12 @@
 #include <random>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 #include <stdlib.h>
 #include <string>
 #include <time.h>
 #include <thread>
+
 
 // [Standard libraries: data structures]
 

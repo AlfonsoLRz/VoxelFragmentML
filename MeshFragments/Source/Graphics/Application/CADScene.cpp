@@ -70,13 +70,6 @@ std::string CADScene::fractureGrid(const std::string& path, std::vector<Fragment
 	std::string result = this->fractureModel(fractureParameters);
 	this->prepareScene(fractureParameters, fragmentMetadata);
 
-	delete _meshGrid;
-	_meshGrid = nullptr;
-
-	this->rebuildGrid(fractureParameters);
-	this->fractureModel(fractureParameters);
-	this->prepareScene(fractureParameters, fragmentMetadata);
-
 	return result;
 }
 

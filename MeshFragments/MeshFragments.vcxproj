@@ -113,6 +113,7 @@
     <ClInclude Include="Source\Graphics\Core\ShadowMap.h" />
     <ClInclude Include="Source\Graphics\Core\SpotLight.h" />
     <ClInclude Include="Source\Graphics\Core\SSAOFBO.h" />
+    <ClInclude Include="Source\Graphics\Core\Tetravoxelizer.h" />
     <ClInclude Include="Source\Graphics\Core\Texture.h" />
     <ClInclude Include="Source\Graphics\Core\TriangleSet.h" />
     <ClInclude Include="Source\Graphics\Core\VAO.h" />
@@ -274,6 +275,7 @@
     <ClCompile Include="Source\Graphics\Core\ShadowMap.cpp" />
     <ClCompile Include="Source\Graphics\Core\SpotLight.cpp" />
     <ClCompile Include="Source\Graphics\Core\SSAOFBO.cpp" />
+    <ClCompile Include="Source\Graphics\Core\Tetravoxelizer.cpp" />
     <ClCompile Include="Source\Graphics\Core\Texture.cpp" />
     <ClCompile Include="Source\Graphics\Core\TriangleSet.cpp" />
     <ClCompile Include="Source\Graphics\Core\VAO.cpp" />
