@@ -33,7 +33,7 @@ void main()
 		return;
 
 	uint positionIndex;
-	ivec3 position = ivec3(getPosition(index));
+	ivec3 position = ivec3(getPosition(index)) + direction[directionIdx];
 	{
 		while (position.x >= 0 && position.y >= 0 && position.z >= 0 && position.x < gridDims.x && position.y < gridDims.y && position.z < gridDims.z)
 		{
