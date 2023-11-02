@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CADModel.h"
 
+#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Face_count_stop_predicate.h>
 #include "CGALInterface.h"
@@ -38,17 +39,9 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory,
 		for (int i = 0; i < 3; ++i)
 		{
 			_modelComp[0]->_geometry.push_back(Model3D::VertexGPUData{ triangle.getPoint(i), .0f, normal });
-			//_modelComp[0]->_triangleMesh.push_back(_modelComp[0]->_geometry.size() - 1);
 		}
 		_modelComp[0]->_topology.push_back(Model3D::FaceGPUData{ uvec3(_modelComp[0]->_geometry.size() - 3, _modelComp[0]->_geometry.size() - 2, _modelComp[0]->_geometry.size() - 1) });
 	}
-
-	//std::vector<int> mapping (_modelComp[0]->_geometry.size());
-	//std::iota(mapping.begin(), mapping.end(), 0);
-
-	//this->fuseVertices(mapping);
-	//this->remapVertices(_modelComp[0], mapping);
-	//this->simplify(1000);
 
 	for (ModelComponent* modelComponent : _modelComp)
 	{
@@ -71,12 +64,12 @@ CADModel::~CADModel()
 {
 }
 
-void CADModel::endBatch(bool releaseMemory, bool buildVao, int targetFaces)
+void CADModel::endInsertionBatch(bool releaseMemory, bool buildVao, int targetFaces)
 {
 	ModelComponent* modelComponent = _modelComp[0];
 
-	if (targetFaces > 0)
-		this->simplify(500);
+	if (targetFaces > 0 and targetFaces < this->getNumFaces())
+		this->simplify(targetFaces);
 
 	if (buildVao)
 	{
@@ -85,10 +78,13 @@ void CADModel::endBatch(bool releaseMemory, bool buildVao, int targetFaces)
 		for (ModelComponent* modelComponent : _modelComp)
 		{
 			modelComponent->buildTriangleMeshTopology();
+#if !DATASET_GENERATION
 			modelComponent->buildWireframeTopology();
+			modelComponent->buildPointCloudTopology();
+#endif
 		}
 
-		Model3D::setVAOData();
+		this->setVAOData();
 	}
 
 	for (ModelComponent* modelComponent : _modelComp)
@@ -159,8 +155,10 @@ bool CADModel::load()
 	for (ModelComponent* modelComponent : _modelComp)
 	{
 		modelComponent->buildTriangleMeshTopology();
-		//modelComponent->buildPointCloudTopology();
-		//modelComponent->buildWireframeTopology();
+#if !DATASET_GENERATION
+		modelComponent->buildPointCloudTopology();
+		modelComponent->buildWireframeTopology();
+#endif
 	}
 	this->setVAOData();
 		
@@ -313,7 +311,7 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 	return pointCloud;
 }
 
-bool CADModel::save(const std::string& filename)
+bool CADModel::save(const std::string& filename, unsigned numFaces)
 {
 	aiScene scene;
 	scene.mRootNode = new aiNode();
@@ -380,7 +378,22 @@ bool CADModel::save(const std::string& filename)
 		face.mIndices[2] = faces[i].z;
 	}
 
-	return _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
+	bool saveSuccess = _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
+
+	//if (numFaces > 0 && numFaces < this->getNumFaces())
+	//{
+	//	// Read with CGAL
+	//	Mesh mesh;
+	//	CGAL::Polygon_mesh_processing::IO::read_polygon_mesh(filename, mesh);
+
+	//	CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
+	//	CGAL::Surface_mesh_simplification::edge_collapse(mesh, stop);
+
+	//	// Write with CGAL
+	//	CGAL::IO::write_polygon_mesh(filename, mesh);
+	//}
+
+	return saveSuccess;
 }
 
 void CADModel::simplify(unsigned numFaces)

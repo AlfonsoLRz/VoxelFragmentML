@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 #else
 			FragmentationProcedure procedure;
 			CADScene* scene = dynamic_cast<CADScene*>(Renderer::getInstance()->getCurrentScene());
-			scene->generateDataset(procedure, procedure._folder, procedure._extension, procedure._destinationFolder);
+			scene->generateDataset(procedure, procedure._folder, procedure._searchExtension, procedure._destinationFolder);
 #endif
 
 			std::cout << "__ Finishing LiDAR Simulator __" << std::endl;

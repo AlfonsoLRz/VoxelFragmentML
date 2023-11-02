@@ -95,7 +95,7 @@ public:
     void initialize(int res);
     
     /** Prepare model. Do not call several times without deleting resources */
-    void initializeModel(const std::vector<Model3D::VertexGPUData>& meshVertices, const std::vector<Model3D::FaceGPUData>& meshFaces);
+    void initializeModel(const std::vector<Model3D::VertexGPUData>& meshVertices, const std::vector<Model3D::FaceGPUData>& meshFaces, const AABB& aabb);
     
     /* Perform voxelization */
     void compute(unsigned char* result);

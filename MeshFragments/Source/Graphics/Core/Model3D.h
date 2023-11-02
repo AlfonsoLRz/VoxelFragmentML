@@ -145,7 +145,7 @@ public:
 
 public:
 	// [Rendering]
-	const static GLuint		RESTART_PRIMITIVE_INDEX;		//!< Index which marks the end of a primitive
+	const static GLuint	RESTART_PRIMITIVE_INDEX;			//!< Index which marks the end of a primitive
 
 protected:
 	// Textures which are initialized just once

@@ -186,11 +186,10 @@ void RegularGrid::exportGrid(const AABB& aabb)
 
 float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples)
 {
-	ChronoUtilities::initChrono();
-
 #if !TETRAVOXELIZER
 	ComputeShader* boundaryShader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_REGULAR_GRID);
 	ComputeShader* fillShader = ShaderList::getInstance()->getComputeShader(RendEnum::FILL_REGULAR_GRID_VOXEL);
+	ComputeShader* finishFillShader = ShaderList::getInstance()->getComputeShader(RendEnum::FINISH_FILL);
 
 	// Input data
 	uvec3 numDivs		= this->getNumSubdivisions();
@@ -237,6 +236,12 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 			fillShader->setUniform("numVoxels", numCells);
 			fillShader->execute(numGroups2, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 		}
+
+		finishFillShader->use();
+		finishFillShader->bindBuffers(std::vector<GLuint>{_ssbo, _countSSBO});
+		finishFillShader->setUniform("numNeighbours", unsigned(6));
+		finishFillShader->setUniform("numVoxels", numCells);
+		finishFillShader->execute(numGroups2, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 	}
 
 	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
@@ -245,15 +250,13 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 	GLuint buffers[] = { noiseSSBO };
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 
-	std::cout << "Tetravoxelizer time: " << ChronoUtilities::getDuration() << std::endl;
-	
 	return maxArea;
 #else
 	unsigned char* voxelModel = new unsigned char[_numDivs.x * _numDivs.y * _numDivs.z];
 
 	Tetravoxelizer tetravoxelizer;
 	tetravoxelizer.initialize(_numDivs.x);
-	tetravoxelizer.initializeModel(modelComponent->_geometry, modelComponent->_topology);
+	tetravoxelizer.initializeModel(modelComponent->_geometry, modelComponent->_topology, _aabb);
 	tetravoxelizer.compute(voxelModel);
 	tetravoxelizer.deleteModelResources();
 	tetravoxelizer.deleteResources();
@@ -273,8 +276,6 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 	}
 
 	delete[] voxelModel;
-
-	std::cout << "Tetravoxelizer time: " << ChronoUtilities::getDuration() << std::endl;
 
 	return .0f;
 #endif
@@ -538,9 +539,6 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh(FractureParameters& fractParam
 
 	for (int idx = 0; idx < values.size(); ++idx)
 		meshes[idx] = _marchingCubes->triangulateFieldGPU(_ssbo, values[idx], fractParameters, transformationMatrix);
-
-	delete _marchingCubes;
-	_marchingCubes = nullptr;
 
 	return meshes;
 }

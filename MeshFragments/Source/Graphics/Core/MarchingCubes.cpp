@@ -406,7 +406,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, float targetValue,
                     unsigned newNumVertices = this->fuseSimilarVertices(numVertices, modelMatrix);
                     this->buildMarchingCubesFaces(numVertices);
                     this->markBoundaryTriangles(numVertices / 3);
-                    this->smoothSurface(newNumVertices, numVertices / 3, 10, 2);
+                    this->smoothSurface(newNumVertices, numVertices / 3, 10, 3);
 
                     vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
                     uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * numVertices / 3);
@@ -435,7 +435,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, float targetValue,
     //    model->insert(vertices, newNumVertices, faces, numVertices / 3);
     //}
 
-    model->endBatch(false, fractureParams._renderMesh, fractureParams._targetTriangles);
+    model->endInsertionBatch(false, fractureParams._renderMesh, fractureParams._targetTriangles);
 
     return model;
 }
@@ -581,11 +581,13 @@ void MarchingCubes::smoothSurface(unsigned numVertices, unsigned numFaces, unsig
 void MarchingCubes::setGrid(RegularGrid& regularGrid)
 {
     float* gridData = (float*)malloc(sizeof(float) * _numDivs.x * _numDivs.y * _numDivs.z);
+#pragma omp parallel for
     for (int x = 0; x < _numDivs.x; ++x)
         for (int y = 0; y < _numDivs.y; ++y)
             for (int z = 0; z < _numDivs.z; ++z)
                 gridData[x * _numDivs.y * _numDivs.z + y * _numDivs.z + z] = VOXEL_FREE;
 
+#pragma omp parallel for
     for (int x = 1; x < _numDivs.x - 1; ++x)
         for (int y = 1; y < _numDivs.y - 1; ++y)
             for (int z = 1; z < _numDivs.z - 1; ++z)

@@ -126,7 +126,7 @@ public:
 	/**
 	*	@brief Sends geometry & topology to GPU.
 	*/
-	void endBatch(bool releaseMemory = true, bool buildVao = true, int targetFaces = -1);
+	void endInsertionBatch(bool releaseMemory = true, bool buildVao = true, int targetFaces = -1);
 
 	/**
 	*	@return Bounding box of the model.
@@ -178,7 +178,7 @@ public:
 	/**
 	*	@brief Saves the model using assimp.
 	*/
-	bool save(const std::string& filename);
+	bool save(const std::string& filename, unsigned numFaces = 0);
 
 	/**
 	*	@brief 

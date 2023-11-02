@@ -96,6 +96,8 @@ void SSAOScene::renderScene(const mat4& mModel, RenderingParameters* rendParams)
 {
 	int visualizationMode = rendParams->_visualizationMode;
 
+	glPolygonOffset(1.0f, 1.0f);
+
 	switch (visualizationMode)
 	{
 	case CGAppEnum::VIS_POINTS:
@@ -115,6 +117,8 @@ void SSAOScene::renderScene(const mat4& mModel, RenderingParameters* rendParams)
 	}
 
 	this->renderOtherStructures(mModel, rendParams);
+
+	glPolygonOffset(0.0f, 0.0f);
 }
 
 void SSAOScene::renderPointCloud(const mat4& mModel, RenderingParameters* rendParams)

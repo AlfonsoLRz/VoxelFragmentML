@@ -14,8 +14,8 @@
 struct RenderingParameters
 {
 public:
-	enum PointCloudRendering : int { ORIGINAL_MESH_PC, SAMPLED_POINT_CLOUD, NUM_POINT_CLOUD_RENDERING_TYPES };
-	inline static const char* PointCloudRendering_STR[NUM_POINT_CLOUD_RENDERING_TYPES] = { "Starting mesh", "Sampled point cloud" };
+	enum PointCloudRendering : int { ORIGINAL_MESH_PC, SAMPLED_POINT_CLOUD, FRAGMENTED_MESH_PC, NUM_POINT_CLOUD_RENDERING_TYPES };
+	inline static const char* PointCloudRendering_STR[NUM_POINT_CLOUD_RENDERING_TYPES] = { "Starting mesh", "Sampled point cloud", "Fragmented mesh" };
 
 	enum WireframeRendering : int { ORIGINAL_MESH_W, FRAGMENTED_MESH_W, NUM_WIREFRAME_RENDERING_TYPES };
 	inline static const char* WireframeRendering_STR[NUM_WIREFRAME_RENDERING_TYPES] = { "Starting mesh", "Fragmented mesh" };

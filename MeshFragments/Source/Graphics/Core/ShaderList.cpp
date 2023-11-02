@@ -27,6 +27,7 @@ std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::FILL_REGULAR_GRID, "Assets/Shaders/Compute/Collision/fillRegularGrid"},
 		{RendEnum::FILL_REGULAR_GRID_VOXEL, "Assets/Shaders/Compute/Fracturer/fillRegularGrid"},
 		{RendEnum::FIND_BEST_NEIGHBOR, "Assets/Shaders/Compute/BVHGeneration/findBestNeighbor"},
+		{RendEnum::FINISH_FILL, "Assets/Shaders/Compute/Fracturer/finishFill"},
 		{RendEnum::FINISH_LAPLACIAN_SMOOTHING, "Assets/Shaders/Compute/Fracturer/finishLaplacianSmoothing"},
 		{RendEnum::FLOOD_FRACTURER, "Assets/Shaders/Compute/Fracturer/floodFracturer"},
 		{RendEnum::FUSE_VERTICES_01, "Assets/Shaders/Compute/Fracturer/findSameVertices_01"},

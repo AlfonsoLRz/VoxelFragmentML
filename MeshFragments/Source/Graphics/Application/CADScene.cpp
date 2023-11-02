@@ -19,7 +19,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::VESSEL_PATH = "Assets/Models/STL_vessels/AL_03A.stl";
+const std::string CADScene::VESSEL_PATH = "Assets/Models/Modelos Vasijas OBJ (completo)-20211117T102301Z-001/Modelos OBJ (completo)/AL_###/AL_13B/AL_13B.obj";
 
 // [Public methods]
 
@@ -82,6 +82,15 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 	fractureProcedure._currentDestinationFolder = destinationFolder;
 	if (!std::filesystem::exists(fractureProcedure._currentDestinationFolder)) std::filesystem::create_directory(fractureProcedure._currentDestinationFolder);
 
+	if (!fractureProcedure._startVessel.empty())
+	{
+		do
+		{
+			fileList.erase(fileList.begin());
+		} 
+		while (fileList[0].find(fractureProcedure._startVessel) == std::string::npos);
+	}
+
 	for (const std::string& path : fileList)
 	{
 		std::vector<FragmentationProcedure::FragmentMetadata> modelMetadata;
@@ -95,6 +104,8 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		for (int numFragments = fractureProcedure._fragmentInterval.x; numFragments <= fractureProcedure._fragmentInterval.y; ++numFragments)
 		{
 			const std::string fragmentFile = meshFile + std::to_string(numFragments) + "f_";
+
+			fractureProcedure._fractureParameters._numExtraSeeds = numFragments;
 			fractureProcedure._fractureParameters._numSeeds = numFragments;
 			const int numIterations = glm::mix(
 				fractureProcedure._iterationInterval.x, fractureProcedure._iterationInterval.y, 
@@ -114,12 +125,12 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 				for (Model3D* fracture : _fractureMeshes)
 				{
-					const std::string filename = itFile + "_" + std::to_string(idx) + fractureProcedure._extension;
+					const std::string filename = itFile + "_" + std::to_string(idx) + fractureProcedure._saveExtension;
 					fragmentMetadata[idx]._vesselName = filename;
 					fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
 					fragmentMetadata[idx]._numFaces = fracture->getNumFaces();
 
-					dynamic_cast<CADModel*>(fracture)->save(filename);
+					dynamic_cast<CADModel*>(fracture)->save(filename, 500);
 
 					++idx;
 				}
@@ -330,7 +341,6 @@ void CADScene::loadModel(const std::string& path)
 	delete _mesh;
 	_mesh = new CADModel(path, true, true, true);
 	_mesh->load();
-	//_mesh->modifyVertices(glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f, .0f, .0f)));
 	_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
 }
 
@@ -639,31 +649,38 @@ void CADScene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingPara
 
 void CADScene::drawSceneAsPoints(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
-	if (_pointCloudRenderer)
+	if (rendParams->_pointCloudRendering == RenderingParameters::ORIGINAL_MESH_PC)
+	{
+		if (_mesh)
+			_mesh->drawAsPoints(shader, shaderType, *matrix);
+	}
+	else if (rendParams->_pointCloudRendering == RenderingParameters::SAMPLED_POINT_CLOUD && _pointCloudRenderer)
 	{
 		if (rendParams->_pointCloudRendering == RenderingParameters::SAMPLED_POINT_CLOUD)
 			shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "clusterColor");
 		else if (rendParams->_pointCloudRendering == RenderingParameters::ORIGINAL_MESH_PC)
 			shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "uniformColor");
-		else
+		//else
 			//shader->setSubroutineUniform(GL_VERTEX_SHADER, "colorUniform", "textureColor");
 		shader->applyActiveSubroutines();
 
 		_pointCloudRenderer->drawAsPoints(shader, shaderType, *matrix);
 	}
-
-	//for (Group3D* group : _sceneGroup)
-	//	group->drawAsPoints(shader, shaderType, *matrix);
+	else
+	{
+		for (Model3D* fractureMesh : _fractureMeshes)
+			fractureMesh->drawAsPoints(shader, shaderType, *matrix);
+	}
 }
 
 void CADScene::drawSceneAsLines(RenderingShader* shader, RendEnum::RendShaderTypes shaderType, std::vector<mat4>* matrix, RenderingParameters* rendParams)
 {
-	if (rendParams->_pointCloudRendering == RenderingParameters::ORIGINAL_MESH_W)
+	if (rendParams->_wireframeRendering == RenderingParameters::ORIGINAL_MESH_W)
 	{
-		for (Group3D* group : _sceneGroup)
-			group->drawAsLines(shader, shaderType, *matrix);
+		if (_mesh)
+			_mesh->drawAsLines(shader, shaderType, *matrix);
 	}
-	else if (rendParams->_pointCloudRendering == RenderingParameters::FRAGMENTED_MESH_W)
+	else if (rendParams->_wireframeRendering == RenderingParameters::FRAGMENTED_MESH_W)
 	{
 		for (Model3D* fractureMesh : _fractureMeshes)
 			fractureMesh->drawAsLines(shader, shaderType, *matrix);

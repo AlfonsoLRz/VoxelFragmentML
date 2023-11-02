@@ -4,7 +4,6 @@
 #include "Graphics/Core/FractureParameters.h"
 #include "Graphics/Core/FragmentationProcedure.h"
 #include "Graphics/Core/Image.h"
-#include "Graphics/Core/Model3D.h"
 #include "Graphics/Core/Tetravoxelizer.h"
 #include "Graphics/Core/Texture.h"
 #include "Graphics/Core/Voronoi.h"
@@ -19,7 +18,7 @@ class MarchingCubes;
 
 #define VOXEL_EMPTY 0
 #define VOXEL_FREE 1
-#define TETRAVOXELIZER false
+#define TETRAVOXELIZER true
 
 /**
 *	@brief Data structure which helps us to locate models on a terrain.

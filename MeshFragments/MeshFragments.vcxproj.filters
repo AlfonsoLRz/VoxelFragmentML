@@ -612,6 +612,9 @@
     <ClInclude Include="Source\Graphics\Core\Tetravoxelizer.h">
       <Filter>Archivos de encabezado\Graphics\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\DataStructures\Bvh.h">
+      <Filter>Archivos de encabezado\DataStructures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -886,6 +889,9 @@
     </ClCompile>
     <ClCompile Include="Source\Graphics\Core\Tetravoxelizer.cpp">
       <Filter>Archivos de origen\Graphics\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DataStructures\Bvh.cpp">
+      <Filter>Archivos de origen\DataStructures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1190,6 +1196,12 @@
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
     <None Include="Assets\Shaders\Compute\Fracturer\markBoundaryTriangles-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\finishFill-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\fillRegularGridVertical-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>

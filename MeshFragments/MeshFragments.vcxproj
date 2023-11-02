@@ -37,6 +37,7 @@
     <ClInclude Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.h" />
     <ClInclude Include="Libraries\progressbar.hpp" />
     <ClInclude Include="Libraries\simplify\Simplify.h" />
+    <ClInclude Include="Source\DataStructures\Bvh.h" />
     <ClInclude Include="Source\DataStructures\FragmentGraph.h" />
     <ClInclude Include="Source\DataStructures\Octree.h" />
     <ClInclude Include="Source\DataStructures\RegularGrid.h" />
@@ -213,6 +214,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Source\DataStructures\Bvh.cpp" />
     <ClCompile Include="Source\DataStructures\FragmentGraph.cpp" />
     <ClCompile Include="Source\DataStructures\Octree.cpp" />
     <ClCompile Include="Source\DataStructures\RegularGrid.cpp" />
@@ -317,8 +319,10 @@
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\fillRegularGrid-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\fillRegularGridVertical-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices_01-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\findSameVertices_02-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\finishFill-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\finishLaplacianSmoothing-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\floodFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\laplacianSmoothing-comp.glsl" />
@@ -531,7 +535,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level1</WarningLevel>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>

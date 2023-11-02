@@ -26,13 +26,19 @@ const ivec3 direction[6] =
 uniform uint directionIdx;
 uniform uint numVoxels;
 
+bool areNeighbours(ivec3 p1, ivec3 p2)
+{
+	return distance(p1, p2) <= (1.0f + EPSILON);
+}
+
 void main()
 {
 	const uint index = gl_GlobalInvocationID.x;
-	if (index >= numVoxels || grid[index].value == VOXEL_FREE || counter[index] < directionIdx)
+	if (index >= numVoxels || grid[index].value >= VOXEL_FREE || counter[index] < directionIdx)
 		return;
 
-	uint positionIndex;
+	uint positionIndex, count = 0;
+	ivec3 lastPosition = ivec3(-100);
 	ivec3 position = ivec3(getPosition(index)) + direction[directionIdx];
 	{
 		while (position.x >= 0 && position.y >= 0 && position.z >= 0 && position.x < gridDims.x && position.y < gridDims.y && position.z < gridDims.z)
@@ -40,14 +46,17 @@ void main()
 			positionIndex = getPositionIndex(position);
 			if (grid[positionIndex].value >= VOXEL_FREE)
 			{
-				counter[index] += 1;
-				break;
+				if (!areNeighbours(position, lastPosition))
+				{
+					lastPosition = position;
+					count += 1;
+				}
 			}
 
 			position += direction[directionIdx];
 		}
 	}
 
-	if (counter[index] == 6)
-		grid[index].value = VOXEL_FREE;
+	if (count > 0 && count % 2 == 1)
+		counter[index] += 1;
 }

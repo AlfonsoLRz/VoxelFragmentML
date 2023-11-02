@@ -325,8 +325,11 @@ void GUI::showRenderingSettings()
 				this->leaveSpace(1);
 
 				ImGui::Combo("Rendering type", &_renderingParams->_triangleMeshRendering, _renderingParams->TriangleMeshRendering_STR, IM_ARRAYSIZE(_renderingParams->TriangleMeshRendering_STR));
-				ImGui::Checkbox("Plane Clipping", &_renderingParams->_planeClipping);
-				ImGui::SameLine(0, 20); ImGui::SliderFloat4("Coefficients", &_renderingParams->_planeCoefficients[0], -10.0f, 10.0f);
+				if (_renderingParams->_triangleMeshRendering == RenderingParameters::VOXELIZATION)
+				{
+					ImGui::Checkbox("Plane Clipping", &_renderingParams->_planeClipping);
+					ImGui::SameLine(0, 20); ImGui::SliderFloat4("Coefficients", &_renderingParams->_planeCoefficients[0], -10.0f, 10.0f);
+				}
 
 				ImGui::EndTabItem();
 			}

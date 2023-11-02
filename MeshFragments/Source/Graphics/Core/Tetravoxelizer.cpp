@@ -27,7 +27,7 @@
 
 // Simple vertex shader for voxelization
 static const char *voxelVertSource = R"(
-    #version 330
+    #version 450
 
     layout(location = 1) in vec3 tVertex;
 
@@ -40,7 +40,7 @@ static const char *voxelVertSource = R"(
 // Receives the 4 vertices of a tetrahedron and
 // computes an slice (one or two triangles)
 static const char *voxelGeomSource = R"(
-    #version 330
+    #version 450
 
     #define INTERP(A,B,s) (mix(A, B, (s - A[1]) / (B[1] - A[1])))
 
@@ -93,7 +93,7 @@ static const char *voxelGeomSource = R"(
 
 // Simple fragment shader for voxelization
 static const char *voxelFragSource = R"(
-    #version 330
+    #version 450
 
     out int result;
 
@@ -195,7 +195,7 @@ void Tetravoxelizer::initialize(int res)
     glViewport(0, 0, res, res);
 }
 
-void Tetravoxelizer::initializeModel(const std::vector<Model3D::VertexGPUData>& meshVertices, const std::vector<Model3D::FaceGPUData>& meshFaces)
+void Tetravoxelizer::initializeModel(const std::vector<Model3D::VertexGPUData>& meshVertices, const std::vector<Model3D::FaceGPUData>& meshFaces, const AABB& aabb)
 {
     // Prepare vertex data *************************************************/
     // 1.- Collect tetrahedra vertices: 3 vertices from each input model face + centroid
@@ -309,13 +309,13 @@ void Tetravoxelizer::compute(unsigned char* result)
         glReadPixels(0, 0, res, res, GL_RED_INTEGER, GL_UNSIGNED_BYTE, result + res * res * slice);
     }
     
-    glDisable(GL_COLOR_LOGIC_OP);
     glEnable(GL_DEPTH_TEST);
 
     // Deactivate program
     glUseProgram(0);
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_COLOR_LOGIC_OP);
 }
 
 
