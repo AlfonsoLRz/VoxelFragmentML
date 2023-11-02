@@ -6,7 +6,7 @@
 #include "Interface/Window.h"
 #include <windows.h>						// DWORD is undefined otherwise
 
-#define DATASET_GENERATION false
+#define DATASET_GENERATION true
 
 // Laptop support. Use NVIDIA graphic card instead of Intel
 extern "C" {

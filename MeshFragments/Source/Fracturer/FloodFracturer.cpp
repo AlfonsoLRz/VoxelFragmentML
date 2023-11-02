@@ -28,16 +28,49 @@ namespace fracturer {
 
     FloodFracturer::FloodFracturer() : _dfunc(MANHATTAN_DISTANCE)
 	{       
-
+        _numCells = 0;
+        _neighborSSBO = std::numeric_limits<GLuint>::max();
+        _stackSizeSSBO = std::numeric_limits<GLuint>::max();
+        _stack1SSBO = std::numeric_limits<GLuint>::max();
+        _stack2SSBO = std::numeric_limits<GLuint>::max();
     }
 
-    void FloodFracturer::init()
+    void FloodFracturer::init(FractureParameters* fractParameters)
 	{
-
+        _numCells = fractParameters->_gridSubdivisions * fractParameters->_gridSubdivisions * fractParameters->_gridSubdivisions;
+        _stack1SSBO = ComputeShader::setWriteBuffer(GLuint(), _numCells, GL_DYNAMIC_DRAW);
+        _stack2SSBO = ComputeShader::setWriteBuffer(GLuint(), _numCells, GL_DYNAMIC_DRAW);
+        _neighborSSBO = ComputeShader::setReadBuffer(_dfunc == 1 ? VON_NEUMANN : MOORE, GL_STATIC_DRAW);
+        _stackSizeSSBO = ComputeShader::setWriteBuffer(GLuint(), 1, GL_DYNAMIC_DRAW);
     }
 
     void FloodFracturer::destroy()
 	{
+        _numCells = 0;
+
+        if (_stack1SSBO != std::numeric_limits<GLuint>::max())
+        {
+            glDeleteBuffers(1, &_stack1SSBO);
+            _stack1SSBO = std::numeric_limits<GLuint>::max();
+        }
+
+        if (_stack2SSBO != std::numeric_limits<GLuint>::max())
+        {
+            glDeleteBuffers(1, &_stack2SSBO);
+            _stack2SSBO = std::numeric_limits<GLuint>::max();
+        }
+
+        if (_neighborSSBO != std::numeric_limits<GLuint>::max())
+		{
+			glDeleteBuffers(1, &_neighborSSBO);
+			_neighborSSBO = std::numeric_limits<GLuint>::max();
+		}
+
+        if (_stackSizeSSBO != std::numeric_limits<GLuint>::max())
+		{
+			glDeleteBuffers(1, &_stackSizeSSBO);
+			_stackSizeSSBO = std::numeric_limits<GLuint>::max();
+		}
     }
 
     void FloodFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters) {
@@ -59,16 +92,21 @@ namespace fracturer {
         RegularGrid::CellGrid* gridData  = grid.data();
         unsigned numNeigh   = _dfunc == 1 ? GLuint(VON_NEUMANN.size()) : GLuint(MOORE.size());
 
-        GLuint stack1SSBO           = ComputeShader::setWriteBuffer(GLuint(), numCells, GL_DYNAMIC_DRAW);
-        GLuint stack2SSBO           = ComputeShader::setWriteBuffer(GLuint(), numCells, GL_DYNAMIC_DRAW);
-        const GLuint neighborSSBO   = ComputeShader::setReadBuffer(_dfunc == 1 ? VON_NEUMANN : MOORE, GL_STATIC_DRAW);
-        const GLuint stackSizeSSBO  = ComputeShader::setWriteBuffer(GLuint(), 1, GL_DYNAMIC_DRAW);
+        if (numCells != _numCells)
+        {
+            this->destroy();
+            this->init(fractParameters);
+        }
+        else
+        {
+            ComputeShader::updateReadBuffer(_neighborSSBO, _dfunc == 1 ? VON_NEUMANN.data() : MOORE.data(), _dfunc == 1 ? VON_NEUMANN.size() : MOORE.size(), GL_STATIC_DRAW);
+        }
 
     	// Load seeds as a subset
         std::vector<GLuint> seedsInt;
         for (auto& seed : seeds) seedsInt.push_back(RegularGrid::getPositionIndex(seed.x, seed.y, seed.z, numDivs));
 
-        ComputeShader::updateReadBufferSubset(stack1SSBO, seedsInt.data(), 0, seeds.size());
+        ComputeShader::updateReadBufferSubset(_stack1SSBO, seedsInt.data(), 0, seeds.size());
 
         shader->use();
         shader->setUniform("gridDims", numDivs);
@@ -77,24 +115,21 @@ namespace fracturer {
         while (stackSize > 0) 
         {
             unsigned numGroups = ComputeShader::getNumGroups(stackSize * numNeigh);
-            ComputeShader::updateReadBuffer(stackSizeSSBO, &nullCount, 1, GL_DYNAMIC_DRAW);
+            ComputeShader::updateReadBuffer(_stackSizeSSBO, &nullCount, 1, GL_DYNAMIC_DRAW);
 
-            shader->bindBuffers(std::vector<GLuint>{ grid.ssbo(), stack1SSBO, stack2SSBO, stackSizeSSBO, neighborSSBO });
+            shader->bindBuffers(std::vector<GLuint>{ grid.ssbo(), _stack1SSBO, _stack2SSBO, _stackSizeSSBO, _neighborSSBO });
             shader->setUniform("stackSize", stackSize);
             shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-            stackSize = *ComputeShader::readData(stackSizeSSBO, GLuint());
+            stackSize = *ComputeShader::readData(_stackSizeSSBO, GLuint());
 
             //  Swap buffers
-		    std::swap(stack1SSBO, stack2SSBO);
+		    std::swap(_stack1SSBO, _stack2SSBO);
         }
 
         RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());
         std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numCells);
         grid.swap(resultBuffer);
-
-        GLuint deleteBuffers[] = { stack1SSBO, stack2SSBO, neighborSSBO, stackSize };
-        glDeleteBuffers(sizeof(deleteBuffers) / sizeof(GLuint), deleteBuffers);
     }
 
     bool FloodFracturer::setDistanceFunction(DistanceFunction dfunc)

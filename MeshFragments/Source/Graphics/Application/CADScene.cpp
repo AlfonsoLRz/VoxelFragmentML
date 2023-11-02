@@ -105,7 +105,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		{
 			const std::string fragmentFile = meshFile + std::to_string(numFragments) + "f_";
 
-			fractureProcedure._fractureParameters._numExtraSeeds = numFragments;
+			fractureProcedure._fractureParameters._numExtraSeeds = numFragments / 2;
 			fractureProcedure._fractureParameters._numSeeds = numFragments;
 			const int numIterations = glm::mix(
 				fractureProcedure._iterationInterval.x, fractureProcedure._iterationInterval.y, 

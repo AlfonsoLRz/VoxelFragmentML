@@ -35,6 +35,16 @@ namespace fracturer {
         virtual void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters) = 0;
 
         /**
+        *   @brief Empty GPU resources.
+        */
+        virtual void destroy() = 0;
+
+        /**
+        *   @brief Initializes GPU buffers.
+        */
+        virtual void init(FractureParameters* fractParameters) = 0;
+
+        /**
         *   Set distance funcion.
         *   @param[in] dfunc Distance function.
         */

@@ -16,6 +16,13 @@ namespace fracturer {
         friend class Singleton<FloodFracturer>;
 
     protected:
+        GLuint  _numCells;
+        GLuint  _neighborSSBO;
+        GLuint  _stack1SSBO;
+        GLuint  _stack2SSBO;
+        GLuint  _stackSizeSSBO;
+
+    protected:
     	/**
     	*   Constructor. 
     	*/
@@ -25,7 +32,7 @@ namespace fracturer {
         /**
 		*   Destructor.
 		*/
-        ~FloodFracturer() = default;
+        ~FloodFracturer() { this->destroy(); };
     	
         /**
         *   Array with Von Neumann neighbourhood.
@@ -50,13 +57,13 @@ namespace fracturer {
         *   Initialize shaders, create objects and set OpenGL needed configuration.
         *   You must invoke init() method before using FloodFracturer.
         */
-        void init();
+        virtual void init(FractureParameters* fractParameters);
 
         /**
         *   Free resources.
         *   You must invoke init() method before using FloodFracturer again.
         */
-        void destroy();
+        virtual void destroy();
 
         /**
         *   Split up a volumentric object into fragments.

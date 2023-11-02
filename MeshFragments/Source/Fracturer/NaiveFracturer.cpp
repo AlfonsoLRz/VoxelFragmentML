@@ -7,7 +7,7 @@
 namespace fracturer {
 	// [Public methods]
 	
-    NaiveFracturer::NaiveFracturer() : _dfunc(EUCLIDEAN_DISTANCE), _spaceTexture(0)
+    NaiveFracturer::NaiveFracturer() : _dfunc(EUCLIDEAN_DISTANCE), _spaceTexture(0), _seedSSBO(std::numeric_limits<unsigned>::max()), _numSeeds(0)
     {
         _distanceFunctionMap[FractureParameters::DistanceFunction::EUCLIDEAN] = [](const ivec3& pos1, const ivec4& pos2) -> float {
             float x = pos1.x - pos2.x, y = pos1.y - pos2.y, z = pos1.z - pos2.z;
@@ -79,9 +79,17 @@ namespace fracturer {
         unsigned numGroups = ComputeShader::getNumGroups(numThreads);
         RegularGrid::CellGrid* gridData = grid.data();
 
-        const GLuint seedSSBO = ComputeShader::setReadBuffer(seeds, GL_STATIC_DRAW);
+        if (_numSeeds != seeds.size())
+		{
+            this->destroy();
+            _seedSSBO = ComputeShader::setWriteBuffer(GLuint(), seeds.size(), GL_DYNAMIC_DRAW);
+		}
+        else
+        {
+            ComputeShader::updateReadBuffer(_seedSSBO, seeds.data(), seeds.size(), GL_DYNAMIC_DRAW);
+        }
 
-        shader->bindBuffers(std::vector<GLuint>{ seedSSBO, grid.ssbo() });
+        shader->bindBuffers(std::vector<GLuint>{ _seedSSBO, grid.ssbo() });
         shader->use();
         shader->setUniform("gridDims", numDivs);
         shader->setUniform("numSeeds", GLuint(seeds.size()));
@@ -100,8 +108,6 @@ namespace fracturer {
 
             grid.swap(resultBuffer);
         }
-
-        glDeleteBuffers(1, &seedSSBO);
     }
 
     void NaiveFracturer::removeIsolatedRegionsCPU(RegularGrid& grid, const std::vector<glm::uvec4>& seeds)
@@ -219,6 +225,24 @@ namespace fracturer {
         {
             this->buildCPU(grid, seeds, fractParameters);
         }
+    }
+
+    void NaiveFracturer::destroy()
+    {
+        _numSeeds = 0;
+
+        if (_seedSSBO != std::numeric_limits<unsigned>::max())
+        {
+            glDeleteBuffers(1, &_seedSSBO);
+            _seedSSBO = std::numeric_limits<unsigned>::max();
+        }
+    }
+
+    void NaiveFracturer::init(FractureParameters* fractParameters)
+    {
+        this->destroy();
+        _seedSSBO = ComputeShader::setWriteBuffer(GLuint(), fractParameters->_numSeeds + fractParameters->_numExtraSeeds, GL_DYNAMIC_DRAW);
+        _numSeeds = fractParameters->_numSeeds + fractParameters->_numExtraSeeds;
     }
 
     bool NaiveFracturer::setDistanceFunction(DistanceFunction dfunc)

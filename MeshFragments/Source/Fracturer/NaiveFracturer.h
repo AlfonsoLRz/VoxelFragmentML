@@ -17,7 +17,9 @@ namespace fracturer {
         typedef std::unordered_map<uint16_t, DistFunction> DistanceFunctionMap;
 
     protected:
-        DistanceFunctionMap _distanceFunctionMap;
+        DistanceFunctionMap     _distanceFunctionMap;
+        GLuint                  _numSeeds;
+        GLuint                  _seedSSBO;
     
     protected:
         /**
@@ -53,7 +55,7 @@ namespace fracturer {
     	/**
     	*   @brief Destructor. 
     	*/
-        ~NaiveFracturer() {};
+        ~NaiveFracturer() { this->destroy(); };
 
         /**
         *   Split up a volumentric object into fragments.
@@ -61,6 +63,16 @@ namespace fracturer {
         *   @param[in] seed  Seeds used to generate fragments
         */
         void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters);
+
+        /**
+        *   @brief Destroys GPU buffers.
+        */
+        virtual void destroy();
+
+        /**
+        *   @brief Initializes GPU buffers.
+        */
+        virtual void init(FractureParameters* fractParameters);
 
         /**
         *   Set distance funcion.
