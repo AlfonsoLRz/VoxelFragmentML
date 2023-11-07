@@ -17,13 +17,13 @@
 */
 
 #define COMMENT_CHAR "#"
-#define CGAL_SIMPLIFICATION false
+#define CGAL_SIMPLIFICATION true
 #define SIMPLIFY_SIMPLIFICATION true
 
 /**
 *	@brief Model loaded from an OBJ file.
 */
-class CADModel: public Model3D
+class CADModel : public Model3D
 {
 protected:
 	static std::unordered_map<std::string, std::unique_ptr<Material>> _cadMaterials;
@@ -39,7 +39,7 @@ protected:
 	std::string			_filename;								//!< File path (without extension)
 	bool				_fuseComponents;						//!< Fuse all the components found in the cad model
 	bool				_fuseVertices;							//!< Fuse vertices which are too close
-	const aiScene*		_scene;									//!< Scene from assimp library	
+	const aiScene* _scene;									//!< Scene from assimp library	
 	bool				_useBinary;								//!< Use binary file instead of original obj models
 
 protected:
@@ -181,9 +181,9 @@ public:
 	bool save(const std::string& filename, unsigned numFaces = 0);
 
 	/**
-	*	@brief 
+	*	@brief
 	*/
-	void simplify(unsigned numFaces);
+	void simplify(unsigned numFaces, bool cgal = false);
 
 	/**
 	*	@brief Subdivides mesh with the specified maximum area.

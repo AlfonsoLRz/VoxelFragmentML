@@ -304,13 +304,13 @@ Model3D::ModelComponent* Primitives::getSphereModelComp(const unsigned sectors, 
 	vec2 textCoord;
 	float xy, lengthInv = 1.0f / radius;		
 
-	float sectorStep = 2 * M_PI / sectors;
-	float stackStep = M_PI / stacks;
+	float sectorStep = 2 * glm::pi<float>() / sectors;
+	float stackStep = glm::pi<float>() / stacks;
 	float sectorAngle, stackAngle;
 
 	for (int i = 0; i <= stacks; ++i)
 	{
-		stackAngle = M_PI / 2.0f - i * stackStep;			// Starting from pi/2 to -pi/2
+		stackAngle = glm::pi<float>() / 2.0f - i * stackStep;			// Starting from pi/2 to -pi/2
 		xy = radius * cosf(stackAngle);						// r * cos(u)
 		position.z = radius * sinf(stackAngle);				// r * sin(u)
 

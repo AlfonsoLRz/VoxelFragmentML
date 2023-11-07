@@ -5,7 +5,6 @@
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Face_count_stop_predicate.h>
 #include "CGALInterface.h"
-#include <filesystem>
 #include "Graphics/Application/MaterialList.h"
 #include "Graphics/Core/ShaderList.h"
 #include "Graphics/Core/VAO.h"
@@ -21,7 +20,7 @@ const std::string CADModel::BINARY_EXTENSION = ".bin";
 
 /// [Public methods]
 
-CADModel::CADModel(const std::string& filename, const bool useBinary, const bool fuseComponents, const bool mergeVertices) : 
+CADModel::CADModel(const std::string& filename, const bool useBinary, const bool fuseComponents, const bool mergeVertices) :
 	Model3D(mat4(1.0f), 0)
 {
 	_filename = filename;
@@ -31,7 +30,7 @@ CADModel::CADModel(const std::string& filename, const bool useBinary, const bool
 }
 
 CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory, const mat4& modelMatrix) :
-	Model3D(modelMatrix, 1), _useBinary(false), _fuseComponents(false), _fuseVertices(false)
+	Model3D(modelMatrix, 1), _useBinary(false), _fuseComponents(false), _fuseVertices(false), _scene(nullptr)
 {
 	for (const Triangle3D& triangle : triangles)
 	{
@@ -56,12 +55,13 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory,
 	}
 }
 
-CADModel::CADModel(const mat4& modelMatrix): Model3D(modelMatrix, 1), _useBinary(false), _fuseComponents(false), _fuseVertices(false)
+CADModel::CADModel(const mat4& modelMatrix) : Model3D(modelMatrix, 1), _useBinary(false), _fuseComponents(false), _fuseVertices(false), _scene(nullptr)
 {
 }
 
 CADModel::~CADModel()
 {
+	delete _scene;
 }
 
 void CADModel::endInsertionBatch(bool releaseMemory, bool buildVao, int targetFaces)
@@ -149,6 +149,8 @@ bool CADModel::load()
 			}
 		}
 
+		this->simplify(500, false);
+
 		this->writeBinary(binaryFile);
 	}
 
@@ -161,7 +163,7 @@ bool CADModel::load()
 #endif
 	}
 	this->setVAOData();
-		
+
 	for (ModelComponent* modelComponent : _modelComp)
 	{
 		modelComponent->releaseMemory(false, false);
@@ -175,7 +177,7 @@ void CADModel::modifyVertices(const mat4& mMatrix)
 {
 	for (ModelComponent* modelComponent : _modelComp)
 	{
-		#pragma omp parallel for
+#pragma omp parallel for
 		for (int idx = 0; idx < modelComponent->_geometry.size(); ++idx)
 		{
 			modelComponent->_geometry[idx]._position = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._position, 1.0f));
@@ -283,11 +285,11 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 		unsigned numPoints = 0, noiseBufferSize = 0;
 		unsigned maxPoints = maxSamples * modelComp->_topology.size();
 
-		const GLuint vertexSSBO		= ComputeShader::setReadBuffer(modelComp->_geometry, GL_STATIC_DRAW);
-		const GLuint faceSSBO		= ComputeShader::setReadBuffer(modelComp->_topology, GL_STATIC_DRAW);
+		const GLuint vertexSSBO = ComputeShader::setReadBuffer(modelComp->_geometry, GL_STATIC_DRAW);
+		const GLuint faceSSBO = ComputeShader::setReadBuffer(modelComp->_topology, GL_STATIC_DRAW);
 		const GLuint pointCloudSSBO = ComputeShader::setWriteBuffer(vec4(), maxPoints, GL_DYNAMIC_DRAW);
-		const GLuint countingSSBO	= ComputeShader::setReadBuffer(&numPoints, 1, GL_DYNAMIC_DRAW);
-		const GLuint noiseSSBO		= ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
+		const GLuint countingSSBO = ComputeShader::setReadBuffer(&numPoints, 1, GL_DYNAMIC_DRAW);
+		const GLuint noiseSSBO = ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
 
 		shader->use();
 		shader->bindBuffers(std::vector<GLuint> { vertexSSBO, faceSSBO, pointCloudSSBO, countingSSBO, noiseSSBO });
@@ -337,7 +339,7 @@ bool CADModel::save(const std::string& filename, unsigned numFaces)
 
 	// Retrieving info from the model
 	glm::uint geometrySize = 0;
-	std::vector<glm::vec3> vertices;	
+	std::vector<glm::vec3> vertices;
 	std::vector<ivec3> faces;
 
 	for (ModelComponent* modelComponent : _modelComp)
@@ -396,47 +398,63 @@ bool CADModel::save(const std::string& filename, unsigned numFaces)
 	return saveSuccess;
 }
 
-void CADModel::simplify(unsigned numFaces)
+void CADModel::simplify(unsigned numFaces, bool cgal)
 {
 	for (Model3D::ModelComponent* modelComponent : _modelComp)
 	{
 		if (modelComponent->_topology.size() > numFaces)
 		{
-#if CGAL_SIMPLIFICATION
-			Mesh* mesh = CGALInterface::translateMesh(modelComponent);
-
-			CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
-			CGAL::Surface_mesh_simplification::edge_collapse(*mesh, stop);
-
-			CGALInterface::translateMesh(mesh, modelComponent);
-
-			delete mesh;
-#elif SIMPLIFY_SIMPLIFICATION
-			Simplify::vertices.clear();
-			Simplify::triangles.clear();
-
-			for (const Model3D::VertexGPUData& vertex : modelComponent->_geometry)
-				Simplify::vertices.push_back(Simplify::Vertex{ vec3f(vertex._position.x, vertex._position.y, vertex._position.z) });
-
-			for (const Model3D::FaceGPUData& face : modelComponent->_topology)
+			if (cgal)
 			{
-				Simplify::triangles.push_back(Simplify::Triangle());
-				for (int i = 0; i < 3; ++i)
-					Simplify::triangles[Simplify::triangles.size() - 1].v[i] = face._vertices[i];
+				//if (modelComponent->_topology.size() > 10000)
+				//	this->simplify(10000, false);
+
+				this->save("Temp/temp.stl");
+
+				Mesh mesh;
+				CGAL::Polygon_mesh_processing::IO::read_polygon_mesh("Temp/temp.stl", mesh);
+
+				CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
+				CGAL::Surface_mesh_simplification::edge_collapse(mesh, stop);
+
+				//Mesh* mesh = CGALInterface::translateMesh(modelComponent);
+
+				//CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
+				//CGAL::Surface_mesh_simplification::edge_collapse(*mesh, stop);
+
+				//delete mesh;
+
+				CGALInterface::translateMesh(&mesh, modelComponent);
 			}
+			else
+			{
+				Simplify::vertices.clear();
+				Simplify::triangles.clear();
 
-			Simplify::simplify_mesh(numFaces);
+				for (const Model3D::VertexGPUData& vertex : modelComponent->_geometry)
+					Simplify::vertices.push_back(Simplify::Vertex{ vec3f(vertex._position.x, vertex._position.y, vertex._position.z) });
 
-			modelComponent->_geometry.clear();
-			modelComponent->_topology.clear();
+				for (const Model3D::FaceGPUData& face : modelComponent->_topology)
+				{
+					Simplify::triangles.push_back(Simplify::Triangle());
+					for (int i = 0; i < 3; ++i)
+						Simplify::triangles[Simplify::triangles.size() - 1].v[i] = face._vertices[i];
+				}
 
-			for (const Simplify::Vertex& vertex : Simplify::vertices)
-				modelComponent->_geometry.push_back(Model3D::VertexGPUData{vec3(vertex.p.x, vertex.p.y, vertex.p.z)});
+				//Simplify::simplify_mesh(numFaces, 5.0);
 
-			for (const Simplify::Triangle& triangle : Simplify::triangles)
-				modelComponent->_topology.push_back(Model3D::FaceGPUData{uvec3(triangle.v[0], triangle.v[1], triangle.v[2])});
-#endif
+				modelComponent->_geometry.clear();
+				modelComponent->_topology.clear();
+
+				for (const Simplify::Vertex& vertex : Simplify::vertices)
+					modelComponent->_geometry.push_back(Model3D::VertexGPUData{ vec3(vertex.p.x, vertex.p.y, vertex.p.z) });
+
+				for (const Simplify::Triangle& triangle : Simplify::triangles)
+					modelComponent->_topology.push_back(Model3D::FaceGPUData{ uvec3(triangle.v[0], triangle.v[1], triangle.v[2]) });
+			}
 		}
+
+		std::cout << "Simplified to " << modelComponent->_topology.size() << " faces." << std::endl;
 	}
 }
 
@@ -445,12 +463,12 @@ bool CADModel::subdivide(float maxArea)
 	bool applyChanges = false;
 	std::vector<unsigned> faces;
 
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (int modelCompIdx = 0; modelCompIdx < _modelComp.size(); ++modelCompIdx)
 	{
 		Model3D::ModelComponent* modelComp = _modelComp[modelCompIdx];
 
-		#pragma omp critical
+#pragma omp critical
 		applyChanges &= modelComp->subdivide(maxArea, faces);
 	}
 
@@ -490,7 +508,7 @@ void CADModel::computeMeshData(ModelComponent* modelComp, bool computeNormals)
 			}
 		}
 
-		#pragma omp parallel for
+#pragma omp parallel for
 		for (int vertexIdx = 0; vertexIdx < modelComp->_geometry.size(); ++vertexIdx)
 		{
 			modelComp->_geometry[vertexIdx]._normal /= faceCount[vertexIdx];
@@ -580,7 +598,7 @@ void CADModel::fuseComponents()
 void CADModel::fuseVertices(std::vector<int>& mapping)
 {
 	Model3D::ModelComponent* modelComp = _modelComp[0];
-	
+
 	for (unsigned vertexIdx = 0; vertexIdx < modelComp->_geometry.size(); ++vertexIdx)
 	{
 		if (mapping[vertexIdx] != vertexIdx)
@@ -703,23 +721,28 @@ bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D
 	{
 		fin.read((char*)&numVertices, sizeof(size_t));
 		component->_geometry.resize(numVertices);
-		fin.read((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
+		if (numVertices)
+			fin.read((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
 
 		fin.read((char*)&numTriangles, sizeof(size_t));
 		component->_topology.resize(numTriangles);
-		fin.read((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
+		if (numTriangles)
+			fin.read((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
 
 		fin.read((char*)&numIndices, sizeof(size_t));
 		component->_triangleMesh.resize(numIndices);
-		fin.read((char*)&component->_triangleMesh[0], numIndices * sizeof(GLuint));
+		if (numIndices)
+			fin.read((char*)&component->_triangleMesh[0], numIndices * sizeof(GLuint));
 
 		fin.read((char*)&numIndices, sizeof(size_t));
 		component->_pointCloud.resize(numIndices);
-		fin.read((char*)&component->_pointCloud[0], numIndices * sizeof(GLuint));
+		if (numIndices)
+			fin.read((char*)&component->_pointCloud[0], numIndices * sizeof(GLuint));
 
 		fin.read((char*)&numIndices, sizeof(size_t));
 		component->_wireframe.resize(numIndices);
-		fin.read((char*)&component->_wireframe[0], numIndices * sizeof(GLuint));
+		if (numIndices)
+			fin.read((char*)&component->_wireframe[0], numIndices * sizeof(GLuint));
 
 		size_t length;
 		fin.read((char*)&length, sizeof(size_t));
@@ -758,7 +781,7 @@ bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D
 void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vector<int>& mapping)
 {
 	unsigned erasedVertices = 0, startingSize = modelComponent->_geometry.size();
-	std::vector<unsigned> newMapping (startingSize);
+	std::vector<unsigned> newMapping(startingSize);
 
 	for (size_t vertexIdx = 0; vertexIdx < startingSize; ++vertexIdx)
 	{

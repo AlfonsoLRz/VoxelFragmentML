@@ -135,7 +135,7 @@ void Tetravoxelizer::checkProgramError(GLint status, GLint program, const char *
     }
 }
 
-void Tetravoxelizer::initialize(int res)
+void Tetravoxelizer::initialize(const ivec3& res)
 {
     this->res = res;
     
@@ -184,7 +184,7 @@ void Tetravoxelizer::initialize(int res)
     // Renderbuffer for voxelization results
     glGenRenderbuffers(1, &resultRBO);
     glBindRenderbuffer(GL_RENDERBUFFER, resultRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_R8UI, res, res);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_R8UI, res.x, res.z);
     
     // Framebuffer for rendering to renderbuffer
     glGenFramebuffers(1, &resultFBO); // frame buffer id
@@ -192,7 +192,7 @@ void Tetravoxelizer::initialize(int res)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, resultRBO);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     
-    glViewport(0, 0, res, res);
+    glViewport(0, 0, res.x, res.z);
 }
 
 void Tetravoxelizer::initializeModel(const std::vector<Model3D::VertexGPUData>& meshVertices, const std::vector<Model3D::FaceGPUData>& meshFaces, const AABB& aabb)
@@ -267,7 +267,7 @@ void Tetravoxelizer::deleteModelResources() {
     glDeleteVertexArrays(1, &VAO);
 }
 
-void Tetravoxelizer::compute(unsigned char* result)
+void Tetravoxelizer::compute(std::vector<unsigned char>& result)
 {
     // Activate render to texture
     glBindFramebuffer(GL_FRAMEBUFFER, resultFBO);
@@ -284,12 +284,12 @@ void Tetravoxelizer::compute(unsigned char* result)
     glUseProgram(voxelizerProgram);
     
     float ySlice = -1.0f;
-    float yStep = 2.0f / res;
+    float yStep = 2.0f / res.y;
     int firstTetrahedraIndex = 0;
     int numVertices = (int) tetrahedraVertices.size();
     
     // Render slices
-    for (int slice = 0; slice < res; ++slice) {
+    for (int slice = 0; slice < res.y; ++slice) {
         glClear(GL_COLOR_BUFFER_BIT);
         glUniform1f(sliceParam, ySlice);
         // We use GL_LINES_ADJACENCY just to supply the four tetrahedron vertices to the geometry shader
@@ -306,7 +306,7 @@ void Tetravoxelizer::compute(unsigned char* result)
         }
 #endif
         // Transfer results to CPU memory buffer
-        glReadPixels(0, 0, res, res, GL_RED_INTEGER, GL_UNSIGNED_BYTE, result + res * res * slice);
+        glReadPixels(0, 0, res.x, res.z, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &result[res.x * res.z * slice]);
     }
     
     glEnable(GL_DEPTH_TEST);

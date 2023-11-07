@@ -213,6 +213,7 @@
     <ClCompile Include="Libraries\MagicaVoxel_File_Writer\VoxWriter.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Source\DataStructures\Bvh.cpp" />
     <ClCompile Include="Source\DataStructures\FragmentGraph.cpp" />
@@ -495,7 +496,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;%userprofile%/Desktop/Libraries/glew/include;%userprofile%/Desktop/Libraries/glm;%userprofile%/Desktop/Libraries/glfw/include;%userprofile%/Desktop/Libraries/FastNoise2/include;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/tinyply;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/surfrecon/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer;Libraries/simplify;Libraries/tinymesh/src/tinymesh/;Libraries/vox/</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>
@@ -504,7 +505,8 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%userprofile%/Desktop/Libraries/glew/lib/Release/x64;%userprofile%/Desktop/Libraries/glfw/lib-vc2019;%userprofile%/Desktop/Libraries/FastNoise2/lib;D:\PDAL-master\build\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glew32.lib;glfw3.lib;FastNoise.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -541,7 +543,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer;Libraries/simplify;Libraries/tinymesh/src/tinymesh/;Libraries/surfrecon/;Libraries/surfrecon/include/mc/;Libraries/surfrecon/src/mc/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer;Libraries/simplify;Libraries/tinymesh/src/tinymesh/;Libraries/vox/</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>
@@ -552,7 +554,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%userprofile%/Desktop/Libraries/glew/lib/Release/x64;%userprofile%/Desktop/Libraries/glfw/lib-vc2019;%userprofile%/Desktop/Libraries/FastNoise2/lib;D:\PDAL-master\build\lib\Debug;Libraries/tinymesh/build/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glew32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

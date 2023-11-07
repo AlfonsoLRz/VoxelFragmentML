@@ -442,7 +442,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, float targetValue,
 
 CADModel* MarchingCubes::triangulateFieldExtendedCPU(float targetValue, const mat4& modelMatrix)
 {
-
+    return nullptr;
 }
 
 // [Protected methods]

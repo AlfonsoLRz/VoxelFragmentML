@@ -92,7 +92,7 @@ void Model3D::buildShadowOffsetTexture()
 	const int samplesU = 8, samplesV = 8;
 	const int samples = samplesU * samplesV;
 	const int bufSize = size * size * samples * 2;
-	const float twoPI = M_PI * 2.0F;
+	const float twoPI = glm::pi<float>() * 2.0F;
 	float* data = new float[bufSize];
 
 	for (int i = 0; i < size; i++) {

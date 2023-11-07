@@ -54,7 +54,7 @@ class Tetravoxelizer {
     std::vector<glm::vec3> tetrahedraVertices;
     
     // Resolution
-    int res;
+    ivec3 res;
     
     /** Shader reader
      Creates null terminated string from file */
@@ -92,13 +92,13 @@ public:
     Tetravoxelizer() { }
 
     /** Initialize voxelizer. Do not call several times without deleting resources */
-    void initialize(int res);
+    void initialize(const ivec3& res);
     
     /** Prepare model. Do not call several times without deleting resources */
     void initializeModel(const std::vector<Model3D::VertexGPUData>& meshVertices, const std::vector<Model3D::FaceGPUData>& meshFaces, const AABB& aabb);
     
     /* Perform voxelization */
-    void compute(unsigned char* result);
+    void compute(std::vector<unsigned char>& result);
 
     /** Delete model resources */
     void deleteModelResources();

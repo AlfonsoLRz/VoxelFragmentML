@@ -37,7 +37,7 @@ namespace fracturer {
 
     void FloodFracturer::init(FractureParameters* fractParameters)
 	{
-        _numCells = fractParameters->_gridSubdivisions * fractParameters->_gridSubdivisions * fractParameters->_gridSubdivisions;
+        _numCells = fractParameters->_gridSubdivisions.x * fractParameters->_gridSubdivisions.y * fractParameters->_gridSubdivisions.z;
         _stack1SSBO = ComputeShader::setWriteBuffer(GLuint(), _numCells, GL_DYNAMIC_DRAW);
         _stack2SSBO = ComputeShader::setWriteBuffer(GLuint(), _numCells, GL_DYNAMIC_DRAW);
         _neighborSSBO = ComputeShader::setReadBuffer(_dfunc == 1 ? VON_NEUMANN : MOORE, GL_STATIC_DRAW);

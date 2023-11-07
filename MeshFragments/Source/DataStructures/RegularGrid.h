@@ -89,7 +89,7 @@ public:
 	/**
 	*	@brief Constructor which specifies the area and the number of divisions of such area.
 	*/
-	RegularGrid(const AABB& aabb, int subdivisions);
+	RegularGrid(const AABB& aabb, const ivec3& subdivisions);
 
 	/**
 	*	@brief Constructor of an abstract regular grid with no notion of space size.

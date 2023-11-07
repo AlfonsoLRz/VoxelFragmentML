@@ -40,7 +40,7 @@ public:
 	bool	_fillShape;
 	int		_fractureAlgorithm;
 	int		_distanceFunction;
-	int		_gridSubdivisions;
+	ivec3	_gridSubdivisions;
 	bool	_launchGPU;
 	int		_marchingCubesSubdivisions;
 	int		_mergeSeedsDistanceFunction;

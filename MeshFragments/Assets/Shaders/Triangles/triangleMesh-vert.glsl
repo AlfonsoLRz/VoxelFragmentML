@@ -118,7 +118,7 @@ mat3 noDisplacement()
 
 void main()
 {
-	position = vec3(mModelView *  vec4(vPosition, 1.0f));
+	position = vec3(mModelView * vec4(vPosition, 1.0f));
 	gl_Position = mModelViewProj * vec4(vPosition, 1.0f);
 	normal = vec3(mModelView * vec4(vNormal, 0.0f));			// Needed for TBN matrix
 	shadowCoord = mShadow * vec4(vPosition, 1.0f);

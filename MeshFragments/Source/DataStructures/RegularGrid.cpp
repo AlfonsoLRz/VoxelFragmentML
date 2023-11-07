@@ -12,7 +12,7 @@
 
 /// Public methods
 
-RegularGrid::RegularGrid(const AABB& aabb, int subdivisions) :
+RegularGrid::RegularGrid(const AABB& aabb, const ivec3& subdivisions) :
 	_aabb(aabb), _marchingCubes(nullptr), _numDivs(subdivisions)
 {
 	this->setAABB(aabb);
@@ -252,30 +252,30 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 
 	return maxArea;
 #else
-	unsigned char* voxelModel = new unsigned char[_numDivs.x * _numDivs.y * _numDivs.z];
+	unsigned maxDimension = glm::max(glm::max(_numDivs.x, _numDivs.y), _numDivs.z);
+	std::vector<unsigned char> voxelModel (maxDimension * maxDimension * maxDimension);
+	ivec3 startingIndices = ivec3(maxDimension) / 2 - ivec3(_numDivs) / 2;
 
 	Tetravoxelizer tetravoxelizer;
-	tetravoxelizer.initialize(_numDivs.x);
+	tetravoxelizer.initialize(ivec3(maxDimension));
 	tetravoxelizer.initializeModel(modelComponent->_geometry, modelComponent->_topology, _aabb);
 	tetravoxelizer.compute(voxelModel);
 	tetravoxelizer.deleteModelResources();
 	tetravoxelizer.deleteResources();
 
-	for (int y = 0; y < _numDivs.y; ++y)
+	for (int y = startingIndices.y; y < startingIndices.y + _numDivs.y; ++y)
 	{
 		glm::uint positionIndex;
-		for (int x = 0; x < _numDivs.x; ++x)
+		for (int x = startingIndices.x; x < startingIndices.x + _numDivs.x; ++x)
 		{
-			for (int z = 0; z < _numDivs.z; ++z)
+			for (int z = startingIndices.z; z < startingIndices.z + _numDivs.z; ++z)
 			{
-				positionIndex = y * _numDivs.x * _numDivs.z + z * _numDivs.x + x;
+				positionIndex = y * maxDimension * maxDimension + z * maxDimension + x;
 				if (voxelModel[positionIndex] == 1)
-					this->set(x, y, z, VOXEL_FREE);
+					this->set(x - startingIndices.x, y - startingIndices.y, z - startingIndices.z, VOXEL_FREE);
 			}
 		}
 	}
-
-	delete[] voxelModel;
 
 	return .0f;
 #endif
@@ -489,9 +489,11 @@ void RegularGrid::setAABB(const AABB& aabb, bool reset)
 {
 	vec3 aabbSize = _aabb.size();
 	float maxDimension = glm::max(glm::max(aabbSize.x, aabbSize.y), aabbSize.z);
-	vec3 scale = vec3(maxDimension) / aabbSize;
-	aabbSize *= scale;
-	_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
+	//vec3 scale = vec3(maxDimension) / aabbSize;
+	//aabbSize *= scale;
+	//_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
+	unsigned maxDivs = glm::max(glm::max(_numDivs.x, _numDivs.y), _numDivs.z);
+	_numDivs = glm::ceil(vec3(maxDivs) * aabbSize / maxDimension);
 	_cellSize = _aabb.size() / vec3(_numDivs);
 
 	if (reset)

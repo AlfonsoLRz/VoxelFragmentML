@@ -30,8 +30,8 @@ inline Mesh* CGALInterface::translateMesh(Model3D::ModelComponent* modelComponen
 	for (size_t faceIdx = 0; faceIdx < modelComponent->_topology.size(); ++faceIdx)
 	{
 		mesh->add_face(
-			vertexDescriptor[modelComponent->_topology[faceIdx]._vertices.x], 
-			vertexDescriptor[modelComponent->_topology[faceIdx]._vertices.y], 
+			vertexDescriptor[modelComponent->_topology[faceIdx]._vertices.x],
+			vertexDescriptor[modelComponent->_topology[faceIdx]._vertices.y],
 			vertexDescriptor[modelComponent->_topology[faceIdx]._vertices.z]);
 	}
 
@@ -40,25 +40,29 @@ inline Mesh* CGALInterface::translateMesh(Model3D::ModelComponent* modelComponen
 
 inline void CGALInterface::translateMesh(Mesh* mesh, Model3D::ModelComponent* modelComponent)
 {
-	std::vector<unsigned> indices;
 	std::vector<unsigned> mapping(modelComponent->_geometry.size(), 0);
 
-	modelComponent->_geometry.clear();
-	modelComponent->_topology.clear();
+	modelComponent->_geometry.resize(mesh->vertices().size());
+	modelComponent->_topology.resize(mesh->faces().size());
 
-	for (Mesh::Vertex_index vertex : mesh->vertices()) 
+#pragma omp parallel for
+	for (int idx = 0; idx < modelComponent->_geometry.size(); ++idx)
 	{
-		mapping[vertex.idx()] = modelComponent->_geometry.size();
-		CartesianKernel::Point_3 point = mesh->point(vertex);
-		modelComponent->_geometry.push_back(Model3D::VertexGPUData{ vec3(point.x(), point.y(), point.z()) });
+		auto vertex = mesh->vertices().begin() + idx;
+		mapping[vertex->idx()] = idx;
+
+		CartesianKernel::Point_3 point = mesh->point(*vertex);
+		modelComponent->_geometry[idx] = Model3D::VertexGPUData{ vec3(point.x(), point.y(), point.z()) };
 	}
 
-	for (Mesh::Face_index face_index : mesh->faces()) 
+#pragma omp parallel for
+	for (int idx = 0; idx < modelComponent->_topology.size(); ++idx)
 	{
-		CGAL::Vertex_around_face_circulator<Mesh> vcirc(mesh->halfedge(face_index), *mesh), done(vcirc);
+		auto face_index = mesh->faces().begin() + idx;
+		CGAL::Vertex_around_face_circulator<Mesh> vcirc(mesh->halfedge(*face_index), *mesh), done(vcirc);
 
-		indices.clear();
+		std::vector<unsigned> indices;
 		do indices.push_back(*vcirc++); while (vcirc != done);
-		modelComponent->_topology.push_back(Model3D::FaceGPUData{ uvec3(mapping[indices[0]], mapping[indices[1]], mapping[indices[2]]) });
+		modelComponent->_topology[idx] = Model3D::FaceGPUData{ uvec3(mapping[indices[0]], mapping[indices[1]], mapping[indices[2]]) };
 	}
 }

@@ -3,7 +3,6 @@
 
 #include "DataStructures/FragmentGraph.h"
 #include "DataStructures/WingedTriangleMesh.h"
-#include "Geometry/3D/Triangle3D.h"
 #include "Graphics/Application/TextureList.h"
 #include "Graphics/Core/CADModel.h"
 #include "Graphics/Core/Light.h"
@@ -19,7 +18,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::VESSEL_PATH = "Assets/Models/Modelos Vasijas OBJ (completo)-20211117T102301Z-001/Modelos OBJ (completo)/AL_###/AL_13B/AL_13B.obj";
+const std::string CADScene::VESSEL_PATH = "E:/obj/AL_###/AL_13B/AL_13B.obj";
 
 // [Public methods]
 
@@ -87,8 +86,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		do
 		{
 			fileList.erase(fileList.begin());
-		} 
-		while (fileList[0].find(fractureProcedure._startVessel) == std::string::npos);
+		} while (fileList[0].find(fractureProcedure._startVessel) == std::string::npos);
 	}
 
 	for (const std::string& path : fileList)
@@ -108,7 +106,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 			fractureProcedure._fractureParameters._numExtraSeeds = numFragments / 2;
 			fractureProcedure._fractureParameters._numSeeds = numFragments;
 			const int numIterations = glm::mix(
-				fractureProcedure._iterationInterval.x, fractureProcedure._iterationInterval.y, 
+				fractureProcedure._iterationInterval.x, fractureProcedure._iterationInterval.y,
 				static_cast<float>(numFragments - fractureProcedure._fragmentInterval.x) / (fractureProcedure._fragmentInterval.y - fractureProcedure._fragmentInterval.x));
 
 			std::cout << modelName << " - " << numFragments << " fragments ";
@@ -166,7 +164,7 @@ void CADScene::eraseFragmentContent()
 	_fractureMeshes.clear();
 
 	for (Material* material : _fragmentMaterials) delete material;
-	for (Texture* texture: _fragmentTextures) delete texture;
+	for (Texture* texture : _fragmentTextures) delete texture;
 	_fragmentMaterials.clear();
 	_fragmentTextures.clear();
 }
@@ -181,24 +179,24 @@ void CADScene::exportMetadata(const std::string& filename, std::vector<Fragmenta
 
 	for (int idx = 0; idx < fragmentSize.size(); ++idx)
 	{
-		outputStream << 
-			fragmentSize[idx]._vesselName << "\t" << 
+		outputStream <<
+			fragmentSize[idx]._vesselName << "\t" <<
 			fragmentSize[idx]._id << "\t" <<
-			fragmentSize[idx]._voxelizationSize << "\t" << 
-			fragmentSize[idx]._voxels << "\t" << 
+			fragmentSize[idx]._voxelizationSize << "\t" <<
+			fragmentSize[idx]._voxels << "\t" <<
 			//fragmentSize[idx]._occupiedVoxels << "\t" << 
 			fragmentSize[idx]._percentage << "\t" <<
 			fragmentSize[idx]._numVertices << "\t" <<
 			fragmentSize[idx]._numFaces << std::endl;
 	}
 
-	outputStream.close();	
+	outputStream.close();
 }
 
 std::string CADScene::fractureModel(FractureParameters& fractParameters)
 {
 	fracturer::DistanceFunction dfunc = static_cast<fracturer::DistanceFunction>(fractParameters._distanceFunction);
-	
+
 	std::vector<uvec4> seeds;
 	std::vector<float> faceClusterIdx, vertexClusterIdx;
 	std::vector<unsigned> boundaryFaces;
@@ -339,7 +337,7 @@ void CADScene::loadModels()
 void CADScene::loadModel(const std::string& path)
 {
 	delete _mesh;
-	_mesh = new CADModel(path, true, true, true);
+	_mesh = new CADModel(path, false, true, true);
 	_mesh->load();
 	_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
 }
@@ -398,9 +396,9 @@ void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<Fra
 bool CADScene::readCameraFromSettings(Camera* camera)
 {
 	const std::string filename = SCENE_SETTINGS_FOLDER + SCENE_CAMERA_FILE;
-	std::string currentLine, lineHeader;	
+	std::string currentLine, lineHeader;
 	std::stringstream line;
-	std::ifstream inputStream;	
+	std::ifstream inputStream;
 	vec3 value;
 
 	inputStream.open(filename.c_str());
@@ -434,7 +432,7 @@ bool CADScene::readCameraFromSettings(Camera* camera)
 		}
 	}
 
-	inputStream.close();	
+	inputStream.close();
 
 	return true;
 }
@@ -585,7 +583,10 @@ bool CADScene::readLightsFromSettings()
 void CADScene::rebuildGrid(FractureParameters& fractureParameters)
 {
 	if (!_meshGrid)
+	{
 		_meshGrid = new RegularGrid(_mesh->getAABB(), fractureParameters._gridSubdivisions);
+		fractureParameters._gridSubdivisions = _meshGrid->getNumSubdivisions();
+	}
 	else
 		_meshGrid->setAABB(_mesh->getAABB(), true);
 

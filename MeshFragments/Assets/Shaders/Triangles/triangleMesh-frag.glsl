@@ -71,11 +71,11 @@ subroutine void depthTextureType(out float shadowDiffuseFactor, out float shadow
 subroutine uniform depthTextureType depthTextureUniform;
 
 uniform float shadowMaxIntensity, shadowMinIntensity;						// Color range
-uniform float shadowRadius;	
+uniform float shadowRadius;
 uniform sampler3D texOffset;
 uniform sampler2DShadow texShadowMapSampler;
 
-layout (location = 0) out vec4 fColor;
+layout(location = 0) out vec4 fColor;
 
 
 // ********* FUNCTIONS ************
@@ -109,7 +109,7 @@ float pixarAttenuation(const float distance)
 // ----------- Lighting ----------
 
 // Computes the diffuse term with lighting wrapping, if active
-vec3 getDiffuse(const vec3 fragKad, const float dotLN) 
+vec3 getDiffuse(const vec3 fragKad, const float dotLN)
 {
 	return Id * fragKad * max((dotLN + materialScattering) / (1 + materialScattering), 0.0f);
 }
@@ -187,13 +187,13 @@ vec3 spotLight(const vec3 fragKad, const vec3 fragKs, const vec3 fragNormal, con
 	float sf = 0.0f;
 	const float dotLD = dot(-l, d);
 
-	if (dotLD >= cosPenumbra) 
+	if (dotLD >= cosPenumbra)
 	{
 		sf = 1.0f;
 	}
-	else if (dotLD > cosUmbra) 
+	else if (dotLD > cosUmbra)
 	{
-		sf = pow((dotLD - cosUmbra) / (cosPenumbra - cosUmbra), exponentS);		
+		sf = pow((dotLD - cosUmbra) / (cosPenumbra - cosUmbra), exponentS);
 	}
 
 	return sf * attenuation * shadowDiffuseFactor * (diffuse + shadowSpecFactor * specular);
@@ -206,7 +206,7 @@ vec3 rimLight(const vec3 fragKad, const vec3 fragKs, const vec3 fragNormal, cons
 	const vec3 v = normalize(-position);
 	const float vdn = 1.0f - max(dot(v, n), 0.0f);
 
-	return vdn * Ia;				
+	return vdn * Ia;
 }
 
 
@@ -296,7 +296,7 @@ void shadow(out float shadowDiffuseFactor, out float shadowSpecFactor)
 	}
 
 	shadowDiffuseFactor = sum / 8.0f;
-	if (shadowDiffuseFactor != 1.0f && shadowDiffuseFactor != 0.0f) 
+	if (shadowDiffuseFactor != 1.0f && shadowDiffuseFactor != 0.0f)
 	{
 		for (int i = 4; i < samplesDiv2; i++) {
 			offsetCoord.z = i;
