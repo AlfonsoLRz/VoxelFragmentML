@@ -5,19 +5,19 @@
 
 struct FragmentationProcedure
 {
-	bool				_exportFragments	= true;	
-	bool				_exportMetadata		= true;
+	bool				_exportFragments = true;
+	bool				_exportMetadata = true;
 	std::string			_currentDestinationFolder = "";
 
 	FractureParameters	_fractureParameters;
-	ivec2				_fragmentInterval	= ivec2(2, 12);
-	ivec2				_iterationInterval	= ivec2(15, 5);
-	std::string			_folder				= "Assets/Models/Modelos Vasijas OBJ (completo)-20211117T102301Z-001/Modelos OBJ (completo)";
-	std::string			_destinationFolder  = "E:/Dataset/";
-	std::string			_startVessel		= "";
-	std::string			_saveExtension		= ".stl";
-	bool				_saveScreenshots	= false;
-	std::string			_searchExtension	= ".obj";
+	ivec2				_fragmentInterval = ivec2(2, 12);
+	ivec2				_iterationInterval = ivec2(15, 5);
+	std::string			_folder = "E:/obj/";
+	std::string			_destinationFolder = "E:/Dataset/";
+	std::string			_startVessel = "BA098_2";
+	std::string			_saveExtension = ".stl";
+	bool				_saveScreenshots = false;
+	std::string			_searchExtension = ".obj";
 
 	struct FragmentMetadata
 	{
@@ -37,6 +37,7 @@ struct FragmentationProcedure
 	{
 		_fractureParameters._biasSeeds = 0;
 		_fractureParameters._erode = false;
+		_fractureParameters._metricVoxelization = true;
 
 		_fractureParameters._renderGrid = false;
 		_fractureParameters._renderPointCloud = false;

@@ -178,12 +178,12 @@ public:
 	/**
 	*	@brief Saves the model using assimp.
 	*/
-	bool save(const std::string& filename, unsigned numFaces = 0);
+	bool save(const std::string& filename);
 
 	/**
 	*	@brief
 	*/
-	void simplify(unsigned numFaces, bool cgal = false);
+	void simplify(unsigned numFaces, bool cgal = false, bool verbose = false);
 
 	/**
 	*	@brief Subdivides mesh with the specified maximum area.

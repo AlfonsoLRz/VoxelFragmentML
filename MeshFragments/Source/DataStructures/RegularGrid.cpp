@@ -39,7 +39,7 @@ unsigned RegularGrid::calculateMaxQuadrantOccupancy(unsigned subdivisions)
 	unsigned numGroups = ComputeShader::getNumGroups(numCells);
 	uvec3 step = glm::ceil(vec3(_numDivs) / vec3(subdivisions));
 
-	unsigned* counter = (unsigned*) calloc(subdivisions * subdivisions * subdivisions, sizeof(unsigned));
+	unsigned* counter = (unsigned*)calloc(subdivisions * subdivisions * subdivisions, sizeof(unsigned));
 	const GLuint counterSSBO = ComputeShader::setReadBuffer(counter, subdivisions * subdivisions * subdivisions, GL_DYNAMIC_DRAW);
 
 	shader->bindBuffers(std::vector<GLuint>{ _ssbo, counterSSBO });
@@ -86,7 +86,7 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 		++convolutionSize;
 
 	uint32_t maskSize = convolutionSize * convolutionSize * convolutionSize, convolutionCenter = std::floor(convolutionSize / 2.0f), activations = 0;
-	float* erosionMask = (float*) calloc(maskSize, sizeof(float));
+	float* erosionMask = (float*)calloc(maskSize, sizeof(float));
 
 	if (fractureParams == FractureParameters::SQUARE)
 	{
@@ -192,10 +192,10 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 	ComputeShader* finishFillShader = ShaderList::getInstance()->getComputeShader(RendEnum::FINISH_FILL);
 
 	// Input data
-	uvec3 numDivs		= this->getNumSubdivisions();
-	unsigned numCells	= numDivs.x * numDivs.y * numDivs.z;
+	uvec3 numDivs = this->getNumSubdivisions();
+	unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
 	unsigned numThreads = modelComponent->_topology.size() * numSamples;
-	unsigned numGroups1	= ComputeShader::getNumGroups(numThreads);
+	unsigned numGroups1 = ComputeShader::getNumGroups(numThreads);
 	unsigned numGroups2 = ComputeShader::getNumGroups(numCells);
 
 	// Noise buffer
@@ -212,7 +212,7 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 	}
 
 	// Input data
-	const GLuint noiseSSBO	= ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
+	const GLuint noiseSSBO = ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
 
 	boundaryShader->bindBuffers(std::vector<GLuint>{ modelComponent->_geometrySSBO, modelComponent->_topologySSBO, noiseSSBO, _ssbo });
 	boundaryShader->use();
@@ -253,8 +253,8 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 	return maxArea;
 #else
 	unsigned maxDimension = glm::max(glm::max(_numDivs.x, _numDivs.y), _numDivs.z);
-	std::vector<unsigned char> voxelModel (maxDimension * maxDimension * maxDimension);
-	ivec3 startingIndices = ivec3(maxDimension) / 2 - ivec3(_numDivs) / 2;
+	std::vector<unsigned char> voxelModel(maxDimension * maxDimension * maxDimension);
+	ivec3 startingIndices = glm::floor(vec3(maxDimension) / 2.0f - vec3(_numDivs) / 2.0f);
 
 	Tetravoxelizer tetravoxelizer;
 	tetravoxelizer.initialize(ivec3(maxDimension));
@@ -283,7 +283,7 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 
 void RegularGrid::fill(const Voronoi& voronoi)
 {
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (int x = 0; x < _numDivs.x; ++x)
 	{
 		int cluster;
@@ -319,7 +319,7 @@ void RegularGrid::fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numS
 void RegularGrid::getAABBs(std::vector<AABB>& aabb)
 {
 	vec3 max, min;
-	
+
 	for (int x = 0; x < _numDivs.x; ++x)
 	{
 		for (int y = 0; y < _numDivs.y; ++y)
@@ -355,7 +355,7 @@ unsigned RegularGrid::numOccupiedVoxels()
 }
 
 void RegularGrid::queryCluster(
-	const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx, 
+	const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx,
 	std::vector<unsigned>& boundaryFaces, std::vector<std::unordered_map<unsigned, float>>& faceClusterOccupancy)
 {
 	ComputeShader* countVoxelTriangle = ShaderList::getInstance()->getComputeShader(RendEnum::COUNT_VOXEL_TRIANGLE);
@@ -431,7 +431,7 @@ void RegularGrid::queryCluster(
 				pair.second /= numSamples;
 			}
 		}
-	
+
 		numProcessedFaces += currentNumFaces;
 
 		glDeleteBuffers(1, &faceSSBO);
@@ -489,11 +489,11 @@ void RegularGrid::setAABB(const AABB& aabb, bool reset)
 {
 	vec3 aabbSize = _aabb.size();
 	float maxDimension = glm::max(glm::max(aabbSize.x, aabbSize.y), aabbSize.z);
-	//vec3 scale = vec3(maxDimension) / aabbSize;
-	//aabbSize *= scale;
-	//_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
-	unsigned maxDivs = glm::max(glm::max(_numDivs.x, _numDivs.y), _numDivs.z);
-	_numDivs = glm::ceil(vec3(maxDivs) * aabbSize / maxDimension);
+	vec3 scale = vec3(maxDimension) / aabbSize;
+	aabbSize *= scale;
+	_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
+	//unsigned maxDivs = glm::max(glm::max(_numDivs.x, _numDivs.y), _numDivs.z);
+	//_numDivs = glm::ceil(vec3(maxDivs) * aabbSize / maxDimension);
 	_cellSize = _aabb.size() / vec3(_numDivs);
 
 	if (reset)
@@ -512,7 +512,7 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh(FractureParameters& fractParam
 
 	values.reserve(valuesSet.size());
 	fragmentMetadata.resize(valuesSet.size());
-	for (auto it = valuesSet.begin(); it != valuesSet.end(); ) 
+	for (auto it = valuesSet.begin(); it != valuesSet.end(); )
 	{
 		fragmentMetadata[it->first - (VOXEL_FREE + 1)]._voxels = it->second;
 
@@ -569,7 +569,7 @@ void RegularGrid::updateSSBO()
 
 // [Protected methods]
 
-RegularGrid::CellGrid* RegularGrid::data() 
+RegularGrid::CellGrid* RegularGrid::data()
 {
 	return _grid.data();
 }
@@ -616,7 +616,7 @@ void RegularGrid::set(int x, int y, int z, uint8_t i)
 /// Protected methods	
 
 void RegularGrid::buildGrid()
-{	
+{
 	_grid = std::vector<CellGrid>(_numDivs.x * _numDivs.y * _numDivs.z);
 	std::fill(_grid.begin(), _grid.end(), CellGrid());
 	_zeroCounter = std::vector<unsigned>(_numDivs.x * _numDivs.y * _numDivs.z, 0);

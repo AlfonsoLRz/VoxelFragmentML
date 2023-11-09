@@ -44,6 +44,7 @@ public:
 	bool	_launchGPU;
 	int		_marchingCubesSubdivisions;
 	int		_mergeSeedsDistanceFunction;
+	bool	_metricVoxelization;
 	int		_numExtraSeeds;
 	int		_numSeeds;
 	int		_numTriangleSamples;
@@ -53,6 +54,7 @@ public:
 	int		_seedingRandom;
 	int		_spreading;
 	int		_targetTriangles;
+	int		_voxelPerMetricUnit;
 
 	// Rendering during the build procedure
 	bool	_renderGrid;
@@ -80,6 +82,7 @@ public:
 		_launchGPU(true),
 		_marchingCubesSubdivisions(1),
 		_mergeSeedsDistanceFunction(EUCLIDEAN),
+		_metricVoxelization(false),
 		_numExtraSeeds(20),
 		_numSeeds(2),
 		_numTriangleSamples(10000),
@@ -89,6 +92,7 @@ public:
 		_seedingRandom(STD_UNIFORM),
 		_spreading(5),
 		_targetTriangles(500),
+		_voxelPerMetricUnit(100),
 
 		_renderGrid(true),
 		_renderMesh(true),

@@ -18,7 +18,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::VESSEL_PATH = "E:/obj/AL_###/AL_13B/AL_13B.obj";
+const std::string CADScene::VESSEL_PATH = "E:/obj/AL_###/AL_03A/AL_03A.obj";
 
 // [Public methods]
 
@@ -99,11 +99,21 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		const std::string meshFile = meshFolder + modelName + "_";
 		if (!std::filesystem::exists(meshFolder)) std::filesystem::create_directory(meshFolder);
 
+		// Calculate size of voxelization according to model size
+		//const AABB aabb = _mesh->getAABB();
+		//fractureProcedure._fractureParameters._gridSubdivisions = glm::ceil(aabb.size() * vec3(fractureProcedure._fractureParameters._voxelPerMetricUnit));
+		//// Transform odd dimensions to even dimensions
+		//if (fractureProcedure._fractureParameters._gridSubdivisions.x % 2 != 0) fractureProcedure._fractureParameters._gridSubdivisions.x += 1;
+		//if (fractureProcedure._fractureParameters._gridSubdivisions.y % 2 != 0) fractureProcedure._fractureParameters._gridSubdivisions.y += 1;
+		//if (fractureProcedure._fractureParameters._gridSubdivisions.z % 2 != 0) fractureProcedure._fractureParameters._gridSubdivisions.z += 1;
+
+		//std::cout << modelName << " - " << fractureProcedure._fractureParameters._gridSubdivisions.x << "x" << fractureProcedure._fractureParameters._gridSubdivisions.y << "x" << fractureProcedure._fractureParameters._gridSubdivisions.z << std::endl;
+
 		for (int numFragments = fractureProcedure._fragmentInterval.x; numFragments <= fractureProcedure._fragmentInterval.y; ++numFragments)
 		{
 			const std::string fragmentFile = meshFile + std::to_string(numFragments) + "f_";
 
-			fractureProcedure._fractureParameters._numExtraSeeds = numFragments / 2;
+			fractureProcedure._fractureParameters._numExtraSeeds = 2;
 			fractureProcedure._fractureParameters._numSeeds = numFragments;
 			const int numIterations = glm::mix(
 				fractureProcedure._iterationInterval.x, fractureProcedure._iterationInterval.y,
@@ -128,7 +138,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 					fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
 					fragmentMetadata[idx]._numFaces = fracture->getNumFaces();
 
-					dynamic_cast<CADModel*>(fracture)->save(filename, 500);
+					dynamic_cast<CADModel*>(fracture)->save(filename);
 
 					++idx;
 				}
@@ -184,7 +194,7 @@ void CADScene::exportMetadata(const std::string& filename, std::vector<Fragmenta
 			fragmentSize[idx]._id << "\t" <<
 			fragmentSize[idx]._voxelizationSize << "\t" <<
 			fragmentSize[idx]._voxels << "\t" <<
-			//fragmentSize[idx]._occupiedVoxels << "\t" << 
+			fragmentSize[idx]._occupiedVoxels << "\t" <<
 			fragmentSize[idx]._percentage << "\t" <<
 			fragmentSize[idx]._numVertices << "\t" <<
 			fragmentSize[idx]._numFaces << std::endl;
@@ -337,7 +347,7 @@ void CADScene::loadModels()
 void CADScene::loadModel(const std::string& path)
 {
 	delete _mesh;
-	_mesh = new CADModel(path, false, true, true);
+	_mesh = new CADModel(path, true, true, true);
 	_mesh->load();
 	_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
 }

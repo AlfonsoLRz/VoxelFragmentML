@@ -21,7 +21,7 @@ const std::string CADModel::BINARY_EXTENSION = ".bin";
 /// [Public methods]
 
 CADModel::CADModel(const std::string& filename, const bool useBinary, const bool fuseComponents, const bool mergeVertices) :
-	Model3D(mat4(1.0f), 0)
+	Model3D(mat4(1.0f), 0), _scene(nullptr)
 {
 	_filename = filename;
 	_fuseComponents = fuseComponents;
@@ -61,7 +61,6 @@ CADModel::CADModel(const mat4& modelMatrix) : Model3D(modelMatrix, 1), _useBinar
 
 CADModel::~CADModel()
 {
-	delete _scene;
 }
 
 void CADModel::endInsertionBatch(bool releaseMemory, bool buildVao, int targetFaces)
@@ -148,8 +147,6 @@ bool CADModel::load()
 				this->remapVertices(_modelComp[0], mapping);
 			}
 		}
-
-		this->simplify(500, false);
 
 		this->writeBinary(binaryFile);
 	}
@@ -313,7 +310,7 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 	return pointCloud;
 }
 
-bool CADModel::save(const std::string& filename, unsigned numFaces)
+bool CADModel::save(const std::string& filename)
 {
 	aiScene scene;
 	scene.mRootNode = new aiNode();
@@ -380,25 +377,10 @@ bool CADModel::save(const std::string& filename, unsigned numFaces)
 		face.mIndices[2] = faces[i].z;
 	}
 
-	bool saveSuccess = _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
-
-	//if (numFaces > 0 && numFaces < this->getNumFaces())
-	//{
-	//	// Read with CGAL
-	//	Mesh mesh;
-	//	CGAL::Polygon_mesh_processing::IO::read_polygon_mesh(filename, mesh);
-
-	//	CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
-	//	CGAL::Surface_mesh_simplification::edge_collapse(mesh, stop);
-
-	//	// Write with CGAL
-	//	CGAL::IO::write_polygon_mesh(filename, mesh);
-	//}
-
-	return saveSuccess;
+	return _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
 }
 
-void CADModel::simplify(unsigned numFaces, bool cgal)
+void CADModel::simplify(unsigned numFaces, bool cgal, bool verbose)
 {
 	for (Model3D::ModelComponent* modelComponent : _modelComp)
 	{
@@ -417,14 +399,14 @@ void CADModel::simplify(unsigned numFaces, bool cgal)
 				CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
 				CGAL::Surface_mesh_simplification::edge_collapse(mesh, stop);
 
+				CGALInterface::translateMesh(&mesh, modelComponent);
+
 				//Mesh* mesh = CGALInterface::translateMesh(modelComponent);
 
 				//CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
 				//CGAL::Surface_mesh_simplification::edge_collapse(*mesh, stop);
 
 				//delete mesh;
-
-				CGALInterface::translateMesh(&mesh, modelComponent);
 			}
 			else
 			{
@@ -441,7 +423,7 @@ void CADModel::simplify(unsigned numFaces, bool cgal)
 						Simplify::triangles[Simplify::triangles.size() - 1].v[i] = face._vertices[i];
 				}
 
-				//Simplify::simplify_mesh(numFaces, 5.0);
+				Simplify::simplify_mesh(numFaces, 5.0);
 
 				modelComponent->_geometry.clear();
 				modelComponent->_topology.clear();
@@ -454,7 +436,8 @@ void CADModel::simplify(unsigned numFaces, bool cgal)
 			}
 		}
 
-		std::cout << "Simplified to " << modelComponent->_topology.size() << " faces." << std::endl;
+		if (verbose)
+			std::cout << "Simplified to " << modelComponent->_topology.size() << " faces." << std::endl;
 	}
 }
 
