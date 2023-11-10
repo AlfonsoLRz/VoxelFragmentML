@@ -28,38 +28,39 @@ public:
 	inline static const char* Erosion_STR[NUM_EROSION_CONVOLUTIONS] = { "Square", "Ellipse", "Cross" };
 
 public:
-	int		_biasSeeds;
-	int		_boundarySize;
-	bool	_computeMCFragments;
-	bool	_erode;
-	int		_erosionConvolution;
-	int		_erosionIterations;
-	float	_erosionProbability;
-	int		_erosionSize;
-	float	_erosionThreshold;
-	bool	_fillShape;
-	int		_fractureAlgorithm;
-	int		_distanceFunction;
-	ivec3	_gridSubdivisions;
-	bool	_launchGPU;
-	int		_marchingCubesSubdivisions;
-	int		_mergeSeedsDistanceFunction;
-	bool	_metricVoxelization;
-	int		_numExtraSeeds;
-	int		_numSeeds;
-	int		_numTriangleSamples;
-	int		_pointCloudSeedingRandom;
-	bool	_removeIsolatedRegions;
-	int		_seed;
-	int		_seedingRandom;
-	int		_spreading;
-	int		_targetTriangles;
-	int		_voxelPerMetricUnit;
+	int				_biasSeeds;
+	int				_boundarySize;
+	int				_clampVoxelMetricUnit;
+	bool			_computeMCFragments;
+	bool			_erode;
+	int				_erosionConvolution;
+	int				_erosionIterations;
+	float			_erosionProbability;
+	int				_erosionSize;
+	float			_erosionThreshold;
+	bool			_fillShape;
+	int				_fractureAlgorithm;
+	int				_distanceFunction;
+	ivec3			_gridSubdivisions;
+	bool			_launchGPU;
+	int				_marchingCubesSubdivisions;
+	int				_mergeSeedsDistanceFunction;
+	bool			_metricVoxelization;
+	int				_numExtraSeeds;
+	int				_numSeeds;
+	int				_numTriangleSamples;
+	int				_pointCloudSeedingRandom;
+	bool			_removeIsolatedRegions;
+	int				_seed;
+	int				_seedingRandom;
+	int				_spreading;
+	std::vector<int> _targetTriangles;
+	int				_voxelPerMetricUnit;
 
 	// Rendering during the build procedure
-	bool	_renderGrid;
-	bool    _renderMesh;
-	bool    _renderPointCloud;
+	bool			_renderGrid;
+	bool			_renderMesh;
+	bool			_renderPointCloud;
 
 public:
 	/**
@@ -68,6 +69,7 @@ public:
 	FractureParameters() :
 		_biasSeeds(0),
 		_boundarySize(1),
+		_clampVoxelMetricUnit(256),
 		_computeMCFragments(false),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
@@ -78,7 +80,7 @@ public:
 		_fillShape(true),
 		_fractureAlgorithm(FLOOD),
 		_distanceFunction(CHEBYSHEV),
-		_gridSubdivisions(256),
+		_gridSubdivisions(264, 62, 264),
 		_launchGPU(true),
 		_marchingCubesSubdivisions(1),
 		_mergeSeedsDistanceFunction(EUCLIDEAN),
@@ -91,13 +93,16 @@ public:
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),
 		_spreading(5),
-		_targetTriangles(500),
-		_voxelPerMetricUnit(100),
+		_targetTriangles({ 500, 1000 }),
+		_voxelPerMetricUnit(90),
 
 		_renderGrid(true),
 		_renderMesh(true),
 		_renderPointCloud(false)
 	{
+		std::qsort(_targetTriangles.data(), _targetTriangles.size(), sizeof(int), [](const void* a, const void* b) {
+			return *(int*)b - *(int*)a;
+			});
 	}
 };
 

@@ -13,9 +13,9 @@ GUI::GUI() :
 	_showRenderingSettings(false), _showSceneSettings(false), _showScreenshotSettings(false), _showAboutUs(false), _showControls(false), _showFractureSettings(false), _showFileDialog(false),
 	_fractureText("")
 {
-	_renderer			= Renderer::getInstance();	
-	_renderingParams	= Renderer::getInstance()->getRenderingParameters();
-	_scene				= dynamic_cast<CADScene*>(_renderer->getCurrentScene());
+	_renderer = Renderer::getInstance();
+	_renderingParams = Renderer::getInstance()->getRenderingParameters();
+	_scene = dynamic_cast<CADScene*>(_renderer->getCurrentScene());
 	_fractureParameters = _scene->getFractureParameters();
 }
 
@@ -25,7 +25,7 @@ void GUI::createMenu()
 
 	if (_showRenderingSettings)		showRenderingSettings();
 	if (_showScreenshotSettings)	showScreenshotSettings();
-	if (_showFragmentList)			showFractureList();	
+	if (_showFragmentList)			showFractureList();
 	if (_showFractureSettings)		showFractureSettings();
 	if (_showAboutUs)				showAboutUsWindow();
 	if (_showControls)				showControls();
@@ -52,7 +52,7 @@ void GUI::createMenu()
 
 		ImGui::SameLine(io.DisplaySize.x - 300, 0);
 		ImGui::Text(_fractureText.c_str());
-		
+
 		ImGui::SameLine(io.DisplaySize.x - 105, 0);
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		ImGui::EndMainMenuBar();
@@ -90,7 +90,7 @@ void GUI::showAboutUsWindow()
 {
 	if (ImGui::Begin("About the project", &_showAboutUs))
 	{
-		ImGui::Text("This code belongs to a research project from University of Jaen (GGGJ group).");	
+		ImGui::Text("This code belongs to a research project from University of Jaen (GGGJ group).");
 	}
 
 	ImGui::End();
@@ -188,7 +188,7 @@ void GUI::showFractureList()
 		this->renderText("Number of voxels: ", std::to_string(metadata._voxels));
 		this->renderText("Number of voxels (percentage): ", std::to_string(metadata._percentage));
 		this->renderText("Number of occupied voxels in vessel: ", std::to_string(metadata._occupiedVoxels));
-		this->renderText("Voxelization size: ", std::to_string(metadata._voxelizationSize));
+		this->renderText("Voxelization size: ", std::to_string(metadata._voxelizationSize.x) + ", " + std::to_string(metadata._voxelizationSize.y) + ", " + std::to_string(metadata._voxelizationSize.z));
 
 		ImGui::EndChild();
 		ImGui::EndGroup();
@@ -202,7 +202,7 @@ void GUI::showFractureSettings()
 	if (ImGui::Begin("Fracture Settings", &_showFractureSettings))
 	{
 		this->leaveSpace(1);
-		
+
 		if (ImGui::Button("Launch Algorithm"))
 		{
 			_fragmentMetadata.clear();
@@ -215,9 +215,9 @@ void GUI::showFractureSettings()
 		{
 			_showFileDialog = true;
 		}
-		
-		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);	
-		
+
+		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);
+
 		ImGui::SliderInt3("Grid Subdivisions", &_fractureParameters->_gridSubdivisions[0], 1, 756);
 
 		ImGui::PushItemWidth(150.0f);
@@ -228,7 +228,7 @@ void GUI::showFractureSettings()
 			ImGui::SliderInt("Num. Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, 1000); ImGui::SameLine(0, 20);
 			ImGui::Combo("Seed Random Distribution", &_fractureParameters->_seedingRandom, FractureParameters::Random_STR, IM_ARRAYSIZE(FractureParameters::Random_STR));
 			ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR)); ImGui::SameLine(0, 20);
-			ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions); 
+			ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
 			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6); ImGui::SameLine(0, 20);
 			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_spreading, 2, 10);
 			ImGui::Checkbox("Fill Shape", &_fractureParameters->_fillShape);
@@ -242,7 +242,7 @@ void GUI::showFractureSettings()
 		ImGui::InputInt("Seed", &_fractureParameters->_seed, 1);
 
 		this->leaveSpace(3); ImGui::Text("Erosion Settings"); ImGui::Separator(); this->leaveSpace(2);
-		ImGui::PushItemWidth(120.0f); 
+		ImGui::PushItemWidth(120.0f);
 		{
 			ImGui::Checkbox("Erode", &_fractureParameters->_erode);
 			ImGui::Combo("Erosion Convolution", &_fractureParameters->_erosionConvolution, FractureParameters::Erosion_STR, IM_ARRAYSIZE(FractureParameters::Erosion_STR));
@@ -344,7 +344,7 @@ void GUI::showRenderingSettings()
 void GUI::showSceneSettings()
 {
 	if (_modelComponents.empty()) _modelComponents = _renderer->getCurrentScene()->getModelComponents();
-	
+
 	ImGui::SetNextWindowSize(ImVec2(480, 440), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("Scene Models", &_showSceneSettings, ImGuiWindowFlags_None))
@@ -374,7 +374,7 @@ void GUI::showSceneSettings()
 		ImGui::Separator();
 
 		this->leaveSpace(1);
-				
+
 		ImGui::Checkbox("Enabled", &_modelComponents[modelCompSelected]->_enabled);
 
 		ImGui::EndChild();
@@ -422,7 +422,7 @@ void GUI::showScreenshotSettings()
 }
 
 GUI::~GUI()
-{	
+{
 	ImGui::DestroyContext();
 }
 
@@ -436,7 +436,7 @@ void GUI::initialize(GLFWwindow* window, const int openGLMinorVersion)
 	ImGui::CreateContext();
 
 	this->loadImGUIStyle();
-	
+
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(openGLVersion.c_str());
 }
@@ -471,7 +471,7 @@ void GUI::loadFonts()
 {
 	ImFontConfig cfg;
 	ImGuiIO& io = ImGui::GetIO();
-	
+
 	std::copy_n("Lato", 5, cfg.Name);
 	io.Fonts->AddFontFromMemoryCompressedBase85TTF(lato_compressed_data_base85, 15.0f, &cfg);
 

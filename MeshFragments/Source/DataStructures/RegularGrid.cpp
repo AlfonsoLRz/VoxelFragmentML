@@ -15,7 +15,7 @@
 RegularGrid::RegularGrid(const AABB& aabb, const ivec3& subdivisions) :
 	_aabb(aabb), _marchingCubes(nullptr), _numDivs(subdivisions)
 {
-	this->setAABB(aabb);
+	this->setAABB(aabb, _numDivs);
 	this->buildGrid();
 }
 
@@ -249,35 +249,31 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 
 	GLuint buffers[] = { noiseSSBO };
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
-
-	return maxArea;
 #else
-	unsigned maxDimension = glm::max(glm::max(_numDivs.x, _numDivs.y), _numDivs.z);
-	std::vector<unsigned char> voxelModel(maxDimension * maxDimension * maxDimension);
-	ivec3 startingIndices = glm::floor(vec3(maxDimension) / 2.0f - vec3(_numDivs) / 2.0f);
+	std::vector<unsigned char> voxelModel(_numDivs.x * _numDivs.y * _numDivs.z);
 
 	Tetravoxelizer tetravoxelizer;
-	tetravoxelizer.initialize(ivec3(maxDimension));
+	tetravoxelizer.initialize(_numDivs);
 	tetravoxelizer.initializeModel(modelComponent->_geometry, modelComponent->_topology, _aabb);
 	tetravoxelizer.compute(voxelModel);
 	tetravoxelizer.deleteModelResources();
 	tetravoxelizer.deleteResources();
 
-	for (int y = startingIndices.y; y < startingIndices.y + _numDivs.y; ++y)
+	for (int y = 0; y < _numDivs.y; ++y)
 	{
 		glm::uint positionIndex;
-		for (int x = startingIndices.x; x < startingIndices.x + _numDivs.x; ++x)
+		for (int x = 0; x < _numDivs.x; ++x)
 		{
-			for (int z = startingIndices.z; z < startingIndices.z + _numDivs.z; ++z)
+			for (int z = 0; z < _numDivs.z; ++z)
 			{
-				positionIndex = y * maxDimension * maxDimension + z * maxDimension + x;
+				positionIndex = y * _numDivs.x * _numDivs.z + z * _numDivs.x + x;
 				if (voxelModel[positionIndex] == 1)
-					this->set(x - startingIndices.x, y - startingIndices.y, z - startingIndices.z, VOXEL_FREE);
+				{
+					this->set(x, y, z, VOXEL_FREE);
+				}
 			}
 		}
 	}
-
-	return .0f;
 #endif
 }
 
@@ -485,15 +481,18 @@ void RegularGrid::queryCluster(std::vector<vec4>* points, std::vector<float>& cl
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 }
 
-void RegularGrid::setAABB(const AABB& aabb, bool reset)
+void RegularGrid::setAABB(const AABB& aabb, const ivec3& gridDims, bool reset)
 {
 	vec3 aabbSize = _aabb.size();
-	float maxDimension = glm::max(glm::max(aabbSize.x, aabbSize.y), aabbSize.z);
-	vec3 scale = vec3(maxDimension) / aabbSize;
-	aabbSize *= scale;
-	_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
+	//float maxDimension = glm::max(glm::max(aabbSize.x, aabbSize.y), aabbSize.z);
+	//vec3 scale = vec3(maxDimension) / aabbSize;
+	//aabbSize *= scale;
+	//_aabb = AABB(_aabb.min() * scale, _aabb.min() * scale + aabbSize);
 	//unsigned maxDivs = glm::max(glm::max(_numDivs.x, _numDivs.y), _numDivs.z);
 	//_numDivs = glm::ceil(vec3(maxDivs) * aabbSize / maxDimension);
+
+	_aabb = AABB(_aabb.min(), _aabb.min() + aabbSize);
+	_numDivs = gridDims;
 	_cellSize = _aabb.size() / vec3(_numDivs);
 
 	if (reset)
@@ -526,7 +525,7 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh(FractureParameters& fractParam
 		fragmentMetadata[idx]._id = idx;
 		fragmentMetadata[idx]._percentage = fragmentMetadata[idx]._voxels / static_cast<float>(globalCount);
 		fragmentMetadata[idx]._occupiedVoxels = globalCount;
-		fragmentMetadata[idx]._voxelizationSize = _numDivs.x;
+		fragmentMetadata[idx]._voxelizationSize = _numDivs;
 	}
 
 	std::sort(values.begin(), values.end());
@@ -622,6 +621,7 @@ void RegularGrid::buildGrid()
 	_zeroCounter = std::vector<unsigned>(_numDivs.x * _numDivs.y * _numDivs.z, 0);
 	_countSSBO = ComputeShader::setReadBuffer(_zeroCounter, GL_DYNAMIC_DRAW);
 	_ssbo = ComputeShader::setReadBuffer(_grid.data(), _grid.size(), GL_DYNAMIC_DRAW);
+	_voxelOpenGL = std::vector<unsigned char>(_numDivs.x * _numDivs.y * _numDivs.z, 0);
 }
 
 void RegularGrid::cleanGrid()

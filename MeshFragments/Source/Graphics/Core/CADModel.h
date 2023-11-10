@@ -89,6 +89,16 @@ protected:
 	void remapVertices(Model3D::ModelComponent* modelComponent, std::vector<int>& mapping);
 
 	/**
+	*	@brief Saves current model using assimp.
+	*/
+	bool saveAssimp(const std::string& filename);
+
+	/**
+	*	@brief Saves current model using assimp.
+	*/
+	void threadedSaveAssimp(aiScene* scene, const std::string& filename);
+
+	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
 	*	@return Success of writing process.
 	*/
@@ -126,7 +136,7 @@ public:
 	/**
 	*	@brief Sends geometry & topology to GPU.
 	*/
-	void endInsertionBatch(bool releaseMemory = true, bool buildVao = true, int targetFaces = -1);
+	void endInsertionBatch(bool releaseMemory = true, bool buildVao = true);
 
 	/**
 	*	@return Bounding box of the model.

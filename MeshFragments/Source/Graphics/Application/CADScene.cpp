@@ -86,7 +86,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		do
 		{
 			fileList.erase(fileList.begin());
-		} while (fileList[0].find(fractureProcedure._startVessel) == std::string::npos);
+		} while (fileList[0].find(fractureProcedure._startVessel + "/") == std::string::npos);
 	}
 
 	for (const std::string& path : fileList)
@@ -100,14 +100,21 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		if (!std::filesystem::exists(meshFolder)) std::filesystem::create_directory(meshFolder);
 
 		// Calculate size of voxelization according to model size
-		//const AABB aabb = _mesh->getAABB();
-		//fractureProcedure._fractureParameters._gridSubdivisions = glm::ceil(aabb.size() * vec3(fractureProcedure._fractureParameters._voxelPerMetricUnit));
-		//// Transform odd dimensions to even dimensions
-		//if (fractureProcedure._fractureParameters._gridSubdivisions.x % 2 != 0) fractureProcedure._fractureParameters._gridSubdivisions.x += 1;
-		//if (fractureProcedure._fractureParameters._gridSubdivisions.y % 2 != 0) fractureProcedure._fractureParameters._gridSubdivisions.y += 1;
-		//if (fractureProcedure._fractureParameters._gridSubdivisions.z % 2 != 0) fractureProcedure._fractureParameters._gridSubdivisions.z += 1;
+		const AABB aabb = _mesh->getAABB();
+		fractureProcedure._fractureParameters._gridSubdivisions = glm::ceil(aabb.size() * vec3(fractureProcedure._fractureParameters._voxelPerMetricUnit));
+		if (fractureProcedure._fractureParameters._gridSubdivisions.x > fractureProcedure._fractureParameters._clampVoxelMetricUnit or
+			fractureProcedure._fractureParameters._gridSubdivisions.y > fractureProcedure._fractureParameters._clampVoxelMetricUnit or
+			fractureProcedure._fractureParameters._gridSubdivisions.z > fractureProcedure._fractureParameters._clampVoxelMetricUnit)
+		{
+			fractureProcedure._fractureParameters._gridSubdivisions =
+				glm::floor(vec3(fractureProcedure._fractureParameters._clampVoxelMetricUnit) *
+					aabb.size() / glm::max(aabb.size().x, glm::max(aabb.size().y, aabb.size().z)));
+			std::cout << modelName << " - " << "Voxelization size clamped to " << fractureProcedure._fractureParameters._clampVoxelMetricUnit << std::endl;
+		}
+		while (fractureProcedure._fractureParameters._gridSubdivisions.x % 4 != 0) ++fractureProcedure._fractureParameters._gridSubdivisions.x;
+		while (fractureProcedure._fractureParameters._gridSubdivisions.z % 4 != 0) ++fractureProcedure._fractureParameters._gridSubdivisions.z;
 
-		//std::cout << modelName << " - " << fractureProcedure._fractureParameters._gridSubdivisions.x << "x" << fractureProcedure._fractureParameters._gridSubdivisions.y << "x" << fractureProcedure._fractureParameters._gridSubdivisions.z << std::endl;
+		std::cout << modelName << " - " << fractureProcedure._fractureParameters._gridSubdivisions.x << "x" << fractureProcedure._fractureParameters._gridSubdivisions.y << "x" << fractureProcedure._fractureParameters._gridSubdivisions.z << std::endl;
 
 		for (int numFragments = fractureProcedure._fragmentInterval.x; numFragments <= fractureProcedure._fragmentInterval.y; ++numFragments)
 		{
@@ -133,12 +140,23 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 				for (Model3D* fracture : _fractureMeshes)
 				{
-					const std::string filename = itFile + "_" + std::to_string(idx) + fractureProcedure._saveExtension;
+					CADModel* cadModel = dynamic_cast<CADModel*>(fracture);
+					const std::string filename = itFile + "_" + std::to_string(idx);
+
+					if (!fractureProcedure._fractureParameters._targetTriangles.empty())
+					{
+						for (int targetCount : fractureProcedure._fractureParameters._targetTriangles)
+						{
+							cadModel->simplify(targetCount);
+							cadModel->save(filename + "_" + std::to_string(targetCount) + fractureProcedure._saveExtension);
+						}
+					}
+					else
+						cadModel->save(filename + fractureProcedure._saveExtension);
+
 					fragmentMetadata[idx]._vesselName = filename;
 					fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
 					fragmentMetadata[idx]._numFaces = fracture->getNumFaces();
-
-					dynamic_cast<CADModel*>(fracture)->save(filename);
 
 					++idx;
 				}
@@ -151,7 +169,15 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		}
 
 		if (fractureProcedure._exportMetadata)
+		{
 			this->exportMetadata(meshFile + "metadata.txt", modelMetadata);
+
+			if (!fractureProcedure._onlineFolder.empty())
+			{
+				std::thread copyFolder(&CADScene::launchCopyingProcess, this, meshFolder, fractureProcedure._onlineFolder + modelName);
+				copyFolder.detach();
+			}
+		}
 	}
 }
 
@@ -192,7 +218,7 @@ void CADScene::exportMetadata(const std::string& filename, std::vector<Fragmenta
 		outputStream <<
 			fragmentSize[idx]._vesselName << "\t" <<
 			fragmentSize[idx]._id << "\t" <<
-			fragmentSize[idx]._voxelizationSize << "\t" <<
+			fragmentSize[idx]._voxelizationSize.x << "x" << fragmentSize[idx]._voxelizationSize.y << "x" << fragmentSize[idx]._voxelizationSize.z << "\t" <<
 			fragmentSize[idx]._voxels << "\t" <<
 			fragmentSize[idx]._occupiedVoxels << "\t" <<
 			fragmentSize[idx]._percentage << "\t" <<
@@ -263,6 +289,19 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 	}
 
 	return "";
+}
+
+void CADScene::launchCopyingProcess(const std::string& folder, const std::string& destinationFolder)
+{
+	//const std::string command = "robocopy \"" + folder + "\" \"" + destinationFolder + "\" /e";
+
+	std::filesystem::copy(folder, destinationFolder, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+	//FILE* pipe = _popen(command.c_str(), "r");
+	//if (!pipe)
+	//{
+	//	std::cout << "Failed to launch copying process" << std::endl;
+	//	return;
+	//}
 }
 
 void CADScene::loadDefaultCamera(Camera* camera)
@@ -592,13 +631,16 @@ bool CADScene::readLightsFromSettings()
 
 void CADScene::rebuildGrid(FractureParameters& fractureParameters)
 {
-	if (!_meshGrid)
+	if (_meshGrid && fractureParameters._gridSubdivisions != glm::ivec3(_meshGrid->getNumSubdivisions()))
 	{
-		_meshGrid = new RegularGrid(_mesh->getAABB(), fractureParameters._gridSubdivisions);
-		fractureParameters._gridSubdivisions = _meshGrid->getNumSubdivisions();
+		delete _meshGrid;
+		_meshGrid = nullptr;
 	}
+
+	if (!_meshGrid)
+		_meshGrid = new RegularGrid(_mesh->getAABB(), fractureParameters._gridSubdivisions);
 	else
-		_meshGrid->setAABB(_mesh->getAABB(), true);
+		_meshGrid->setAABB(_mesh->getAABB(), fractureParameters._gridSubdivisions, true);
 
 	_meshGrid->fill(_mesh->getModelComponent(0), fractureParameters._fillShape, fractureParameters._numTriangleSamples);
 }

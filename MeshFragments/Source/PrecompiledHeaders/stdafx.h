@@ -26,6 +26,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <iostream>
 #include <limits>
 #include <memory>

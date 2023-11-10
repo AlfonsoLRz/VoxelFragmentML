@@ -24,13 +24,13 @@ class MarchingCubes;
 *	@brief Data structure which helps us to locate models on a terrain.
 */
 class RegularGrid
-{   
+{
 public:
 	struct CellGrid
 	{
 		uint16_t _value;
 
-		CellGrid() : _value(VOXEL_EMPTY)/*, _boundary(0), _padding(.0f) */{}
+		CellGrid() : _value(VOXEL_EMPTY)/*, _boundary(0), _padding(.0f) */ {}
 		CellGrid(uint16_t value) : _value(value)/*, _boundary(0), _padding(.0f)*/ {}
 	};
 
@@ -38,19 +38,20 @@ protected:
 	const unsigned MASK_POSITION = 15;
 
 protected:
-	std::vector<CellGrid>	_grid;									//!< Color index of regular grid
+	std::vector<CellGrid>	_grid;										//!< Color index of regular grid
 
-	AABB					_aabb;									//!< Bounding box of the scene
-	vec3					_cellSize;								//!< Size of each grid cell
-	GLuint					_countSSBO;								//!< GPU buffer to save the number of occupied voxels per cell		
-	MarchingCubes*			_marchingCubes;							//!< Marching cubes algorithm
-	uvec3					_numDivs;								//!< Number of subdivisions of space between mininum and maximum point
-	GLuint					_ssbo;									//!< GPU buffer to save the grid
-	std::vector<unsigned>	_zeroCounter;							//!< CPU buffer to save the number of occupied voxels per cell		
+	AABB						_aabb;									//!< Bounding box of the scene
+	vec3						_cellSize;								//!< Size of each grid cell
+	GLuint						_countSSBO;								//!< GPU buffer to save the number of occupied voxels per cell		
+	MarchingCubes* _marchingCubes;							//!< Marching cubes algorithm
+	uvec3						_numDivs;								//!< Number of subdivisions of space between mininum and maximum point
+	GLuint						_ssbo;									//!< GPU buffer to save the grid
+	std::vector<unsigned char>	_voxelOpenGL;							//!< CPU buffer to save the number of occupied voxels per cell
+	std::vector<unsigned>		_zeroCounter;							//!< CPU buffer to save the number of occupied voxels per cell		
 
 protected:
 	/**
-	*	@brief Builds a 3D grid. 
+	*	@brief Builds a 3D grid.
 	*/
 	void buildGrid();
 
@@ -58,12 +59,12 @@ protected:
 	*	@brief Cleans the current grid.
 	*/
 	void cleanGrid();
-	
+
 	/**
 	*	@return Number of different values in grid.
 	*/
 	size_t countValues(std::unordered_map<uint16_t, unsigned>& values);
-	
+
 	/**
 	*	@return Index of grid cell to be filled.
 	*/
@@ -75,13 +76,13 @@ protected:
 	unsigned getPositionIndex(int x, int y, int z) const;
 
 	/**
-	*	@return 
+	*	@return
 	*/
 	uint16_t unmask(uint16_t value) const;
 
-public:	
+public:
 	/**
-	*	@return Index in grid array of a non-real position. 
+	*	@return Index in grid array of a non-real position.
 	*/
 	static unsigned getPositionIndex(int x, int y, int z, const uvec3& numDivs);
 
@@ -101,10 +102,10 @@ public:
 	*/
 	RegularGrid(const RegularGrid& regulargrid) = delete;
 
-    /**
-    *	@brief Destructor.
-    */
-    virtual ~RegularGrid();
+	/**
+	*	@brief Destructor.
+	*/
+	virtual ~RegularGrid();
 
 	/**
 	*	@brief Calculates the maximum number of voxels occupied per quadrant.
@@ -117,17 +118,17 @@ public:
 	void detectBoundaries(int boundarySize);
 
 	/**
-	*	@brief 
+	*	@brief
 	*/
 	void erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint8_t numIterations, float erosionProbability, float erosionThreshold);
 
 	/**
-	*	@brief Exports fragments into several models in a PLY file. 
+	*	@brief Exports fragments into several models in a PLY file.
 	*/
 	void exportGrid(const AABB& aabb);
 
 	/**
-	*	@brief  
+	*	@brief
 	*/
 	float fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples);
 
@@ -142,12 +143,12 @@ public:
 	void fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numSamples);
 
 	/**
-	*	@return Bounding box of the regular grid. 
+	*	@return Bounding box of the regular grid.
 	*/
 	AABB getAABB() { return _aabb; }
 
 	/**
-	*	@brief Retrieves grid AABBs for rendering purposes. 
+	*	@brief Retrieves grid AABBs for rendering purposes.
 	*/
 	void getAABBs(std::vector<AABB>& aabb);
 
@@ -174,7 +175,7 @@ public:
 	/**
 	*	@brief Modifies the bounding box of the scenario while maintaining the grid.
 	*/
-	void setAABB(const AABB& aabb, bool reset = false);
+	void setAABB(const AABB& aabb, const ivec3& gridDims, bool reset = false);
 
 	/**
 	*	@return Compute shader's buffer.
@@ -203,36 +204,36 @@ public:
 
 	// ----------- External functions ----------
 
-    /**
-    *   Get data pointer.
-    *   @return Internal data pointer.
-    */
+	/**
+	*   Get data pointer.
+	*   @return Internal data pointer.
+	*/
 	CellGrid* data();
 
-    /**
-    *   Read voxel.
-    *   @pre x in range [-1, size.x].
-    *   @pre y in range [-1, size.y].
-    *   @pre z in range [-1, size.z].
-    *   @param[in] x Voxel x coord.
-    *   @param[in] y Voxel y coord.
-    *   @param[in] z Voxel z coord.
-    *   @return Read voxel value.
-    */
-    uint16_t at(int x, int y, int z) const;
+	/**
+	*   Read voxel.
+	*   @pre x in range [-1, size.x].
+	*   @pre y in range [-1, size.y].
+	*   @pre z in range [-1, size.z].
+	*   @param[in] x Voxel x coord.
+	*   @param[in] y Voxel y coord.
+	*   @param[in] z Voxel z coord.
+	*   @return Read voxel value.
+	*/
+	uint16_t at(int x, int y, int z) const;
 
-    /**
-    *   Voxel space dimensions.
-    *   @return Space dimension
-    */
-    glm::uvec3 getNumSubdivisions() const;
+	/**
+	*   Voxel space dimensions.
+	*   @return Space dimension
+	*/
+	glm::uvec3 getNumSubdivisions() const;
 
-    /**
+	/**
 	*   Set every voxel that is not EMPTY as FREE.
 	*/
-    void homogenize();
+	void homogenize();
 
-    /**
+	/**
 	*   Check if a voxel is occupied.
 	*   @pre x in range [-1, size.x].
 	*   @pre y in range [-1, size.y].
@@ -242,27 +243,27 @@ public:
 	*   @param[in] z Voxel z coord.
 	*   @return True if the voxel is occupied, false if not.
 	*/
-    bool isOccupied(int x, int y, int z) const;
+	bool isOccupied(int x, int y, int z) const;
 
-    /**
-    *   Check if a voxel is empty.
-    *   @pre x in range [-1, size.x]
-    *   @pre y in range [-1, size.y]
-    *   @pre z in range [-1, size.z]
-    *   @param[in] x Voxel x coord
-    *   @param[in] y Voxel y coord
-    *   @param[in] z Voxel z coord
-    *   @return True if the voxel is empty, false if not
-    */
-    bool isEmpty(int x, int y, int z) const;
+	/**
+	*   Check if a voxel is empty.
+	*   @pre x in range [-1, size.x]
+	*   @pre y in range [-1, size.y]
+	*   @pre z in range [-1, size.z]
+	*   @param[in] x Voxel x coord
+	*   @param[in] y Voxel y coord
+	*   @param[in] z Voxel z coord
+	*   @return True if the voxel is empty, false if not
+	*/
+	bool isEmpty(int x, int y, int z) const;
 
-    /**
-    *   Space size in bytes.
-    *   @return size.x * size.y * size.z
-    */
-    size_t length() const;
+	/**
+	*   Space size in bytes.
+	*   @return size.x * size.y * size.z
+	*/
+	size_t length() const;
 
-    /**
+	/**
 	*   Set voxel at position [x, y, z].
 	*   @pre x in range [-1, size.x].
 	*   @pre y in range [-1, size.y].
@@ -272,6 +273,6 @@ public:
 	*   @param[in] z Voxel z coord.
 	*   @param[in] i Voxel new color index.
 	*/
-    void set(int x, int y, int z, uint8_t i);
+	void set(int x, int y, int z, uint8_t i);
 };
 

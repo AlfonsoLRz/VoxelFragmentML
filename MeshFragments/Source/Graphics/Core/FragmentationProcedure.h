@@ -14,7 +14,8 @@ struct FragmentationProcedure
 	ivec2				_iterationInterval = ivec2(15, 5);
 	std::string			_folder = "E:/obj/";
 	std::string			_destinationFolder = "E:/Dataset/";
-	std::string			_startVessel = "BA098_2";
+	std::string			_onlineFolder = "G:/Mi unidad/Datasets/Vasijas/";
+	std::string			_startVessel = "AT007";
 	std::string			_saveExtension = ".stl";
 	bool				_saveScreenshots = false;
 	std::string			_searchExtension = ".obj";
@@ -28,7 +29,7 @@ struct FragmentationProcedure
 		glm::uint	_occupiedVoxels;
 		float		_percentage;
 		glm::uint	_voxels;
-		glm::uint16 _voxelizationSize;
+		glm::ivec3	_voxelizationSize;
 
 		FragmentMetadata() : _id(0), _vesselName(""), _occupiedVoxels(0), _percentage(0.0f), _voxels(0), _voxelizationSize(0), _numFaces(0), _numVertices(0) {}
 	};

@@ -63,12 +63,9 @@ CADModel::~CADModel()
 {
 }
 
-void CADModel::endInsertionBatch(bool releaseMemory, bool buildVao, int targetFaces)
+void CADModel::endInsertionBatch(bool releaseMemory, bool buildVao)
 {
 	ModelComponent* modelComponent = _modelComp[0];
-
-	if (targetFaces > 0 and targetFaces < this->getNumFaces())
-		this->simplify(targetFaces);
 
 	if (buildVao)
 	{
@@ -312,72 +309,7 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 
 bool CADModel::save(const std::string& filename)
 {
-	aiScene scene;
-	scene.mRootNode = new aiNode();
-
-	scene.mMaterials = new aiMaterial * [1];
-	scene.mMaterials[0] = nullptr;
-	scene.mNumMaterials = 1;
-
-	scene.mMaterials[0] = new aiMaterial();
-
-	scene.mMeshes = new aiMesh * [1];
-	scene.mMeshes[0] = nullptr;
-	scene.mNumMeshes = 1;
-
-	scene.mMeshes[0] = new aiMesh();
-	scene.mMeshes[0]->mMaterialIndex = 0;
-
-	scene.mRootNode->mMeshes = new unsigned int[1];
-	scene.mRootNode->mMeshes[0] = 0;
-	scene.mRootNode->mNumMeshes = 1;
-
-	auto pMesh = scene.mMeshes[0];
-
-	// Retrieving info from the model
-	glm::uint geometrySize = 0;
-	std::vector<glm::vec3> vertices;
-	std::vector<ivec3> faces;
-
-	for (ModelComponent* modelComponent : _modelComp)
-	{
-		for (VertexGPUData& vertex : modelComponent->_geometry)
-			vertices.push_back(vertex._position);
-
-		for (FaceGPUData& face : modelComponent->_topology)
-			faces.push_back(ivec3(face._vertices.x + geometrySize, face._vertices.y + geometrySize, face._vertices.z + geometrySize));
-
-		geometrySize += modelComponent->_geometry.size();
-	}
-
-	// Vertex generation
-	const auto& assimpVertices = vertices;
-
-	pMesh->mVertices = new aiVector3D[assimpVertices.size()];
-	pMesh->mNumVertices = assimpVertices.size();
-
-	int j = 0;
-	for (auto itr = assimpVertices.begin(); itr != assimpVertices.end(); ++itr)
-	{
-		pMesh->mVertices[itr - assimpVertices.begin()] = aiVector3D(assimpVertices[j].x, assimpVertices[j].y, assimpVertices[j].z);
-		++j;
-	}
-
-	// Index generation
-	pMesh->mFaces = new aiFace[faces.size()];
-	pMesh->mNumFaces = static_cast<unsigned>(faces.size());
-
-	for (size_t i = 0; i < faces.size(); i++)
-	{
-		aiFace& face = pMesh->mFaces[i];
-		face.mIndices = new unsigned int[3];
-		face.mNumIndices = 3;
-		face.mIndices[0] = faces[i].x;
-		face.mIndices[1] = faces[i].y;
-		face.mIndices[2] = faces[i].z;
-	}
-
-	return _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
+	return this->saveAssimp(filename);
 }
 
 void CADModel::simplify(unsigned numFaces, bool cgal, bool verbose)
@@ -784,6 +716,88 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vecto
 			face._vertices[i] = newMapping[mapping[face._vertices[i]]];
 		}
 	}
+}
+
+bool CADModel::saveAssimp(const std::string& filename)
+{
+	aiScene* scene = new aiScene;
+	scene->mRootNode = new aiNode();
+
+	scene->mMaterials = new aiMaterial * [1];
+	scene->mMaterials[0] = nullptr;
+	scene->mNumMaterials = 1;
+
+	scene->mMaterials[0] = new aiMaterial();
+
+	scene->mMeshes = new aiMesh * [1];
+	scene->mMeshes[0] = nullptr;
+	scene->mNumMeshes = 1;
+
+	scene->mMeshes[0] = new aiMesh();
+	scene->mMeshes[0]->mMaterialIndex = 0;
+
+	scene->mRootNode->mMeshes = new unsigned int[1];
+	scene->mRootNode->mMeshes[0] = 0;
+	scene->mRootNode->mNumMeshes = 1;
+
+	auto pMesh = scene->mMeshes[0];
+
+	// Retrieving info from the model
+	glm::uint geometrySize = 0;
+	std::vector<glm::vec3> vertices;
+	std::vector<ivec3> faces;
+
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		for (VertexGPUData& vertex : modelComponent->_geometry)
+			vertices.push_back(vertex._position);
+
+		for (FaceGPUData& face : modelComponent->_topology)
+			faces.push_back(ivec3(face._vertices.x + geometrySize, face._vertices.y + geometrySize, face._vertices.z + geometrySize));
+
+		geometrySize += modelComponent->_geometry.size();
+	}
+
+	// Vertex generation
+	const auto& assimpVertices = vertices;
+
+	pMesh->mVertices = new aiVector3D[assimpVertices.size()];
+	pMesh->mNumVertices = assimpVertices.size();
+
+	int j = 0;
+	for (auto itr = assimpVertices.begin(); itr != assimpVertices.end(); ++itr)
+	{
+		pMesh->mVertices[itr - assimpVertices.begin()] = aiVector3D(assimpVertices[j].x, assimpVertices[j].y, assimpVertices[j].z);
+		++j;
+	}
+
+	// Index generation
+	pMesh->mFaces = new aiFace[faces.size()];
+	pMesh->mNumFaces = static_cast<unsigned>(faces.size());
+
+	for (size_t i = 0; i < faces.size(); i++)
+	{
+		aiFace& face = pMesh->mFaces[i];
+		face.mIndices = new unsigned int[3];
+		face.mNumIndices = 3;
+		face.mIndices[0] = faces[i].x;
+		face.mIndices[1] = faces[i].y;
+		face.mIndices[2] = faces[i].z;
+	}
+
+	// Out of main thread
+	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename);
+	writeModel.detach();
+
+	return true;
+	//return _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
+}
+
+void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename)
+{
+	Assimp::Exporter exporter;
+	exporter.Export(scene, "stl", filename);
+	delete scene;
 }
 
 bool CADModel::writeBinary(const std::string& path)

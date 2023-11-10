@@ -44,7 +44,7 @@
 /**
 *	@brief Scene composed of CAD models for the manuscript of this work.
 */
-class CADScene: public SSAOScene
+class CADScene : public SSAOScene
 {
 protected:
 	const static std::string SCENE_ROOT_FOLDER;				//!< 
@@ -58,17 +58,17 @@ protected:
 	const static std::string VESSEL_PATH;					//!< Location of the first mesh in the file system
 
 protected:
-	AABBSet*				_aabbRenderer;					//!< Buffer of voxels
-	DrawLines*				_fragmentBoundaries;			//!<
+	AABBSet* _aabbRenderer;					//!< Buffer of voxels
+	DrawLines* _fragmentBoundaries;			//!<
 	FractureParameters		_fractParameters;				//!< 
 	std::vector<Model3D*>	_fractureMeshes;				//!<
 	std::vector<Material*>	_fragmentMaterials;				//!< Material for each fragment, built with marching cubes
 	FragmentMetadataBuffer	_fragmentMetadata;				//!< Metadata of the current fragmentation procedure
 	std::vector<Texture*>	_fragmentTextures;				//!< Texture for each fragment, built with marching cubes
-	CADModel*				_mesh;							//!< Jar mesh
-	RegularGrid*			_meshGrid;						//!< Mesh regular grid
-	PointCloud3D*			_pointCloud;					//!<
-	DrawPointCloud*			_pointCloudRenderer;			//!<
+	CADModel* _mesh;							//!< Jar mesh
+	RegularGrid* _meshGrid;						//!< Mesh regular grid
+	PointCloud3D* _pointCloud;					//!<
+	DrawPointCloud* _pointCloudRenderer;			//!<
 
 protected:
 	/**
@@ -77,14 +77,19 @@ protected:
 	void eraseFragmentContent();
 
 	/**
-	*	@brief 
+	*	@brief
 	*/
 	void exportMetadata(const std::string& filename, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize);
 
 	/**
-	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm. 
+	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm.
 	*/
 	std::string fractureModel(FractureParameters& fractParameters);
+
+	/**
+	*	@brief Saves the whole folder into another one.
+	*/
+	void launchCopyingProcess(const std::string& folder, const std::string& destinationFolder);
 
 	/**
 	*	@brief Loads a camera with code-defined values.
@@ -212,7 +217,7 @@ public:
 	std::string fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters);
 
 	/**
-	*	@brief Fractures voxelized model. 
+	*	@brief Fractures voxelized model.
 	*/
 	std::string fractureGrid(const std::string& path, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters);
 
