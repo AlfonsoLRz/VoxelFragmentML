@@ -12,13 +12,13 @@ struct FragmentationProcedure
 	FractureParameters	_fractureParameters;
 	ivec2				_fragmentInterval = ivec2(2, 12);
 	ivec2				_iterationInterval = ivec2(15, 5);
-	std::string			_folder = "E:/obj/";
-	std::string			_destinationFolder = "E:/Dataset/";
+	std::string			_folder = "E:/stlmodels/";
+	std::string			_destinationFolder = "E:/Fragmentos/";
 	std::string			_onlineFolder = "G:/Mi unidad/Datasets/Vasijas/";
-	std::string			_startVessel = "AT007";
+	std::string			_startVessel = "";
 	std::string			_saveExtension = ".stl";
 	bool				_saveScreenshots = false;
-	std::string			_searchExtension = ".obj";
+	std::string			_searchExtension = ".stl";
 
 	struct FragmentMetadata
 	{

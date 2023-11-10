@@ -184,7 +184,7 @@ void RegularGrid::exportGrid(const AABB& aabb)
 	vox.PrintStats();
 }
 
-float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples)
+void RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples)
 {
 #if !TETRAVOXELIZER
 	ComputeShader* boundaryShader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_REGULAR_GRID);
@@ -250,12 +250,10 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 	GLuint buffers[] = { noiseSSBO };
 	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 #else
-	std::vector<unsigned char> voxelModel(_numDivs.x * _numDivs.y * _numDivs.z);
-
 	Tetravoxelizer tetravoxelizer;
 	tetravoxelizer.initialize(_numDivs);
 	tetravoxelizer.initializeModel(modelComponent->_geometry, modelComponent->_topology, _aabb);
-	tetravoxelizer.compute(voxelModel);
+	tetravoxelizer.compute(_voxelOpenGL);
 	tetravoxelizer.deleteModelResources();
 	tetravoxelizer.deleteResources();
 
@@ -267,7 +265,7 @@ float RegularGrid::fill(Model3D::ModelComponent* modelComponent, bool fill, int 
 			for (int z = 0; z < _numDivs.z; ++z)
 			{
 				positionIndex = y * _numDivs.x * _numDivs.z + z * _numDivs.x + x;
-				if (voxelModel[positionIndex] == 1)
+				if (_voxelOpenGL[positionIndex] == 1)
 				{
 					this->set(x, y, z, VOXEL_FREE);
 				}
@@ -629,6 +627,7 @@ void RegularGrid::cleanGrid()
 	std::fill(_grid.begin(), _grid.end(), CellGrid());
 	ComputeShader::updateReadBuffer(_ssbo, _grid.data(), _grid.size(), GL_DYNAMIC_DRAW);
 	ComputeShader::updateReadBuffer(_countSSBO, _zeroCounter.data(), _zeroCounter.size(), GL_DYNAMIC_DRAW);
+	_voxelOpenGL = std::vector<unsigned char>(_numDivs.x * _numDivs.y * _numDivs.z, 0);
 }
 
 size_t RegularGrid::countValues(std::unordered_map<uint16_t, unsigned>& values)

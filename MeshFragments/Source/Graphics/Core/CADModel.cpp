@@ -145,6 +145,9 @@ bool CADModel::load()
 			}
 		}
 
+		std::cout << "Number of vertices: " << this->getNumVertices() << std::endl;
+		std::cout << "Number of faces: " << this->getNumFaces() << std::endl;
+
 		this->writeBinary(binaryFile);
 	}
 

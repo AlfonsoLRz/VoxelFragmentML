@@ -386,7 +386,7 @@ void CADScene::loadModels()
 void CADScene::loadModel(const std::string& path)
 {
 	delete _mesh;
-	_mesh = new CADModel(path, true, true, true);
+	_mesh = new CADModel(path, true, true, false);
 	_mesh->load();
 	_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
 }

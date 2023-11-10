@@ -130,7 +130,7 @@ public:
 	/**
 	*	@brief
 	*/
-	float fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples);
+	void fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples);
 
 	/**
 	*	@brief
