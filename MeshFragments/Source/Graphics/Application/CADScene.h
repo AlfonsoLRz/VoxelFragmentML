@@ -1,18 +1,18 @@
 #pragma once
 
-#include "DataStructures/Octree.h"
 #include "DataStructures/RegularGrid.h"
 #include "Fracturer/FloodFracturer.h"
 #include "Fracturer/NaiveFracturer.h"
 #include "Fracturer/Seeder.h"
-#include "Geometry/3D/PointCloud3D.h"
 #include "Graphics/Application/SSAOScene.h"
-#include "Graphics/Core/AABBSet.h"
-#include "Graphics/Core/DrawLines.h"
-#include "Graphics/Core/DrawPointCloud.h"
-#include "Graphics/Core/FractureParameters.h"
-#include "Graphics/Core/FragmentationProcedure.h"
-#include "Utilities/FileManagement.h"
+
+class AABBSet;
+class DrawLines;
+class DrawPointCloud;
+class FractureParameters;
+class FragmentationProcedure;
+class PointCloud3D;
+
 
 #define NEW_LIGHT "!"
 
@@ -60,11 +60,11 @@ protected:
 protected:
 	AABBSet* _aabbRenderer;					//!< Buffer of voxels
 	DrawLines* _fragmentBoundaries;			//!<
-	FractureParameters		_fractParameters;				//!< 
-	std::vector<Model3D*>	_fractureMeshes;				//!<
-	std::vector<Material*>	_fragmentMaterials;				//!< Material for each fragment, built with marching cubes
-	FragmentMetadataBuffer	_fragmentMetadata;				//!< Metadata of the current fragmentation procedure
-	std::vector<Texture*>	_fragmentTextures;				//!< Texture for each fragment, built with marching cubes
+	FractureParameters			_fractParameters;				//!< 
+	std::vector<Model3D*>		_fractureMeshes;				//!<
+	std::vector<Material*>		_fragmentMaterials;				//!< Material for each fragment, built with marching cubes
+	FragmentMetadataBuffer		_fragmentMetadata;				//!< Metadata of the current fragmentation procedure
+	std::vector<Texture*>		_fragmentTextures;				//!< Texture for each fragment, built with marching cubes
 	CADModel* _mesh;							//!< Jar mesh
 	RegularGrid* _meshGrid;						//!< Mesh regular grid
 	PointCloud3D* _pointCloud;					//!<

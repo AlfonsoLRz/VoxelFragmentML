@@ -3,13 +3,24 @@
 
 #include "DataStructures/FragmentGraph.h"
 #include "DataStructures/WingedTriangleMesh.h"
+#include "Geometry/3D/PointCloud3D.h"
 #include "Graphics/Application/TextureList.h"
+#include "Graphics/Core/AABBSet.h"
 #include "Graphics/Core/CADModel.h"
+#include "Graphics/Core/DrawLines.h"
+#include "Graphics/Core/DrawPointCloud.h"
+#include "Graphics/Core/FractureParameters.h"
+#include "Graphics/Core/FragmentationProcedure.h"
 #include "Graphics/Core/Light.h"
 #include "Graphics/Core/OpenGLUtilities.h"
 #include "Graphics/Core/Voronoi.h"
 #include "progressbar.hpp"
 #include "Utilities/ChronoUtilities.h"
+#include "Utilities/FileManagement.h"
+
+
+#include "Graphics/Application/SSAOScene.h"
+
 
 /// Initialization of static attributes
 const std::string CADScene::SCENE_ROOT_FOLDER = "Assets/Scene/Basement/";
@@ -86,7 +97,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		do
 		{
 			fileList.erase(fileList.begin());
-		} while (fileList[0].find(fractureProcedure._startVessel + "/") == std::string::npos);
+		} while (!fileList.empty() && fileList[0].find(fractureProcedure._startVessel) == std::string::npos);
 	}
 
 	for (const std::string& path : fileList)
