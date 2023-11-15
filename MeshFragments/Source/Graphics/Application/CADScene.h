@@ -65,12 +65,18 @@ protected:
 	std::vector<Material*>		_fragmentMaterials;				//!< Material for each fragment, built with marching cubes
 	FragmentMetadataBuffer		_fragmentMetadata;				//!< Metadata of the current fragmentation procedure
 	std::vector<Texture*>		_fragmentTextures;				//!< Texture for each fragment, built with marching cubes
+	bool _generateDataset;
 	CADModel* _mesh;							//!< Jar mesh
 	RegularGrid* _meshGrid;						//!< Mesh regular grid
 	PointCloud3D* _pointCloud;					//!<
 	DrawPointCloud* _pointCloudRenderer;			//!<
 
 protected:
+	/**
+	*	@brief Allocates memory for the scene.
+	*/
+	void allocateMemoryDataset(FragmentationProcedure& fractureProcedure);
+
 	/**
 	*	@brief Erase content from a previous fragmentation process.
 	*/

@@ -36,23 +36,23 @@ void main()
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= numFaces * numSamples) return;
 
-	uint sampleIdx		= index % numSamples;
-	uint faceIdx		= uint(floor(index / numSamples));
-	vec3 v1				= vertex[face[faceIdx].vertices.x].position, v2 = vertex[face[faceIdx].vertices.y].position, v3 = vertex[face[faceIdx].vertices.z].position;
-	vec3 u				= v2 - v1, v = v3 - v1;
-	vec2 randomFactors	= vec2(noise[sampleIdx * 2 + 0], noise[sampleIdx * 2 + 1]);
+	//uint sampleIdx		= index % numSamples;
+	//uint faceIdx		= uint(floor(index / numSamples));
+	//vec3 v1				= vertex[face[faceIdx].vertices.x].position, v2 = vertex[face[faceIdx].vertices.y].position, v3 = vertex[face[faceIdx].vertices.z].position;
+	//vec3 u				= v2 - v1, v = v3 - v1;
+	//vec2 randomFactors	= vec2(noise[sampleIdx * 2 + 0], noise[sampleIdx * 2 + 1]);
 
-	if (randomFactors.x + randomFactors.y >= 1.0f)
-	{
-		randomFactors = 1.0f - randomFactors;
-	}
+	//if (randomFactors.x + randomFactors.y >= 1.0f)
+	//{
+	//	randomFactors = 1.0f - randomFactors;
+	//}
 
-	vec3 point		= v1 + u * randomFactors.x + v * randomFactors.y;
-	uvec3 gridIndex = getPositionIndex(point);
+	//vec3 point		= v1 + u * randomFactors.x + v * randomFactors.y;
+	//uvec3 gridIndex = getPositionIndex(point);
 
-	if (grid[getPositionIndex(gridIndex)].value > VOXEL_FREE)
-	{
-		atomicAdd(count[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], 1);
-		atomicAdd(boundary[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], uint(grid[getPositionIndex(gridIndex)].boundary > uint16_t(0)));
-	}
+	//if (grid[getPositionIndex(gridIndex)].value > VOXEL_FREE)
+	//{
+	//	atomicAdd(count[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], 1);
+	//	atomicAdd(boundary[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], uint(grid[getPositionIndex(gridIndex)].boundary > uint16_t(0)));
+	//}
 }

@@ -91,12 +91,12 @@ protected:
 	/**
 	*	@brief Saves current model using assimp.
 	*/
-	bool saveAssimp(const std::string& filename);
+	bool saveAssimp(const std::string& filename, bool compress = true);
 
 	/**
 	*	@brief Saves current model using assimp.
 	*/
-	void threadedSaveAssimp(aiScene* scene, const std::string& filename);
+	void threadedSaveAssimp(aiScene* scene, const std::string& filename, bool zip);
 
 	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
@@ -188,7 +188,7 @@ public:
 	/**
 	*	@brief Saves the model using assimp.
 	*/
-	bool save(const std::string& filename);
+	bool save(const std::string& filename, bool compress = true);
 
 	/**
 	*	@brief

@@ -98,13 +98,20 @@ std::string CADModel::getShortName() const
 void CADModel::insert(vec4* vertices, unsigned numVertices, uvec4* faces, unsigned numFaces, bool updateIndices)
 {
 	ModelComponent* modelComponent = _modelComp[0];
-	unsigned baseIndex = modelComponent->_geometry.size();
 
+	unsigned baseGeometryIndex = modelComponent->_geometry.size();
+	modelComponent->_geometry.resize(baseGeometryIndex + numVertices);
+#pragma omp parallel for
 	for (int idx = 0; idx < numVertices; ++idx)
-		modelComponent->_geometry.push_back(Model3D::VertexGPUData{ vec3(vertices[idx].x, vertices[idx].y, vertices[idx].z) });
+		modelComponent->_geometry[baseGeometryIndex + idx] = Model3D::VertexGPUData{ vec3(vertices[idx].x, vertices[idx].y, vertices[idx].z) };
 
+	unsigned baseTopologyIndex = modelComponent->_topology.size();
+	modelComponent->_topology.resize(modelComponent->_topology.size() + numFaces);
+#pragma omp parallel for
 	for (int idx = 0; idx < numFaces; ++idx)
-		modelComponent->_topology.push_back(Model3D::FaceGPUData{ uvec3(faces[idx].x + baseIndex, faces[idx].y + baseIndex, faces[idx].z + baseIndex) });
+		modelComponent->_topology[baseTopologyIndex + idx] =
+		Model3D::FaceGPUData{
+			uvec3(faces[idx].x + baseGeometryIndex, faces[idx].y + baseGeometryIndex, faces[idx].z + baseGeometryIndex) };
 }
 
 bool CADModel::load()
@@ -310,9 +317,9 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 	return pointCloud;
 }
 
-bool CADModel::save(const std::string& filename)
+bool CADModel::save(const std::string& filename, bool compress)
 {
-	return this->saveAssimp(filename);
+	return this->saveAssimp(filename, compress);
 }
 
 void CADModel::simplify(unsigned numFaces, bool cgal, bool verbose)
@@ -345,29 +352,37 @@ void CADModel::simplify(unsigned numFaces, bool cgal, bool verbose)
 			}
 			else
 			{
-				Simplify::vertices.clear();
-				Simplify::triangles.clear();
+				Simplify::vertices.resize(modelComponent->_geometry.size());
+				Simplify::triangles.resize(modelComponent->_topology.size());
 
-				for (const Model3D::VertexGPUData& vertex : modelComponent->_geometry)
-					Simplify::vertices.push_back(Simplify::Vertex{ vec3f(vertex._position.x, vertex._position.y, vertex._position.z) });
+#pragma omp parallel for
+				for (int i = 0; i < modelComponent->_geometry.size(); ++i)
+					Simplify::vertices[i] = Simplify::Vertex{
+						vec3f(modelComponent->_geometry[i]._position.x, modelComponent->_geometry[i]._position.y, modelComponent->_geometry[i]._position.z)
+				};
 
-				for (const Model3D::FaceGPUData& face : modelComponent->_topology)
+#pragma omp parallel for
+				for (int i = 0; i < modelComponent->_topology.size(); ++i)
 				{
-					Simplify::triangles.push_back(Simplify::Triangle());
-					for (int i = 0; i < 3; ++i)
-						Simplify::triangles[Simplify::triangles.size() - 1].v[i] = face._vertices[i];
+					Simplify::triangles[i] = Simplify::Triangle();
+					for (int j = 0; j < 3; ++j)
+						Simplify::triangles[i].v[j] = modelComponent->_topology[i]._vertices[j];
 				}
 
 				Simplify::simplify_mesh(numFaces, 5.0);
 
-				modelComponent->_geometry.clear();
-				modelComponent->_topology.clear();
+				modelComponent->_geometry.resize(Simplify::vertices.size());
+				modelComponent->_topology.resize(Simplify::triangles.size());
 
-				for (const Simplify::Vertex& vertex : Simplify::vertices)
-					modelComponent->_geometry.push_back(Model3D::VertexGPUData{ vec3(vertex.p.x, vertex.p.y, vertex.p.z) });
+#pragma omp parallel for
+				for (int i = 0; i < Simplify::vertices.size(); ++i)
+					modelComponent->_geometry[i]._position = vec3(Simplify::vertices[i].p.x, Simplify::vertices[i].p.y, Simplify::vertices[i].p.z);
 
-				for (const Simplify::Triangle& triangle : Simplify::triangles)
-					modelComponent->_topology.push_back(Model3D::FaceGPUData{ uvec3(triangle.v[0], triangle.v[1], triangle.v[2]) });
+#pragma omp parallel for
+				for (int i = 0; i < Simplify::triangles.size(); ++i)
+				{
+					modelComponent->_topology[i]._vertices = uvec3(Simplify::triangles[i].v[0], Simplify::triangles[i].v[1], Simplify::triangles[i].v[2]);
+				}
 			}
 		}
 
@@ -721,7 +736,7 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vecto
 	}
 }
 
-bool CADModel::saveAssimp(const std::string& filename)
+bool CADModel::saveAssimp(const std::string& filename, bool compress)
 {
 	aiScene* scene = new aiScene;
 	scene->mRootNode = new aiNode();
@@ -789,18 +804,41 @@ bool CADModel::saveAssimp(const std::string& filename)
 	}
 
 	// Out of main thread
-	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename);
+	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename, compress);
 	writeModel.detach();
 
 	return true;
 	//return _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
 }
 
-void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename)
+void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename, bool zip)
 {
+	const std::string file = filename.substr(filename.find_last_of('/') + 1);
 	Assimp::Exporter exporter;
 	exporter.Export(scene, "stl", filename);
 	delete scene;
+
+	// Zip file
+	if (zip)
+	{
+		std::string directory = filename.substr(0, filename.find_last_of('/'));
+		std::string changeDirectory = "cd " + directory;
+		std::string changeStorageUnit = filename.substr(0, 2);
+		std::string compress = "tar -cf " + file + ".zip " + file + " >nul 2>nul";
+		std::string remove = changeDirectory + " && " + changeStorageUnit + " && " + "del " + file;
+		std::string command = changeDirectory + " && " + changeStorageUnit + " && " + compress;
+
+		do
+		{
+			system(command.c_str());
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		} 
+		while (std::filesystem::file_size(directory + "/" + file + ".zip") <= 1024);
+
+		std::cout << file << " " << std::filesystem::file_size(directory + "/" + file + ".zip") << std::endl;
+
+		system(remove.c_str());
+	}
 }
 
 bool CADModel::writeBinary(const std::string& path)

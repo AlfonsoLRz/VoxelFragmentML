@@ -1,12 +1,13 @@
 #pragma once
 
-#include "Geometry/3D/AABB.h"
 #include "Graphics/Core/FractureParameters.h"
 #include "Graphics/Core/FragmentationProcedure.h"
-#include "Graphics/Core/Image.h"
-#include "Graphics/Core/Tetravoxelizer.h"
-#include "Graphics/Core/Texture.h"
-#include "Graphics/Core/Voronoi.h"
+#include "Graphics/Core/Model3D.h"
+
+class AABB;
+class MarchingCubes;
+class Texture;
+class Voronoi;
 
 /**
 *	@file RegularGrid.h
@@ -14,11 +15,8 @@
 *	@date 09/02/2020
 */
 
-class MarchingCubes;
-
 #define VOXEL_EMPTY 0
 #define VOXEL_FREE 1
-#define TETRAVOXELIZER true
 
 /**
 *	@brief Data structure which helps us to locate models on a terrain.
@@ -38,16 +36,24 @@ protected:
 	const unsigned MASK_POSITION = 15;
 
 protected:
-	std::vector<CellGrid>	_grid;										//!< Color index of regular grid
+	std::vector<CellGrid>		_grid;					//!< Color index of regular grid
 
-	AABB						_aabb;									//!< Bounding box of the scene
-	vec3						_cellSize;								//!< Size of each grid cell
-	GLuint						_countSSBO;								//!< GPU buffer to save the number of occupied voxels per cell		
-	MarchingCubes* _marchingCubes;							//!< Marching cubes algorithm
-	uvec3						_numDivs;								//!< Number of subdivisions of space between mininum and maximum point
-	GLuint						_ssbo;									//!< GPU buffer to save the grid
-	std::vector<unsigned char>	_voxelOpenGL;							//!< CPU buffer to save the number of occupied voxels per cell
-	std::vector<unsigned>		_zeroCounter;							//!< CPU buffer to save the number of occupied voxels per cell		
+	AABB						_aabb;					//!< Bounding box of the scene
+	vec3						_cellSize;				//!< Size of each grid cell
+	GLuint						_countSSBO;				//!< GPU buffer to save the number of occupied voxels per cell		
+	MarchingCubes*				_marchingCubes;			//!< Marching cubes algorithm
+	uvec3						_numDivs;				//!< Number of subdivisions of space between mininum and maximum point
+	GLuint						_ssbo;					//!< GPU buffer to save the grid
+	std::vector<unsigned char>	_voxelOpenGL;			//!< CPU buffer to save the number of occupied voxels per cell	
+
+	// Compute shaders
+	ComputeShader* _assignVertexClusterShader;			//!< Shader to assign a cluster to each vertex
+	ComputeShader* _countQuadrantOccupancyShader;		//!< Shader to count the number of occupied voxels per quadrant
+	ComputeShader* _countVoxelTriangleShader;
+	ComputeShader* _erodeShader;
+	ComputeShader* _pickVoxelTriangleShader;
+	ComputeShader* _resetCounterShader;					//!< Shader to reset the counter
+	ComputeShader* _undoMaskShader;
 
 protected:
 	/**
@@ -66,6 +72,11 @@ protected:
 	size_t countValues(std::unordered_map<uint16_t, unsigned>& values);
 
 	/**
+	*	@brief Retrieves compute shaders from the shader list.
+	*/
+	void getComputeShaders();
+
+	/**
 	*	@return Index of grid cell to be filled.
 	*/
 	uvec3 getPositionIndex(const vec3& position);
@@ -74,6 +85,11 @@ protected:
 	*	@return Index in grid array of a non-real position.
 	*/
 	unsigned getPositionIndex(int x, int y, int z) const;
+
+	/**
+	*	@brief Resets buffer to a given value.
+	*/
+	void resetBuffer(GLuint ssbo, unsigned value, unsigned count);
 
 	/**
 	*	@return
@@ -95,7 +111,7 @@ public:
 	/**
 	*	@brief Constructor of an abstract regular grid with no notion of space size.
 	*/
-	RegularGrid(uvec3 subdivisions);
+	RegularGrid(const ivec3& subdivisions);
 
 	/**
 	*	@brief Invalid copy constructor.
@@ -125,12 +141,12 @@ public:
 	/**
 	*	@brief Exports fragments into several models in a PLY file.
 	*/
-	void exportGrid(const AABB& aabb);
+	void exportGrid();
 
 	/**
 	*	@brief
 	*/
-	void fill(Model3D::ModelComponent* modelComponent, bool fill, int numSamples);
+	void fill(Model3D::ModelComponent* modelComponent);
 
 	/**
 	*	@brief
@@ -173,9 +189,19 @@ public:
 	void queryCluster(std::vector<vec4>* points, std::vector<float>& clusterIdx);
 
 	/**
+	*	@brief Resets regular grid to avoid filling it again.
+	*/
+	void resetFilling();
+
+	/**
+	*   @brief Rebuilds the marching cubes instance.
+	*/
+	void resetMarchingCubes();
+
+	/**
 	*	@brief Modifies the bounding box of the scenario while maintaining the grid.
 	*/
-	void setAABB(const AABB& aabb, const ivec3& gridDims, bool reset = false);
+	void setAABB(const AABB& aabb, const ivec3& gridDims);
 
 	/**
 	*	@return Compute shader's buffer.

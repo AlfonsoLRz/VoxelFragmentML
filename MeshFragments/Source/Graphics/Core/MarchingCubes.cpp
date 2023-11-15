@@ -307,7 +307,6 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_steps = glm::ceil(vec3(_numDivs) / vec3(_gridSubdivisions));
 	_numThreads = _steps.x * _steps.y * _steps.z;
 	_numGroups = ComputeShader::getNumGroups(_numThreads);
-	//unsigned maxNumPoints = regularGrid.numOccupiedVoxels() * _maxTriangles * 3;
 	unsigned maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3;
 	_indices = new unsigned[maxNumPoints];
 	std::iota(_indices, _indices + maxNumPoints, 0);
@@ -484,19 +483,12 @@ unsigned MarchingCubes::fuseSimilarVertices(unsigned numVertices, const mat4& mo
 
 	this->resetCounter(_numVerticesSSBO);
 
-	//unsigned* data = ComputeShader::readData(_indicesBufferID_1, unsigned());
-	//std::vector<unsigned> buffer = std::vector<unsigned>(data, data + numVertices);
-
 	_fuseSimilarVerticesShader_01->bindBuffers(std::vector<GLuint> { _indicesBufferID_2, _indicesBufferID_1, _verticesSSBO, _vertexSSBO, _numVerticesSSBO });
 	_fuseSimilarVerticesShader_01->use();
 	_fuseSimilarVerticesShader_01->setUniform("defaultValue", defaultValue);
 	_fuseSimilarVerticesShader_01->setUniform("modelMatrix", modelMatrix);
 	_fuseSimilarVerticesShader_01->setUniform("numPoints", numVertices);
 	_fuseSimilarVerticesShader_01->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	//unsigned nv = *ComputeShader::readData(_numVerticesSSBO, unsigned());
-	//data = ComputeShader::readData(_indicesBufferID_1, unsigned());
-	//buffer = std::vector<unsigned>(data, data + numVertices);
 
 	unsigned nonUpdatedVertices = 1;
 
@@ -513,16 +505,13 @@ unsigned MarchingCubes::fuseSimilarVertices(unsigned numVertices, const mat4& mo
 		nonUpdatedVertices = *ComputeShader::readData(_nonUpdatedVerticesSSBO, unsigned());
 	}
 
-	//data = ComputeShader::readData(_indicesBufferID_1, unsigned());
-	//buffer = std::vector<unsigned>(data, data + numVertices);
-
 	return *ComputeShader::readData(_numVerticesSSBO, unsigned());
 }
 
 void MarchingCubes::resetCounter(GLuint ssbo)
 {
 	unsigned zero = 0;
-	ComputeShader::updateReadBuffer(ssbo, &zero, 1, GL_DYNAMIC_DRAW);
+	ComputeShader::updateReadBufferSubset(ssbo, &zero, 0, 1);
 }
 
 void MarchingCubes::markBoundaryTriangles(unsigned numFaces)
@@ -531,18 +520,6 @@ void MarchingCubes::markBoundaryTriangles(unsigned numFaces)
 	_markBoundaryTrianglesShader->use();
 	_markBoundaryTrianglesShader->setUniform("numFaces", numFaces);
 	_markBoundaryTrianglesShader->execute(ComputeShader::getNumGroups(numFaces), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	//   uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4());
-	//   std::vector<uvec4> buffer = std::vector<uvec4>(faces, faces + numFaces);
-
-	//   unsigned count = 0;
-	//   for (const uvec4& face : buffer)
-	//   {
-	   //	if (face.w == 1)
-	   //		++count;
-	   //}
-
-	//   std::cout << count << std::endl;
 }
 
 void MarchingCubes::smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations, unsigned boundaryIterations)
@@ -593,7 +570,7 @@ void MarchingCubes::setGrid(RegularGrid& regularGrid)
 			for (int z = 1; z < _numDivs.z - 1; ++z)
 				gridData[x * _numDivs.y * _numDivs.z + y * _numDivs.z + z] = regularGrid.at(x - 1, y - 1, z - 1);
 
-	ComputeShader::updateReadBuffer(_gridSSBO, gridData, _numDivs.x * _numDivs.y * _numDivs.z, GL_STATIC_DRAW);
+	ComputeShader::updateReadBufferSubset(_gridSSBO, gridData, 0, _numDivs.x * _numDivs.y * _numDivs.z);
 	free(gridData);
 }
 
@@ -610,7 +587,7 @@ void MarchingCubes::sortMortonCodes(unsigned numVertices)
 	const int numGroups2Log = ComputeShader::getNumGroups(startThreads);
 	unsigned numThreads = 0, iteration;
 
-	ComputeShader::updateReadBuffer(_indicesBufferID_2, _indices, arraySize);
+	ComputeShader::updateReadBufferSubset(_indicesBufferID_2, _indices, 0, arraySize);
 
 	while (currentBits < numBits)
 	{

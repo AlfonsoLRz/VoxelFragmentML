@@ -14,7 +14,7 @@
 
 // [Static variables initialization]
 
-const GLuint Model3D::RESTART_PRIMITIVE_INDEX	= 0xFFFFFFFF;
+const GLuint Model3D::RESTART_PRIMITIVE_INDEX = 0xFFFFFFFF;
 
 GLuint Model3D::_ssaoKernelTextureID = -1;
 GLuint Model3D::_ssaoNoiseTextureID = -1;
@@ -84,9 +84,9 @@ void Model3D::buildSSAONoiseKernels()
 void Model3D::buildShadowOffsetTexture()
 {
 	auto jitter = []() -> float
-	{
-		return ((float)rand() / RAND_MAX) - 0.5f;
-	};
+		{
+			return ((float)rand() / RAND_MAX) - 0.5f;
+		};
 
 	const int size = 64;
 	const int samplesU = 8, samplesV = 8;
@@ -139,7 +139,7 @@ void Model3D::buildShadowOffsetTexture()
 /// [Public methods]
 
 Model3D::Model3D(const glm::mat4& modelMatrix, unsigned numComponents) :
-	_loaded(false), _modelMatrix(modelMatrix),  _modelComp(numComponents)
+	_loaded(false), _modelMatrix(modelMatrix), _modelComp(numComponents)
 {
 	for (int i = 0; i < numComponents; ++i)
 		_modelComp[i] = new ModelComponent();
@@ -276,14 +276,14 @@ void Model3D::captureTexture(FBOScreenshot* fbo, const std::vector<vec4>& pixels
 
 void Model3D::computeTangents(ModelComponent* modelComp)
 {
-	ComputeShader* shader	= ShaderList::getInstance()->getComputeShader(RendEnum::COMPUTE_TANGENTS_1);
-	const int numVertices	= modelComp->_geometry.size(), numTriangles = modelComp->_topology.size();
-	int numGroups			= ComputeShader::getNumGroups(numTriangles);
+	ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::COMPUTE_TANGENTS_1);
+	const int numVertices = modelComp->_geometry.size(), numTriangles = modelComp->_topology.size();
+	int numGroups = ComputeShader::getNumGroups(numTriangles);
 
 	GLuint geometryBufferID, meshBufferID, outBufferID;
-	geometryBufferID	= ComputeShader::setReadBuffer(modelComp->_geometry);
-	meshBufferID		= ComputeShader::setReadBuffer(modelComp->_topology);
-	outBufferID			= ComputeShader::setWriteBuffer(vec4(), numVertices);
+	geometryBufferID = ComputeShader::setReadBuffer(modelComp->_geometry);
+	meshBufferID = ComputeShader::setReadBuffer(modelComp->_topology);
+	outBufferID = ComputeShader::setWriteBuffer(vec4(), numVertices);
 
 	shader->bindBuffers(std::vector<GLuint> { geometryBufferID, meshBufferID, outBufferID });
 	shader->use();
@@ -298,8 +298,8 @@ void Model3D::computeTangents(ModelComponent* modelComp)
 	shader->setUniform("numVertices", numVertices);
 	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-	VertexGPUData* data		= ComputeShader::readData(geometryBufferID, VertexGPUData());
-	modelComp->_geometry	= std::move(std::vector<VertexGPUData>(data, data + numVertices));
+	VertexGPUData* data = ComputeShader::readData(geometryBufferID, VertexGPUData());
+	modelComp->_geometry = std::move(std::vector<VertexGPUData>(data, data + numVertices));
 
 	glDeleteBuffers(1, &geometryBufferID);
 	glDeleteBuffers(1, &meshBufferID);
@@ -323,7 +323,7 @@ void Model3D::setShaderUniforms(ShaderProgram* shader, const RendEnum::RendShade
 		shader->setUniform("mModelView", matrix[RendEnum::VIEW_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
 		shader->setUniform("mModelViewProj", matrix[RendEnum::VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
 		shader->setUniform("mShadow", matrix[RendEnum::BIAS_VIEW_PROJ_MATRIX] * matrix[RendEnum::MODEL_MATRIX]);
-		
+
 		// ---- Alternative shadow technique
 		shader->setUniform("texOffset", 10);
 		glActiveTexture(GL_TEXTURE0 + 10);
@@ -456,8 +456,7 @@ Model3D::ModelComponent::~ModelComponent()
 {
 	delete _vao;
 
-	if (_geometrySSBO != UINT_MAX) glDeleteBuffers(1, &_geometrySSBO);
-	if (_topologySSBO != UINT_MAX) glDeleteBuffers(1, &_topologySSBO);
+	this->releaseMemory(true, true);
 }
 
 void Model3D::ModelComponent::assignModelCompIDFaces()
@@ -484,27 +483,27 @@ void Model3D::ModelComponent::buildWireframeTopology()
 	std::unordered_map<int, std::unordered_set<int>> includedEdges;				// Already included edges
 
 	auto isEdgeIncluded = [&](int index1, int index2) -> bool
-	{
-		std::unordered_map<int, std::unordered_set<int>>::iterator it;
-
-		if ((it = includedEdges.find(index1)) != includedEdges.end())			// p2, p1 and p1, p2 are considered to be the same edge
 		{
-			if (it->second.find(index2) != it->second.end())					// Already included
-			{
-				return true;
-			}
-		}
+			std::unordered_map<int, std::unordered_set<int>>::iterator it;
 
-		if ((it = includedEdges.find(index2)) != includedEdges.end())
-		{
-			if (it->second.find(index1) != it->second.end())					// Already included
+			if ((it = includedEdges.find(index1)) != includedEdges.end())			// p2, p1 and p1, p2 are considered to be the same edge
 			{
-				return true;
+				if (it->second.find(index2) != it->second.end())					// Already included
+				{
+					return true;
+				}
 			}
-		}
 
-		return false;
-	};
+			if ((it = includedEdges.find(index2)) != includedEdges.end())
+			{
+				if (it->second.find(index1) != it->second.end())					// Already included
+				{
+					return true;
+				}
+			}
+
+			return false;
+		};
 
 	for (unsigned int i = 0; i < _triangleMesh.size(); i += 3)
 	{
@@ -538,7 +537,7 @@ void Model3D::ModelComponent::buildTriangleMeshTopology()
 	int numFaces = static_cast<int>(_topology.size());
 	_triangleMesh.resize(_topology.size() * 3);
 
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (int faceIdx = 0; faceIdx < numFaces; ++faceIdx)
 	{
 		for (int i = 0; i < 3; ++i)
@@ -555,6 +554,10 @@ void Model3D::ModelComponent::releaseMemory(bool geometry, bool topology)
 	std::vector<GLuint>().swap(_pointCloud);
 	std::vector<GLuint>().swap(_wireframe);
 	std::vector<GLuint>().swap(_triangleMesh);
+
+	// SSBOs
+	if (_geometrySSBO != UINT_MAX) glDeleteBuffers(1, &_geometrySSBO);
+	if (_topologySSBO != UINT_MAX) glDeleteBuffers(1, &_topologySSBO);
 }
 
 bool Model3D::ModelComponent::subdivide(float maxArea, std::vector<unsigned>& maskFaces)
@@ -577,7 +580,7 @@ bool Model3D::ModelComponent::subdivide(float maxArea, std::vector<unsigned>& ma
 		}
 
 		return applyChanges;
-	};
+		};
 
 	if (maskFaces.empty())
 	{

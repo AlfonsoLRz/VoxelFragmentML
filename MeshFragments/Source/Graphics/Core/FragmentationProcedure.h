@@ -7,15 +7,16 @@ struct FragmentationProcedure
 {
 	bool				_exportFragments = true;
 	bool				_exportMetadata = true;
+	bool				_compressFiles = true;
 	std::string			_currentDestinationFolder = "";
 
 	FractureParameters	_fractureParameters;
 	ivec2				_fragmentInterval = ivec2(2, 12);
 	ivec2				_iterationInterval = ivec2(15, 5);
 	std::string			_folder = "E:/stlmodels/";
-	std::string			_destinationFolder = "E:/Fragmentos/";
-	std::string			_onlineFolder = "";
-	std::string			_startVessel = "TU_90_7";
+	std::string			_destinationFolder = "E:/Fragmentos_Testing/";
+	std::string			_onlineFolder = "E:/Online_Testing/";
+	std::string			_startVessel = "";
 	std::string			_saveExtension = ".stl";
 	bool				_saveScreenshots = false;
 	std::string			_searchExtension = ".stl";

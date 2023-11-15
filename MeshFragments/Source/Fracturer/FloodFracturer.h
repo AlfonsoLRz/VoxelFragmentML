@@ -5,82 +5,87 @@
 
 namespace fracturer {
 
-    /**
-    *   Volumetric object fracturer using flood algorithm. The main diference
-    *   between this and VoronoiFracturer is that FloodFracturer guarantees
-    *   every fragment is solid (VoronoiFracturer can generate `fragmented` fragments).
-    */
-    class FloodFracturer : public Singleton<FloodFracturer>, public Fracturer {
+	/**
+	*   Volumetric object fracturer using flood algorithm. The main diference
+	*   between this and VoronoiFracturer is that FloodFracturer guarantees
+	*   every fragment is solid (VoronoiFracturer can generate `fragmented` fragments).
+	*/
+	class FloodFracturer : public Singleton<FloodFracturer>, public Fracturer {
 
-        // Singleton<FloodFracturer> needs access to the constructor and destructor
-        friend class Singleton<FloodFracturer>;
+		// Singleton<FloodFracturer> needs access to the constructor and destructor
+		friend class Singleton<FloodFracturer>;
 
-    protected:
-        GLuint  _numCells;
-        GLuint  _neighborSSBO;
-        GLuint  _stack1SSBO;
-        GLuint  _stack2SSBO;
-        GLuint  _stackSizeSSBO;
+	protected:
+		GLuint  _numCells;
+		GLuint  _neighborSSBO;
+		GLuint  _stack1SSBO;
+		GLuint  _stack2SSBO;
+		GLuint  _stackSizeSSBO;
 
-    protected:
-    	/**
-    	*   Constructor. 
-    	*/
-        FloodFracturer();
+	protected:
+		/**
+		*   Constructor.
+		*/
+		FloodFracturer();
 
-    public:
-        /**
+	public:
+		/**
 		*   Destructor.
 		*/
-        ~FloodFracturer() { this->destroy(); };
-    	
-        /**
-        *   Array with Von Neumann neighbourhood.
-        */
-        static const std::vector<glm::ivec4> VON_NEUMANN;
+		~FloodFracturer() { this->destroy(); };
 
-        /**
-        *   Array with MOORE neighbourhood.
-        */
-        static const std::vector<glm::ivec4> MOORE;
+		/**
+		*   Array with Von Neumann neighbourhood.
+		*/
+		static const std::vector<glm::ivec4> VON_NEUMANN;
 
-        /**
-        *   Exception thrown when voxel stack is overflow.
-        */
-        class StackOverflowError : public std::runtime_error
-    	{
-        public:
-            explicit StackOverflowError(const std::string& msg) : std::runtime_error(msg) {  }
-        };
+		/**
+		*   Array with MOORE neighbourhood.
+		*/
+		static const std::vector<glm::ivec4> MOORE;
 
-        /**
-        *   Initialize shaders, create objects and set OpenGL needed configuration.
-        *   You must invoke init() method before using FloodFracturer.
-        */
-        virtual void init(FractureParameters* fractParameters);
+		/**
+		*   Exception thrown when voxel stack is overflow.
+		*/
+		class StackOverflowError : public std::runtime_error
+		{
+		public:
+			explicit StackOverflowError(const std::string& msg) : std::runtime_error(msg) {  }
+		};
 
-        /**
-        *   Free resources.
-        *   You must invoke init() method before using FloodFracturer again.
-        */
-        virtual void destroy();
+		/**
+		*   Split up a volumentric object into fragments.
+		*   @param[in] grid Volumetric space we want to split into fragments
+		*   @param[in] seed  Seeds used to generate fragments
+		*/
+		virtual void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters);
 
-        /**
-        *   Split up a volumentric object into fragments.
-        *   @param[in] grid Volumetric space we want to split into fragments
-        *   @param[in] seed  Seeds used to generate fragments
-        */
-        void build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters);
+		/**
+		*   Free resources.
+		*   You must invoke init() method before using FloodFracturer again.
+		*/
+		virtual void destroy();
 
-        /**
-        *   Set distance funcion.
-        *   @param[in] dfunc Distance funcion
-        */
-        bool setDistanceFunction(DistanceFunction dfunc);
+		/**
+		*   Initialize shaders, create objects and set OpenGL needed configuration.
+		*   You must invoke init() method before using FloodFracturer.
+		*/
+		virtual void init(FractureParameters* fractParameters);
 
-    private:
+		/**
+		*   @brief Allocates GPU memory.
+		*/
+		virtual void prepareSSBOs(FractureParameters* fractParameters);
 
-        DistanceFunction _dfunc;    //!< Inner distance metric
-    };
+		/**
+		*   Set distance funcion.
+		*   @param[in] dfunc Distance funcion
+		*/
+		virtual bool setDistanceFunction(DistanceFunction dfunc);
+
+	private:
+
+		DistanceFunction _dfunc;    //!< Inner distance metric
+	};
 
 }
