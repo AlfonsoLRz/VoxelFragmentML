@@ -29,7 +29,7 @@ const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basem
 const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
 const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
 
-const std::string CADScene::VESSEL_PATH = "E:/obj/AL_###/AL_03A/AL_03A.obj";
+const std::string CADScene::VESSEL_PATH = "E:/Research/Ajax.obj";
 
 // [Public methods]
 
@@ -76,6 +76,14 @@ std::string CADScene::fractureGrid(const std::string& path, std::vector<Fragment
 	if (!path.empty())
 		this->loadModel(path);
 
+	if (!_generateDataset)
+	{
+		if (!_meshGrid)
+			_meshGrid = new RegularGrid(ivec3(_fractParameters._clampVoxelMetricUnit));
+
+		this->allocateMeshGrid(_fractParameters);
+	}
+
 	this->rebuildGrid(fractureParameters);
 	std::string result = this->fractureModel(fractureParameters);
 	this->prepareScene(fractureParameters, fragmentMetadata);
@@ -97,7 +105,8 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		do
 		{
 			fileList.erase(fileList.begin());
-		} while (!fileList.empty() && fileList[0].find(fractureProcedure._startVessel) == std::string::npos);
+		} 
+		while (!fileList.empty() && fileList[0].find(fractureProcedure._startVessel) == std::string::npos);
 	}
 
 	this->_generateDataset = true;
@@ -202,15 +211,13 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		if (fractureProcedure._exportMetadata)
 		{
 			this->exportMetadata(meshFile + "metadata.txt", modelMetadata);
-
-
 		}
 
-		//if (fractureProcedure._compressFiles)
-		//{
-		//	std::thread compressFolder(&CADScene::launchCopyingProcess, this, meshFolder, meshFolder + "Compressed/");
-		//	compressFolder.detach();
-		//}
+		if (fractureProcedure._compressFiles)
+		{
+			std::thread compressFolder(&CADScene::launchZipingProcess, this, meshFolder);
+			compressFolder.detach();
+		}
 
 		//if (!fractureProcedure._onlineFolder.empty())
 		//{
@@ -219,6 +226,19 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		//	std::thread copyFolder(&CADScene::launchCopyingProcess, this, meshFolder, fractureProcedure._onlineFolder + modelName);
 		//	copyFolder.detach();
 		//}
+	}
+}
+
+void CADScene::hit(const Model3D::RayGPUData& ray)
+{
+	if (_meshGrid)
+	{
+		uvec3 hit = _meshGrid->getClosestEntryVoxel(ray);
+		if (hit.x == std::numeric_limits<glm::uint>::max()) return;
+
+		_impactSeeds.push_back(uvec4(hit, VOXEL_FREE + 1));
+		this->fractureGrid(_fragmentMetadata, _fractParameters);
+		_impactSeeds.clear();
 	}
 }
 
@@ -243,6 +263,20 @@ void CADScene::allocateMemoryDataset(FragmentationProcedure& fractureProcedure)
 
 	fractureProcedure._fractureParameters._gridSubdivisions = ivec3(fractureProcedure._fractureParameters._clampVoxelMetricUnit);
 	fracturer->prepareSSBOs(&fractureProcedure._fractureParameters);
+}
+
+void CADScene::allocateMeshGrid(FractureParameters& fractParameters)
+{
+	const AABB aabb = _mesh->getAABB();
+	fractParameters._gridSubdivisions =
+		glm::floor(vec3(fractParameters._gridSubdivisions.x) * aabb.size() / glm::max(aabb.size().x, glm::max(aabb.size().y, aabb.size().z)));
+
+	while (fractParameters._gridSubdivisions.x % 4 != 0) ++fractParameters._gridSubdivisions.x;
+	while (fractParameters._gridSubdivisions.z % 4 != 0) ++fractParameters._gridSubdivisions.z;
+
+	_meshGrid->setAABB(aabb, fractParameters._gridSubdivisions);
+	_meshGrid->fill(_mesh->getModelComponent(0));
+	_meshGrid->resetMarchingCubes();
 }
 
 void CADScene::eraseFragmentContent()
@@ -295,14 +329,22 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 	std::vector<unsigned> boundaryFaces;
 	std::vector<std::unordered_map<unsigned, float>> faceClusterOccupancy;
 
-	if (fractParameters._biasSeeds == 0)
+	if (_impactSeeds.empty())
 	{
-		seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom);
+		if (fractParameters._biasSeeds == 0)
+		{
+			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom);
+		}
+		else
+		{
+			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._biasSeeds, fractParameters._seedingRandom);
+			seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numSeeds - fractParameters._biasSeeds, fractParameters._spreading);
+		}
 	}
 	else
 	{
-		seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._biasSeeds, fractParameters._seedingRandom);
-		seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numSeeds - fractParameters._biasSeeds, fractParameters._spreading);
+		seeds = _impactSeeds;
+		seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numSeeds - 1, fractParameters._spreading);
 	}
 
 	if (fractParameters._numExtraSeeds > 0)
@@ -348,17 +390,15 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 	return "";
 }
 
-void CADScene::launchCopyingProcess(const std::string& folder, const std::string& destinationFolder)
+void CADScene::launchZipingProcess(const std::string& folder)
 {
-	//const std::string command = "robocopy \"" + folder + "\" \"" + destinationFolder + "\" /e";
+	//std::filesystem::copy(folder, destinationFolder, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+	const std::string currentPath = std::filesystem::current_path().string();
+	const std::string systemUnit = currentPath.substr(0, currentPath.find_first_of("/\\"));
+	const std::string cd = "cd " + currentPath;
+	const std::string command = cd + " && " + systemUnit + " && " + "Bash\\zip.bat " + folder + " " + folder.substr(0, folder.find_first_of("/\\")) + " >nul";
 
-	std::filesystem::copy(folder, destinationFolder, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
-	//FILE* pipe = _popen(command.c_str(), "r");
-	//if (!pipe)
-	//{
-	//	std::cout << "Failed to launch copying process" << std::endl;
-	//	return;
-	//}
+	std::system(command.c_str());
 }
 
 void CADScene::loadDefaultCamera(Camera* camera)

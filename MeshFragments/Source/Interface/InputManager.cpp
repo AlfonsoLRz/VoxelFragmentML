@@ -254,6 +254,27 @@ void InputManager::mouseButtonEvent(GLFWwindow* window, int button, int action, 
 		inputManager->_rightClickPressed = action == GLFW_PRESS;
 		inputManager->_lastCursorPosition = CURSOR_POS;
 	}
+
+	if (action == GLFW_PRESS && mods == GLFW_MOD_CONTROL)
+	{
+		Renderer* renderer = Renderer::getInstance();
+		Window* win = Window::getInstance();
+		Camera* camera = renderer->getActiveCamera();
+
+		double x, y;
+		vec4 viewport(.0f, .0f, win->getSize().x, win->getSize().y);
+		glfwGetCursorPos(window, &x, &y);
+
+		const vec3 unprojected = glm::unProject(vec3(x, win->getSize().y - y, 1.0f), camera->getViewMatrix(), camera->getProjectionMatrix(), viewport);
+		const vec3 position = glm::normalize(unprojected - camera->getEye()) * 1000.0f + camera->getEye();
+		Model3D::RayGPUData ray;
+
+		ray._origin = camera->getEye();
+		ray._destination = position;
+		ray._direction = glm::normalize(ray._destination - ray._origin);
+
+		dynamic_cast<CADScene*>(renderer->getCurrentScene())->hit(ray);
+	}
 }
 
 void InputManager::mouseCursorEvent(GLFWwindow* window, double xpos, double ypos)

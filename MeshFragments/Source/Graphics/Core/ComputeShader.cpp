@@ -4,7 +4,8 @@
 /// [Static members initialization]
 
 std::vector<GLint> ComputeShader::MAX_WORK_GROUP_SIZE = { 1024, 1024, 64 };					//!< That value can't be queried before OpenGL is ready
-std::vector<GLint> ComputeShader::MAX_NUM_WORK_GROUPS = { 65536, 65536, 65536 };			
+std::vector<GLint> ComputeShader::MAX_NUM_WORK_GROUPS = { 65536, 65536, 65536 };		
+ComputeShader::MemoryFootprint ComputeShader::_memoryFootprint;
 
 /// [Public methods]
 
@@ -94,6 +95,21 @@ void ComputeShader::execute(GLuint numGroups_x, GLuint numGroups_y, GLuint numGr
 {
 	glDispatchComputeGroupSizeARB(numGroups_x, numGroups_y, numGroups_z, workGroup_x, workGroup_y, workGroup_z);											
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);
+}
+
+void ComputeShader::deleteBuffer(const GLuint bufferID)
+{
+	glDeleteBuffers(1, &bufferID);
+	_memoryFootprint.removeBuffer(bufferID);
+}
+
+void ComputeShader::deleteBuffers(const std::vector<GLuint>& bufferID)
+{
+	glDeleteBuffers(bufferID.size(), bufferID.data());
+	for (unsigned i = 0; i < bufferID.size(); ++i)
+	{
+		_memoryFootprint.removeBuffer(bufferID[i]);
+	}
 }
 
 std::vector<GLint> ComputeShader::getMaxGlobalSize()

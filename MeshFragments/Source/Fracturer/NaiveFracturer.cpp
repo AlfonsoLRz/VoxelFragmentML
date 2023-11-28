@@ -104,9 +104,7 @@ namespace fracturer {
 		else
 		{
 			RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());
-			std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numThreads);
-
-			grid.swap(resultBuffer);
+			grid.swap(resultPointer, numThreads);
 		}
 	}
 
@@ -148,7 +146,7 @@ namespace fracturer {
 		}
 
 		// Move operator
-		grid.swap(newGrid);
+		grid.swap(newGrid.data(), newGrid.size());
 	}
 
 	void NaiveFracturer::removeIsolatedRegionsGPU(const GLuint gridSSBO, RegularGrid& grid, const std::vector<glm::uvec4>& seeds)
@@ -209,10 +207,9 @@ namespace fracturer {
 		}
 
 		RegularGrid::CellGrid* resultPointer = ComputeShader::readData(newGridSSBO, RegularGrid::CellGrid());
-		grid.swap(std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numCells));
+		grid.swap(resultPointer, numCells);
 
-		GLuint deleteBuffers[] = { stack1SSBO, stack2SSBO, newGridSSBO, neighborSSBO, stackSize };
-		glDeleteBuffers(sizeof(deleteBuffers) / sizeof(GLuint), deleteBuffers);
+		ComputeShader::deleteBuffers(std::vector<GLuint>{ stack1SSBO, stack2SSBO, newGridSSBO, neighborSSBO, stackSize });
 	}
 
 	void NaiveFracturer::build(RegularGrid& grid, const std::vector<glm::uvec4>& seeds, FractureParameters* fractParameters)
@@ -233,7 +230,7 @@ namespace fracturer {
 
 		if (_seedSSBO != std::numeric_limits<unsigned>::max())
 		{
-			glDeleteBuffers(1, &_seedSSBO);
+			ComputeShader::deleteBuffer(_seedSSBO);
 			_seedSSBO = std::numeric_limits<unsigned>::max();
 		}
 	}

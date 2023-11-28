@@ -215,14 +215,16 @@ void Tetravoxelizer::initializeModel(const std::vector<Model3D::VertexGPUData>& 
 	glm::vec3 maxDimBBox = aabb.size();
 	glm::vec3 centerBBox = 0.5f * (aabb.min() + aabb.max());
 	centroid = scaleToNDC(centroid, centerBBox, maxDimBBox);
+	tetrahedraVertices.resize(meshFaces.size() * 4);
 
+#pragma omp parallel for
 	for (int i = 0; i < meshFaces.size(); ++i) {
-		tetrahedraVertices.push_back(scaleToNDC(meshVertices[meshFaces[i]._vertices.x]._position, centerBBox, maxDimBBox));
-		tetrahedraVertices.push_back(scaleToNDC(meshVertices[meshFaces[i]._vertices.y]._position, centerBBox, maxDimBBox));
-		tetrahedraVertices.push_back(scaleToNDC(meshVertices[meshFaces[i]._vertices.z]._position, centerBBox, maxDimBBox));
-		tetrahedraVertices.push_back(centroid);
+		tetrahedraVertices[i * 4 + 0] = scaleToNDC(meshVertices[meshFaces[i]._vertices.x]._position, centerBBox, maxDimBBox);
+		tetrahedraVertices[i * 4 + 1] = scaleToNDC(meshVertices[meshFaces[i]._vertices.y]._position, centerBBox, maxDimBBox);
+		tetrahedraVertices[i * 4 + 2] = scaleToNDC(meshVertices[meshFaces[i]._vertices.z]._position, centerBBox, maxDimBBox);
+		tetrahedraVertices[i * 4 + 3] = centroid;
 
-		sort4Vec3ByLowerY(tetrahedraVertices.end() - 4);
+		sort4Vec3ByLowerY(tetrahedraVertices.begin() + i * 4);
 	}
 
 #ifdef FILTER_TETRAHEDRA_BY_Y

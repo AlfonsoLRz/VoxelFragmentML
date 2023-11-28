@@ -310,8 +310,7 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 		pointCloud = new PointCloud3D;
 		pointCloud->push_back(pointCloudData, numPoints);
 
-		GLuint buffers[] = { vertexSSBO, faceSSBO, pointCloudSSBO, countingSSBO, noiseSSBO };
-		glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+		ComputeShader::deleteBuffers(std::vector<GLuint>{ vertexSSBO, faceSSBO, pointCloudSSBO, countingSSBO, noiseSSBO });
 	}
 
 	return pointCloud;
@@ -449,8 +448,8 @@ void CADModel::computeMeshData(ModelComponent* modelComp, bool computeNormals)
 		}
 	}
 
-	glDeleteBuffers(1, &modelBufferID);
-	glDeleteBuffers(1, &meshBufferID);
+	ComputeShader::deleteBuffer(modelBufferID);
+	ComputeShader::deleteBuffer(meshBufferID);
 }
 
 Material* CADModel::createMaterial(ModelComponent* modelComp)
@@ -819,26 +818,24 @@ void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename, b
 	delete scene;
 
 	// Zip file
-	if (zip)
-	{
-		std::string directory = filename.substr(0, filename.find_last_of('/'));
-		std::string changeDirectory = "cd " + directory;
-		std::string changeStorageUnit = filename.substr(0, 2);
-		std::string compress = "tar -cf " + file + ".zip " + file + " >nul 2>nul";
-		std::string remove = changeDirectory + " && " + changeStorageUnit + " && " + "del " + file;
-		std::string command = changeDirectory + " && " + changeStorageUnit + " && " + compress;
+	//if (zip)
+	//{
+	//	std::string directory = filename.substr(0, filename.find_last_of('/'));
+	//	std::string changeDirectory = "cd " + directory;
+	//	std::string changeStorageUnit = filename.substr(0, 2);
+	//	std::string compress = "tar -cf " + file + ".zip " + file + " >nul 2>nul";
+	//	std::string remove = changeDirectory + " && " + changeStorageUnit + " && " + "del " + file;
+	//	std::string command = changeDirectory + " && " + changeStorageUnit + " && " + compress;
 
-		do
-		{
-			system(command.c_str());
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		} 
-		while (std::filesystem::file_size(directory + "/" + file + ".zip") <= 1024);
+	//	do
+	//	{
+	//		system(command.c_str());
+	//		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	//	} 
+	//	while (std::filesystem::file_size(directory + "/" + file + ".zip") <= 1024);
 
-		std::cout << file << " " << std::filesystem::file_size(directory + "/" + file + ".zip") << std::endl;
-
-		system(remove.c_str());
-	}
+	//	system(remove.c_str());
+	//}
 }
 
 bool CADModel::writeBinary(const std::string& path)

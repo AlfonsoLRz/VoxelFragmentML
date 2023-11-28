@@ -58,24 +58,30 @@ protected:
 	const static std::string VESSEL_PATH;					//!< Location of the first mesh in the file system
 
 protected:
-	AABBSet* _aabbRenderer;					//!< Buffer of voxels
-	DrawLines* _fragmentBoundaries;			//!<
+	AABBSet*					_aabbRenderer;					//!< Buffer of voxels
+	DrawLines*					_fragmentBoundaries;			//!<
 	FractureParameters			_fractParameters;				//!< 
 	std::vector<Model3D*>		_fractureMeshes;				//!<
 	std::vector<Material*>		_fragmentMaterials;				//!< Material for each fragment, built with marching cubes
 	FragmentMetadataBuffer		_fragmentMetadata;				//!< Metadata of the current fragmentation procedure
 	std::vector<Texture*>		_fragmentTextures;				//!< Texture for each fragment, built with marching cubes
-	bool _generateDataset;
-	CADModel* _mesh;							//!< Jar mesh
-	RegularGrid* _meshGrid;						//!< Mesh regular grid
-	PointCloud3D* _pointCloud;					//!<
-	DrawPointCloud* _pointCloudRenderer;			//!<
+	bool						_generateDataset;
+	std::vector<uvec4>			_impactSeeds;					//!< Seeds obtained by impacting the user's ray to the voxelization
+	CADModel*					_mesh;							//!< Jar mesh
+	RegularGrid*				_meshGrid;						//!< Mesh regular grid
+	PointCloud3D*				_pointCloud;					//!<
+	DrawPointCloud*				_pointCloudRenderer;			//!<
 
 protected:
 	/**
 	*	@brief Allocates memory for the scene.
 	*/
 	void allocateMemoryDataset(FragmentationProcedure& fractureProcedure);
+
+	/**
+	*	@brief Allocates the mesh grid.
+	*/
+	void allocateMeshGrid(FractureParameters& fractParameters);
 
 	/**
 	*	@brief Erase content from a previous fragmentation process.
@@ -95,7 +101,7 @@ protected:
 	/**
 	*	@brief Saves the whole folder into another one.
 	*/
-	void launchCopyingProcess(const std::string& folder, const std::string& destinationFolder);
+	void launchZipingProcess(const std::string& folder);
 
 	/**
 	*	@brief Loads a camera with code-defined values.
@@ -236,6 +242,11 @@ public:
 	*	@return Buffer with information of split fragments.
 	*/
 	std::vector<FragmentationProcedure::FragmentMetadata> getFragmentMetadata() { return _fragmentMetadata; }
+
+	/**
+	*	@brief Hits the scene and creates a new fragmentation pattern.
+	*/
+	void hit(const Model3D::RayGPUData& ray);
 
 	/**
 	*	@brief Draws the scene as the rendering parameters specifies.

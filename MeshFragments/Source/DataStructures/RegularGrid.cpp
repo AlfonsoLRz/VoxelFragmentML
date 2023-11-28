@@ -32,8 +32,8 @@ RegularGrid::RegularGrid(const ivec3& subdivisions) : _cellSize(.0f), _marchingC
 RegularGrid::~RegularGrid()
 {
 	delete _marchingCubes;
-	glDeleteBuffers(1, &_countSSBO);
-	glDeleteBuffers(1, &_ssbo);
+	ComputeShader::deleteBuffer(_countSSBO);
+	ComputeShader::deleteBuffer(_ssbo);
 }
 
 unsigned RegularGrid::calculateMaxQuadrantOccupancy(unsigned subdivisions)
@@ -144,22 +144,12 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
 	std::copy(gridData, gridData + numCells, _grid.begin());
 
-	GLuint buffers[] = { maskSSBO, noiseSSBO };
-	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+	ComputeShader::deleteBuffers(std::vector<GLuint>{ maskSSBO, noiseSSBO });
 }
 
 void RegularGrid::exportGrid()
 {
 	vox::VoxWriter vox;
-	vec3 size = _aabb.size();
-	float minSize = glm::min(glm::min(size.x, size.y), size.z);
-	size /= minSize;
-	unsigned maxDimension = glm::max(glm::max(_numDivs.x, _numDivs.y), _numDivs.z);
-	uvec3 offset = uvec3(vec3(maxDimension) * size - vec3(_numDivs));
-	uvec3 halfOffset = offset / uvec3(2);
-	uvec3 otherOffset = offset - halfOffset;
-	halfOffset.y = 0; otherOffset.y = offset.y;
-
 	for (int x = 0; x < _numDivs.x; ++x)
 	{
 		unsigned positionIndex;
@@ -169,8 +159,8 @@ void RegularGrid::exportGrid()
 			for (int z = 0; z < _numDivs.z; ++z)
 			{
 				positionIndex = this->getPositionIndex(x, y, z);
-				if (_grid[positionIndex]._value > VOXEL_FREE)
-					vox.AddVoxel(x + halfOffset.x, z + halfOffset.z, y, _grid[positionIndex]._value);
+				if (_grid[positionIndex]._value >= VOXEL_FREE)
+					vox.AddVoxel(x, z, y, _grid[positionIndex]._value - VOXEL_FREE);
 			}
 		}
 	}
@@ -263,6 +253,11 @@ void RegularGrid::getAABBs(std::vector<AABB>& aabb)
 			}
 		}
 	}
+}
+
+uvec3 RegularGrid::getClosestEntryVoxel(const Model3D::RayGPUData& ray)
+{
+	return this->rayTraversalAmanatidesWoo(ray);
 }
 
 void RegularGrid::insertPoint(const vec3& position, unsigned index)
@@ -358,7 +353,7 @@ void RegularGrid::queryCluster(
 
 		numProcessedFaces += currentNumFaces;
 
-		glDeleteBuffers(1, &faceSSBO);
+		ComputeShader::deleteBuffer(faceSSBO);
 	}
 
 	float* clusterData = ComputeShader::readData(clusterSSBO, float());
@@ -373,9 +368,7 @@ void RegularGrid::queryCluster(
 		}
 	}
 
-	GLuint buffers[] = { countSSBO, vertexSSBO, gridSSBO, boundarySSBO, noiseSSBO };
-	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
-
+	ComputeShader::deleteBuffers(std::vector<GLuint> { countSSBO, vertexSSBO, gridSSBO, boundarySSBO, noiseSSBO });
 	free(count);
 	free(boundary);
 }
@@ -403,13 +396,12 @@ void RegularGrid::queryCluster(std::vector<vec4>* points, std::vector<float>& cl
 	float* clusterData = ComputeShader::readData(clusterSSBO, float());
 	clusterIdx = std::vector<float>(clusterData, clusterData + points->size());
 
-	GLuint buffers[] = { vertexSSBO, gridSSBO, clusterSSBO };
-	glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+	ComputeShader::deleteBuffers(std::vector<GLuint> { vertexSSBO, gridSSBO, clusterSSBO });
 }
 
 void RegularGrid::resetFilling()
 {
-	size_t numCells = _grid.size();
+	size_t numCells = _numDivs.x * _numDivs.y * _numDivs.z;
 #pragma omp parallel for
 	for (int idx = 0; idx < numCells; ++idx)
 		_grid[idx]._value = glm::clamp(_grid[idx]._value, uint16_t(VOXEL_EMPTY), uint16_t(VOXEL_FREE + 1));
@@ -529,6 +521,24 @@ void RegularGrid::homogenize()
 					this->set(x, y, z, VOXEL_FREE);
 }
 
+bool RegularGrid::isBoundary(int x, int y, int z, int neighbourhoodSize) const
+{
+	if (neighbourhoodSize % 2 == 0)
+		++neighbourhoodSize;
+
+	ivec3 min = glm::clamp(ivec3(x, y, z) - ivec3(neighbourhoodSize), ivec3(0), ivec3(_numDivs) - ivec3(1));
+	ivec3 max = glm::clamp(ivec3(x, y, z) + ivec3(neighbourhoodSize), ivec3(0), ivec3(_numDivs) - ivec3(1));
+	bool isBoundary = false;
+
+	for (int x = min.x; x <= max.x && !isBoundary; ++x)
+		for (int y = min.y; y <= max.y && !isBoundary; ++y)
+			for (int z = min.z; z <= max.z && !isBoundary; ++z)
+				if (this->at(x, y, z) == VOXEL_EMPTY)
+					isBoundary = true;
+
+	return !isBoundary;
+}
+
 bool RegularGrid::isOccupied(int x, int y, int z) const
 {
 	return this->at(x, y, z) != VOXEL_EMPTY;
@@ -561,11 +571,12 @@ void RegularGrid::buildGrid()
 
 void RegularGrid::cleanGrid()
 {
+	unsigned numCells = _numDivs.x * _numDivs.y * _numDivs.z;
 	//_grid = std::vector<CellGrid>(_numDivs.x * _numDivs.y * _numDivs.z);
-	std::fill(_grid.begin(), _grid.end(), CellGrid());
-	std::fill(_voxelOpenGL.begin(), _voxelOpenGL.end(), 0);
+	std::fill(_grid.begin(), _grid.begin() + numCells, CellGrid());
+	std::fill(_voxelOpenGL.begin(), _voxelOpenGL.begin() + numCells, 0);
 
-	ComputeShader::updateReadBufferSubset(_ssbo, _grid.data(), 0, _grid.size());
+	ComputeShader::updateReadBufferSubset(_ssbo, _grid.data(), 0, numCells);
 }
 
 size_t RegularGrid::countValues(std::unordered_map<uint16_t, unsigned>& values)
@@ -616,6 +627,159 @@ uvec3 RegularGrid::getPositionIndex(const vec3& position)
 unsigned RegularGrid::getPositionIndex(int x, int y, int z) const
 {
 	return x * _numDivs.y * _numDivs.z + y * _numDivs.z + z;
+}
+
+bool RegularGrid::rayBoxIntersection(const Model3D::RayGPUData& ray, float& tMin, float& tMax, float t0, float t1)
+{
+	vec3 rayStart = ray._origin, rayDirection = ray._direction;
+	vec3 minBound = _aabb.min(), maxBound = _aabb.max();
+	float tYMin, tYMax, tZMin, tZMax;
+
+	const float x_inv_dir = 1 / rayDirection.x;
+	if (x_inv_dir >= 0) {
+		tMin = (minBound.x - rayStart.x) * x_inv_dir;
+		tMax = (maxBound.x - rayStart.x) * x_inv_dir;
+	}
+	else {
+		tMin = (maxBound.x - rayStart.x) * x_inv_dir;
+		tMax = (minBound.x - rayStart.x) * x_inv_dir;
+	}
+
+	const float y_inv_dir = 1 / rayDirection.y;
+	if (y_inv_dir >= 0) {
+		tYMin = (minBound.y - rayStart.y) * y_inv_dir;
+		tYMax = (maxBound.y - rayStart.y) * y_inv_dir;
+	}
+	else {
+		tYMin = (maxBound.y - rayStart.y) * y_inv_dir;
+		tYMax = (minBound.y - rayStart.y) * y_inv_dir;
+	}
+
+	if (tMin > tYMax || tYMin > tMax) return false;
+	if (tYMin > tMin) tMin = tYMin;
+	if (tYMax < tMax) tMax = tYMax;
+
+	const float z_inv_dir = 1 / rayDirection.z;
+	if (z_inv_dir >= 0) {
+		tZMin = (minBound.z - rayStart.z) * z_inv_dir;
+		tZMax = (maxBound.z - rayStart.z) * z_inv_dir;
+	}
+	else {
+		tZMin = (maxBound.z - rayStart.z) * z_inv_dir;
+		tZMax = (minBound.z - rayStart.z) * z_inv_dir;
+	}
+
+	if (tMin > tZMax || tZMin > tMax) return false;
+	if (tZMin > tMin) tMin = tZMin;
+	if (tZMax < tMax) tMax = tZMax;
+
+	return (tMin < t1 && tMax > t0);
+}
+
+uvec3 RegularGrid::rayTraversalAmanatidesWoo(const Model3D::RayGPUData& ray)
+{
+	float t0 = .0f, t1 = FLT_MAX, tMin = .0f, tMax;
+	const bool intersects = this->rayBoxIntersection(ray, tMin, tMax, t0, t1);
+	if (!intersects) return uvec3(std::numeric_limits<glm::uint>::max());
+
+	tMin = glm::max(tMin, t0);
+	tMax = glm::max(tMax, t1);
+
+	float tDeltaX, tMaxX, tDeltaY, tMaxY, tDeltaZ, tMaxZ;
+	vec3 rayDirection = ray._direction;
+	vec3 rayStart = ray._origin + rayDirection * tMin, rayEnd = ray._origin + rayDirection * tMax;
+	vec3 minBound = _aabb.min();
+	uvec3 current_index = 
+		uvec3(
+			glm::max(1.0f, std::ceil((rayStart.x - minBound.x) / _cellSize.x)), 
+			glm::max(1.0f, std::ceil((rayStart.y - minBound.y) / _cellSize.y)),
+			glm::max(1.0f, std::ceil((rayStart.z - minBound.z) / _cellSize.z)));
+	ivec3 step;
+
+	if (rayDirection.x > 0.0)
+	{
+		step.x = 1;
+		tDeltaX = _cellSize.x / rayDirection.x;
+		tMaxX = tMin + (minBound.x + current_index.x * _cellSize.x - rayStart.x) / rayDirection.x;
+	}
+	else if (rayDirection.x < 0.0)
+	{
+		step.x = -1;
+		tDeltaX = _cellSize.x / -rayDirection.x;
+		const size_t previous_X_index = current_index.x - 1;
+		tMaxX = tMin + (minBound.x + previous_X_index * _cellSize.x - rayStart.x) / rayDirection.x;
+	}
+	else
+	{
+		step.x = 0;
+		tDeltaX = tMax;
+		tMaxX = tMax;
+	}
+
+	if (rayDirection.y > 0.0)
+	{
+		step.y = 1;
+		tDeltaY = _cellSize.y / rayDirection.y;
+		tMaxY = tMin + (minBound.y + current_index.y * _cellSize.y - rayStart.y) / rayDirection.y;
+	}
+	else if (rayDirection.y < 0.0)
+	{
+		step.y = -1;
+		tDeltaY = _cellSize.y / -rayDirection.y;
+		const size_t previous_Y_index = current_index.y - 1;
+		tMaxY = tMin + (minBound.y + previous_Y_index * _cellSize.y - rayStart.y) / rayDirection.y;
+	}
+	else
+	{
+		step.y = 0;
+		tDeltaY = tMax;
+		tMaxY = tMax;
+	}
+
+	if (rayDirection.z > 0.0)
+	{
+		step.z = 1;
+		tDeltaZ = _cellSize.z / rayDirection.z;
+		tMaxZ = tMin + (minBound.z + current_index.z * _cellSize.z - rayStart.z) / rayDirection.z;
+	}
+	else if (rayDirection.z < 0.0)
+	{
+		step.z = -1;
+		tDeltaZ = _cellSize.z / -rayDirection.z;
+		const size_t previous_Z_index = current_index.z - 1;
+		tMaxZ = tMin + (minBound.z + previous_Z_index * _cellSize.z - rayStart.z) / rayDirection.z;
+	}
+	else
+	{
+		step.z = 0;
+		tDeltaZ = tMax;
+		tMaxZ = tMax;
+	}
+
+	while (current_index.x <= _numDivs.x && current_index.y <= _numDivs.y && current_index.z <= _numDivs.z
+		&& current_index.x > 0 && current_index.y > 0 && current_index.z > 0)
+	{
+		if (this->at(current_index.x - 1, current_index.y - 1, current_index.z - 1) != VOXEL_EMPTY)
+			return current_index;
+
+		if (tMaxX < tMaxY && tMaxX < tMaxZ) {
+			// X-axis traversal
+			current_index.x += step.x;
+			tMaxX += tDeltaX;
+		}
+		else if (tMaxY < tMaxZ) {
+			// Y-axis traversal
+			current_index.y += step.y;
+			tMaxY += tDeltaY;
+		}
+		else {
+			// Z-axis traversal
+			current_index.z += step.z;
+			tMaxZ += tDeltaZ;
+		}
+	}
+
+	return uvec3(std::numeric_limits<glm::uint>::max());
 }
 
 void RegularGrid::resetBuffer(GLuint ssbo, unsigned value, unsigned count)

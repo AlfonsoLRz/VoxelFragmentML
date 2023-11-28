@@ -301,9 +301,7 @@ void Model3D::computeTangents(ModelComponent* modelComp)
 	VertexGPUData* data = ComputeShader::readData(geometryBufferID, VertexGPUData());
 	modelComp->_geometry = std::move(std::vector<VertexGPUData>(data, data + numVertices));
 
-	glDeleteBuffers(1, &geometryBufferID);
-	glDeleteBuffers(1, &meshBufferID);
-	glDeleteBuffers(1, &outBufferID);
+	ComputeShader::deleteBuffers(std::vector<GLuint>{ geometryBufferID, meshBufferID, outBufferID });
 }
 
 void Model3D::setModelMatrix(std::vector<mat4>& matrix)
@@ -556,8 +554,8 @@ void Model3D::ModelComponent::releaseMemory(bool geometry, bool topology)
 	std::vector<GLuint>().swap(_triangleMesh);
 
 	// SSBOs
-	if (_geometrySSBO != UINT_MAX) glDeleteBuffers(1, &_geometrySSBO);
-	if (_topologySSBO != UINT_MAX) glDeleteBuffers(1, &_topologySSBO);
+	if (_geometrySSBO != UINT_MAX) ComputeShader::deleteBuffer(_geometrySSBO);
+	if (_topologySSBO != UINT_MAX) ComputeShader::deleteBuffer(_topologySSBO);
 }
 
 bool Model3D::ModelComponent::subdivide(float maxArea, std::vector<unsigned>& maskFaces)

@@ -50,25 +50,25 @@ namespace fracturer {
 
 		if (_stack1SSBO != std::numeric_limits<GLuint>::max())
 		{
-			glDeleteBuffers(1, &_stack1SSBO);
+			ComputeShader::deleteBuffer(_stack1SSBO);
 			_stack1SSBO = std::numeric_limits<GLuint>::max();
 		}
 
 		if (_stack2SSBO != std::numeric_limits<GLuint>::max())
 		{
-			glDeleteBuffers(1, &_stack2SSBO);
+			ComputeShader::deleteBuffer(_stack2SSBO);
 			_stack2SSBO = std::numeric_limits<GLuint>::max();
 		}
 
 		if (_neighborSSBO != std::numeric_limits<GLuint>::max())
 		{
-			glDeleteBuffers(1, &_neighborSSBO);
+			ComputeShader::deleteBuffer(_neighborSSBO);
 			_neighborSSBO = std::numeric_limits<GLuint>::max();
 		}
 
 		if (_stackSizeSSBO != std::numeric_limits<GLuint>::max())
 		{
-			glDeleteBuffers(1, &_stackSizeSSBO);
+			ComputeShader::deleteBuffer(_stackSizeSSBO);
 			_stackSizeSSBO = std::numeric_limits<GLuint>::max();
 		}
 	}
@@ -127,9 +127,9 @@ namespace fracturer {
 			std::swap(_stack1SSBO, _stack2SSBO);
 		}
 
-		RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());
-		std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numCells);
-		grid.swap(resultBuffer);
+		//RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());
+		//std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numCells);
+		//grid.swap(resultBuffer);
 	}
 
 	void FloodFracturer::prepareSSBOs(FractureParameters* fractParameters)
@@ -141,9 +141,9 @@ namespace fracturer {
 	bool FloodFracturer::setDistanceFunction(DistanceFunction dfunc)
 	{
 		// EUCLIDEAN_DISTANCE is forbid
-		if (dfunc == EUCLIDEAN_DISTANCE)
-			//throw std::invalid_argument("Flood method is not compatible with euclidean metric. Try with naive method.");
-			return false;
+		//if (dfunc == EUCLIDEAN_DISTANCE)
+		//	//throw std::invalid_argument("Flood method is not compatible with euclidean metric. Try with naive method.");
+		//	return false;
 
 		_dfunc = dfunc;
 		return true;

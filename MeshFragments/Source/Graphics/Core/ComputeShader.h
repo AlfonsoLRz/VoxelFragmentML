@@ -2,6 +2,8 @@
 
 #include "Graphics/Core/ShaderProgram.h"
 
+#define TRACK_GPU_MEMORY true
+
 /**
 *	@file ComputeShader.h
 *	@authors Alfonso López Ruiz (alr00048@red.ujaen.es)
@@ -19,6 +21,24 @@ public:
 protected:
 	static std::vector<GLint> MAX_WORK_GROUP_SIZE;					//!< This value can be useful since the number of groups is not as limited as group size
 	static std::vector<GLint> MAX_NUM_WORK_GROUPS;					//!< Maximum number of invocable work groups
+
+public:
+	class MemoryFootprint
+	{
+	public:
+		std::unordered_map<GLuint, size_t> inBuffers;				//!< Size of input buffers
+		size_t size;												//!< Size of allocated GPU buffers
+
+	public:
+		MemoryFootprint() : size(0) {}
+		virtual ~MemoryFootprint() {}
+
+		void addBuffer(GLuint bufferID, const size_t size) { inBuffers[bufferID] = size; this->size += size; }
+		void removeBuffer(GLuint bufferID) { size -= inBuffers[bufferID]; inBuffers.erase(bufferID); }
+		void updateBuffer(GLuint bufferID, const size_t size) { this->size -= inBuffers[bufferID]; inBuffers[bufferID] = size; this->size += size; }
+	};
+
+	static MemoryFootprint _memoryFootprint;						//!< Memory footprint of all the compute shaders
 
 public:	
 	/**
@@ -51,6 +71,16 @@ public:
 	*	@brief Executes the compute shader with many groups and works as specified and waits till the execution is over.
 	*/
 	void execute(GLuint numGroups_x, GLuint numGroups_y, GLuint numGroups_z, GLuint workGroup_x, GLuint workGroup_y, GLuint workGroup_z);
+
+	/**
+	*	@brief Deletes a single buffer.
+	*/
+	static void deleteBuffer(const GLuint bufferID);
+
+	/**
+	*	@brief Deletes a set of buffers.
+	*/
+	static void deleteBuffers(const std::vector<GLuint>& bufferID);
 
 	/**
 	*	@return Maximum number of work groups.
@@ -177,6 +207,10 @@ inline GLuint ComputeShader::setReadBuffer(const std::vector<T>& data, const GLu
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * data.size(), data.data(), changeFrequency);
 
+#if TRACK_GPU_MEMORY
+	_memoryFootprint.addBuffer(id, sizeof(T) * data.size());
+#endif
+
 	return id;
 }
 
@@ -187,6 +221,10 @@ inline GLuint ComputeShader::setReadBuffer(const T* data, const unsigned arraySi
 	glGenBuffers(1, &id);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * arraySize, data, changeFrequency);
+
+#if TRACK_GPU_MEMORY
+	_memoryFootprint.addBuffer(id, sizeof(T) * arraySize);
+#endif
 
 	return id;
 }
@@ -199,6 +237,10 @@ inline GLuint ComputeShader::setReadData(const T& data, const GLuint changeFrequ
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T), &data, changeFrequency);
 
+#if TRACK_GPU_MEMORY
+	_memoryFootprint.addBuffer(id, sizeof(T));
+#endif
+
 	return id;
 }
 
@@ -210,6 +252,10 @@ inline GLuint ComputeShader::setWriteBuffer(const T& dataType, const GLuint arra
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(dataType) * arraySize, nullptr, changeFrequency);
 
+#if TRACK_GPU_MEMORY
+	_memoryFootprint.addBuffer(id, sizeof(T) * arraySize);
+#endif
+
 	return id;
 }
 
@@ -218,6 +264,10 @@ inline void ComputeShader::updateReadBuffer(const GLuint id, const T* data, cons
 {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * arraySize, data, changeFrequency);
+
+#if TRACK_GPU_MEMORY
+	_memoryFootprint.updateBuffer(id, sizeof(T) * arraySize);
+#endif
 }
 
 template<typename T>

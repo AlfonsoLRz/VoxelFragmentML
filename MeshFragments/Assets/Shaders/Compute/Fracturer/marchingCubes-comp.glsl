@@ -8,7 +8,7 @@ layout (local_size_variable) in;
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
 
-layout (std430, binding = 0) buffer GridBuffer		{ float		grid[]; };
+layout (std430, binding = 0) buffer GridBuffer		{ uint16_t	grid[]; };
 layout (std430, binding = 1) buffer VertexBuffer	{ vec4		vertexData[]; };
 layout (std430, binding = 2) buffer FaceCounter		{ uint		numVertices; };
 layout (std430, binding = 3) buffer TriangleTable	{ int		triangleTable[]; };
@@ -18,11 +18,11 @@ layout (std430, binding = 5) buffer SupportBuffer	{ vec4		vertexList[]; };
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 #include <Assets/Shaders/Compute/Fracturer/voxelMask.glsl>
 
-uniform float	isolevel;
-uniform uvec3	localSize;
-uniform mat4	modelMatrix;
-uniform uvec3	start;
-uniform int		targetValue;
+uniform float		isolevel;
+uniform uvec3		localSize;
+uniform mat4		modelMatrix;
+uniform uvec3		start;
+uniform int			targetValue;
 
 // The indices of the 8 neighbors that form the boundary of this cell
 const ivec3 neighbors[8] =
@@ -108,7 +108,7 @@ void march(in uint index, in ivec3 cellIndices)
 	for (int i = 0; i < 8; ++i)
 	{
 		// Sample the volume texture at this neighbor's coordinates
-		values[i] = float(unmasked_f(grid[getPositionIndex(cellIndices + neighbors[i])]) == targetValue);
+		values[i] = float(unmasked(grid[getPositionIndex(cellIndices + neighbors[i])]) == uint16_t(targetValue));
 
 		// Compare the sampled value to the user-specified isolevel
 		if (values[i] < isolevel)
@@ -138,8 +138,8 @@ void march(in uint index, in ivec3 cellIndices)
 			uint offset = atomicAdd(numVertices, 3);
 
 			vertexData[offset + 0].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 0)]].xyz;
-			vertexData[offset + 1].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
-			vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 2)]].xyz;
+			vertexData[offset + 1].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 2)]].xyz;
+			vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
 
 			//if (!ccw(offset))
 			//{
@@ -147,7 +147,7 @@ void march(in uint index, in ivec3 cellIndices)
 			//	vertexData[offset + 2].xyz = vertexList[index * 12 + triangleTable[triangleStartMemory + (3 * i + 1)]].xyz;
 			//}
 
-			float isBoundary = isBoundary_f(grid[getPositionIndex(cellIndices)]);
+			float isBoundary = float(isBoundary(grid[getPositionIndex(cellIndices)]));
 			vertexData[offset + 0].w = isBoundary;
 			vertexData[offset + 1].w = isBoundary;
 			vertexData[offset + 2].w = isBoundary;

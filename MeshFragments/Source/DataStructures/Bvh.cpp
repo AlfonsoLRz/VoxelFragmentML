@@ -143,9 +143,8 @@ Bvh::Bvh(Model3D* model) : _model(model)
 			volatileGPUData->_cluster = std::move(std::vector<Model3D::BVHCluster>(clusterData, clusterData + staticData._numTriangles * 2 - 1));
 
 			// Free buffers from GPU
-			GLuint toDeleteBuffers[] = { coutBuffer, cinBuffer, inCurrentPosition, outCurrentPosition, neighborIndex,
-										 prefixScan, validCluster, mergedCluster, numNodesCount, arraySizeCount };
-			glDeleteBuffers(sizeof(toDeleteBuffers) / sizeof(GLuint), toDeleteBuffers);
+			ComputeShader::deleteBuffers(std::vector<GLuint>{ coutBuffer, cinBuffer, inCurrentPosition, outCurrentPosition, neighborIndex,
+										 prefixScan, validCluster, mergedCluster, numNodesCount, arraySizeCount });
 
 			// Free dynamic memory
 			delete[]	outCluster;
@@ -206,7 +205,7 @@ void Bvh::buildClusterBuffer(VolatileGPUData* gpuData, StaticGPUData* staticData
 	buildClusterShader->setUniform("arraySize", arraySize);
 	buildClusterShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-	glDeleteBuffers(1, &sortedFaces);
+	ComputeShader::deleteBuffer(sortedFaces);
 }
 
 GLuint Bvh::computeMortonCodes(StaticGPUData* staticData)
@@ -315,11 +314,7 @@ GLuint Bvh::sortFacesByMortonCode(StaticGPUData* staticData, const GLuint morton
 		reallocatePositionShader->execute(numGroups, 1, 1, maxGroupSize, 1, 1);
 	}
 
-	glDeleteBuffers(1, &indicesBufferID_1);
-	glDeleteBuffers(1, &pBitsBufferID);
-	glDeleteBuffers(1, &nBitsBufferID);
-	glDeleteBuffers(1, &positionBufferID);
-
+	ComputeShader::deleteBuffers(std::vector<GLuint> { indicesBufferID_1, pBitsBufferID, nBitsBufferID, positionBufferID });
 	delete[] indices;
 
 	return indicesBufferID_2;
@@ -333,19 +328,16 @@ Bvh::VolatileGPUData::VolatileGPUData() : _tempClusterSSBO(-1), _mortonCodesSSBO
 
 Bvh::VolatileGPUData::~VolatileGPUData()
 {
-	glDeleteBuffers(1, &_mortonCodesSSBO);
-	glDeleteBuffers(1, &_tempClusterSSBO);
+	ComputeShader::deleteBuffers(std::vector<GLuint>{ _tempClusterSSBO, _mortonCodesSSBO });
 }
 
 // StaticGPUData
 
-Bvh::StaticGPUData::StaticGPUData() : _groupGeometrySSBO(-1), _groupTopologySSBO(-1), _groupMeshSSBO(-1), _clusterSSBO(-1), _numTriangles(0)
+Bvh::StaticGPUData::StaticGPUData() : _groupGeometrySSBO(-1), _groupTopologySSBO(-1), _groupMeshSSBO(-1), _clusterSSBO(-1), _numTriangles(0), _numClusters(0)
 {
 }
 
 Bvh::StaticGPUData::~StaticGPUData()
 {
-	// Delete buffers
-	GLuint toDeleteBuffers[] = { _groupMeshSSBO, _clusterSSBO };
-	glDeleteBuffers(sizeof(toDeleteBuffers) / sizeof(GLuint), toDeleteBuffers);
+	ComputeShader::deleteBuffers(std::vector<GLuint>{ _groupMeshSSBO, _clusterSSBO });
 }

@@ -47,7 +47,6 @@ protected:
 
 	GLuint          _indicesBufferID_1;
 	GLuint          _indicesBufferID_2;
-	GLuint          _indices4ID;
 	GLuint          _pBitsBufferID;
 	GLuint          _nBitsBufferID;
 	GLuint          _positionBufferID;
@@ -112,11 +111,6 @@ public:
 	/**
 	*   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
 	*/
-	CADModel* triangulateFieldGPU(GLuint gridSSBO, float targetValue, FractureParameters& fractureParams, const mat4& modelMatrix);
-
-	/**
-	*   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
-	*/
-	CADModel* triangulateFieldExtendedCPU(float targetValue, const mat4& modelMatrix);
+	CADModel* triangulateFieldGPU(GLuint gridSSBO, uint16_t targetValue, FractureParameters& fractureParams, const mat4& modelMatrix);
 };
 

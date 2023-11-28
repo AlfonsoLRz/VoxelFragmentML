@@ -218,7 +218,7 @@ void GUI::showFractureSettings()
 
 		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);
 
-		ImGui::SliderInt3("Grid Subdivisions", &_fractureParameters->_gridSubdivisions[0], 1, 756);
+		ImGui::SliderInt("Grid Subdivisions", &_fractureParameters->_gridSubdivisions[0], 1, _fractureParameters->_clampVoxelMetricUnit);
 
 		ImGui::PushItemWidth(150.0f);
 		{

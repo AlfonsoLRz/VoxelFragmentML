@@ -52,7 +52,8 @@ namespace fracturer
             currentSeeds = 0;
 			
             // Bruteforce seed search
-            while (currentSeeds != nseeds) {
+            while (currentSeeds != nseeds) 
+            {
                 // Generate random seed
                 int x = numDivs2.x - RandomUtilities::getBiasedRandomInt(0, numDivs.x, spreading);
                 int y = numDivs2.y - RandomUtilities::getBiasedRandomInt(0, numDivs.y, spreading);
@@ -159,10 +160,13 @@ namespace fracturer
             // Is occupied the voxel?
             bool occupied = grid.isOccupied(x, y, z);
 
+            // Is on the mesh surface?
+            bool isBoundary = grid.isBoundary(x, y, z);
+
             // Is repeated?
             bool isFree = seeds.find(voxel) == seeds.end();
 
-            if (occupied && isFree)
+            if (occupied && isFree && isBoundary)
                 seeds.insert(voxel);
 
             attempt++;

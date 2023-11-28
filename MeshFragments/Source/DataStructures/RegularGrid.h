@@ -87,6 +87,16 @@ protected:
 	unsigned getPositionIndex(int x, int y, int z) const;
 
 	/**
+	*	@brief Checks if a ray intersects the bounding box.
+	*/
+	bool rayBoxIntersection(const Model3D::RayGPUData& ray, float& tMin, float& tMax, float t0, float t1);
+
+	/**
+	*	@brief Traverses the grid using the Amanatides-Woo algorithm.
+	*/
+	uvec3 rayTraversalAmanatidesWoo(const Model3D::RayGPUData& ray);
+
+	/**
 	*	@brief Resets buffer to a given value.
 	*/
 	void resetBuffer(GLuint ssbo, unsigned value, unsigned count);
@@ -169,6 +179,11 @@ public:
 	void getAABBs(std::vector<AABB>& aabb);
 
 	/**
+	*	@return First collided voxel in the ray direction.
+	*/
+	uvec3 getClosestEntryVoxel(const Model3D::RayGPUData& ray);
+
+	/**
 	*	@brief Inserts a new point in the grid.
 	*/
 	void insertPoint(const vec3& position, unsigned index);
@@ -211,7 +226,7 @@ public:
 	/**
 	*	@brief Substitutes current grid with new values.
 	*/
-	void swap(const std::vector<CellGrid>& newGrid) { if (newGrid.size() == _grid.size()) _grid = std::move(newGrid); }
+	void swap(CellGrid* newGrid, unsigned size) { std::copy(newGrid, newGrid + size, _grid.begin()); }
 
 	/**
 	*	@brief Transforms the regular grid into a triangle mesh per value.
@@ -258,6 +273,11 @@ public:
 	*   Set every voxel that is not EMPTY as FREE.
 	*/
 	void homogenize();
+
+	/**
+	*	@brief Checks if any neighbour is empty.
+	*/
+	bool isBoundary(int x, int y, int z, int neighbourhoodSize = 1) const;
 
 	/**
 	*   Check if a voxel is occupied.
