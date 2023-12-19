@@ -83,7 +83,8 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 	if (!(convolutionSize % 2))
 		++convolutionSize;
 
-	uint32_t maskSize = convolutionSize * convolutionSize * convolutionSize, convolutionCenter = std::floor(convolutionSize / 2.0f), activations = 0;
+	uint32_t maskSize = convolutionSize * convolutionSize * convolutionSize, convolutionCenter = std::floor(convolutionSize / 2.0f);
+	float activations = 0;
 	float* erosionMask = (float*)calloc(maskSize, sizeof(float));
 
 	if (fractureParams == FractureParameters::SQUARE)
@@ -115,6 +116,8 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 				}
 	}
 
+	activations /= maskSize;
+
 	// Noise
 	std::vector<float> noiseBuffer;
 	this->fillNoiseBuffer(noiseBuffer, 1e6);
@@ -128,9 +131,11 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 
 	for (int idx = 0; idx < numIterations; ++idx)
 	{
+		this->detectBoundaries(1);
+
 		_erodeShader->bindBuffers(std::vector<GLuint>{ _ssbo, maskSSBO, noiseSSBO });
 		_erodeShader->use();
-		_erodeShader->setUniform("numActivations", activations);
+		_erodeShader->setUniform("numActivationsFloat", activations);
 		_erodeShader->setUniform("gridDims", numDivs);
 		_erodeShader->setUniform("maskSize", convolutionSize);
 		_erodeShader->setUniform("maskSize2", unsigned(std::floor(convolutionSize / 2.0f)));
@@ -141,31 +146,67 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 		_erodeShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 	}
 
+	this->removeIsolatedRegions();
+
 	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
 	std::copy(gridData, gridData + numCells, _grid.begin());
 
 	ComputeShader::deleteBuffers(std::vector<GLuint>{ maskSSBO, noiseSSBO });
 }
 
-void RegularGrid::exportGrid()
+void RegularGrid::exportGrid(bool squared, const std::string& filename)
 {
 	vox::VoxWriter vox;
-	for (int x = 0; x < _numDivs.x; ++x)
-	{
-		unsigned positionIndex;
 
-		for (int y = 0; y < _numDivs.y; ++y)
+	// Check if squared is required
+	uvec3 end = _numDivs, start = uvec3(0);
+	if (squared)
+	{
+		ivec3 currentPosition;
+		end.x = end.y = end.z = glm::max(end.x, glm::max(end.y, end.z));
+		start = (end - _numDivs) / uvec3(2);
+
+		// Reset first
+		for (int x = 0; x < end.x; ++x)
 		{
-			for (int z = 0; z < _numDivs.z; ++z)
+			for (int y = 0; y < end.y; ++y)
 			{
-				positionIndex = this->getPositionIndex(x, y, z);
-				if (_grid[positionIndex]._value >= VOXEL_FREE)
-					vox.AddVoxel(x, z, y, _grid[positionIndex]._value - VOXEL_FREE);
+				for (int z = 0; z < end.z; ++z)
+				{
+					currentPosition = ivec3(x, y, z) - ivec3(start);
+
+					if (glm::all(glm::greaterThanEqual(currentPosition, ivec3(0))) && glm::all(glm::lessThan(currentPosition, ivec3(_numDivs))))
+						vox.AddVoxel(x, z, y, this->at(currentPosition.x, currentPosition.y, currentPosition.z));
+					else
+						vox.AddVoxel(x, z, y, VOXEL_EMPTY);
+				}
+			}
+		}
+	}
+	else
+	{
+		for (int x = 0; x < _numDivs.x; ++x)
+		{
+			unsigned positionIndex;
+
+			for (int y = 0; y < _numDivs.y; ++y)
+			{
+				for (int z = 0; z < _numDivs.z; ++z)
+				{
+					positionIndex = this->getPositionIndex(x, y, z);
+					if (_grid[positionIndex]._value >= VOXEL_FREE)
+						vox.AddVoxel(x + start.x, z + start.z, y + start.y, _grid[positionIndex]._value - VOXEL_EMPTY);
+				}
 			}
 		}
 	}
 
-	vox.SaveToFile("grid" + std::to_string(RandomUtilities::getUniformRandomInt(0, 10e5)) + ".vox");
+	// If path is empty then save in a file with random numbering
+	std::string filePath = filename;
+	if (filePath.empty())
+		filePath = "Output/grid" + std::to_string(rand()) + ".vox";
+
+	vox.SaveToFile(filePath);
 	vox.PrintStats();
 }
 
@@ -243,7 +284,7 @@ void RegularGrid::getAABBs(std::vector<AABB>& aabb)
 		{
 			for (int z = 0; z < _numDivs.z; ++z)
 			{
-				if (_grid[this->getPositionIndex(x, y, z)]._value != VOXEL_EMPTY)
+				if (_grid[this->getPositionIndex(x, y, z)]._value >= VOXEL_FREE)
 				{
 					min = _aabb.min() + _cellSize * vec3(x, y, z);
 					max = min + _cellSize;
@@ -536,7 +577,7 @@ bool RegularGrid::isBoundary(int x, int y, int z, int neighbourhoodSize) const
 				if (this->at(x, y, z) == VOXEL_EMPTY)
 					isBoundary = true;
 
-	return !isBoundary;
+	return isBoundary;
 }
 
 bool RegularGrid::isOccupied(int x, int y, int z) const
@@ -612,6 +653,7 @@ void RegularGrid::getComputeShaders()
 	_countVoxelTriangleShader = ShaderList::getInstance()->getComputeShader(RendEnum::COUNT_VOXEL_TRIANGLE);
 	_erodeShader = ShaderList::getInstance()->getComputeShader(RendEnum::ERODE_GRID);
 	_pickVoxelTriangleShader = ShaderList::getInstance()->getComputeShader(RendEnum::SELECT_VOXEL_TRIANGLE);
+	_removeIsolatedRegionsShader = ShaderList::getInstance()->getComputeShader(RendEnum::REMOVE_ISOLATED_REGIONS_GRID);
 	_resetCounterShader = ShaderList::getInstance()->getComputeShader(RendEnum::RESET_BUFFER);
 	_undoMaskShader = ShaderList::getInstance()->getComputeShader(RendEnum::UNDO_MASK_SHADER);
 }
@@ -780,6 +822,17 @@ uvec3 RegularGrid::rayTraversalAmanatidesWoo(const Model3D::RayGPUData& ray)
 	}
 
 	return uvec3(std::numeric_limits<glm::uint>::max());
+}
+
+void RegularGrid::removeIsolatedRegions()
+{
+	unsigned numCells = _numDivs.x * _numDivs.y * _numDivs.z;
+
+	_removeIsolatedRegionsShader->bindBuffers(std::vector<GLuint>{ _ssbo });
+	_removeIsolatedRegionsShader->use();
+	_removeIsolatedRegionsShader->setUniform("gridDims", this->getNumSubdivisions());
+	_removeIsolatedRegionsShader->setUniform("numCells", numCells);
+	_removeIsolatedRegionsShader->execute(ComputeShader::getNumGroups(numCells), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 }
 
 void RegularGrid::resetBuffer(GLuint ssbo, unsigned value, unsigned count)

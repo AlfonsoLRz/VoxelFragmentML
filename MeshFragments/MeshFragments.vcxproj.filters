@@ -205,9 +205,6 @@
     <Filter Include="Archivos de origen\ImportedLibraries\objloader">
       <UniqueIdentifier>{f25f865e-3383-45e9-83eb-7064c916f5b0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Archivos de recursos\Shaders\Compute\Model\PlanarSurface">
-      <UniqueIdentifier>{fa8b8cdf-4b5f-4812-97f2-164a95f7b37d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Archivos de recursos\Shaders\Compute\BVH Build">
       <UniqueIdentifier>{e5a67437-04f9-4a02-a138-25ac99c13c3c}</UniqueIdentifier>
     </Filter>
@@ -991,12 +988,6 @@
     <None Include="Assets\Shaders\Compute\BVHGeneration\endLoopComputations-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\BVH Build</Filter>
     </None>
-    <None Include="Assets\Shaders\Compute\PlanarSurface\planarSurfaceFaces-comp.glsl">
-      <Filter>Archivos de recursos\Shaders\Compute\Model\PlanarSurface</Filter>
-    </None>
-    <None Include="Assets\Shaders\Compute\PlanarSurface\planarSurfaceGeometryTopology-comp.glsl">
-      <Filter>Archivos de recursos\Shaders\Compute\Model\PlanarSurface</Filter>
-    </None>
     <None Include="Assets\Shaders\Compute\Model\computeNormals-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Model</Filter>
     </None>
@@ -1203,6 +1194,12 @@
     </None>
     <None Include="Assets\Shaders\Compute\Fracturer\fillRegularGridVertical-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegionsGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Triangles</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Model\samplerAlt-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Model</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -12,6 +12,8 @@
 *_metadata.txt
 *errors.txt
 *.vox
+*.blend*
+*.ini
 
 # Prerequisites
 *.d

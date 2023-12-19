@@ -269,56 +269,82 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 {
 	PointCloud3D* pointCloud = nullptr;
 
-	if (_modelComp.size())
+	if (!_modelComp.empty())
 	{
-		Model3D::ModelComponent* modelComp = _modelComp[0];
+		Model3D::ModelComponent* component = _modelComp[0];
+		pointCloud = new PointCloud3D;
+
+		// Noise to generate randomized points within each triangle
 		std::vector<float> noiseBuffer;
 		fracturer::Seeder::getFloatNoise(maxSamples, maxSamples * 2, randomFunction, noiseBuffer);
-
-		// Max. triangle area
-		float maxArea = FLT_MIN;
-		Triangle3D triangle;
-		for (const Model3D::FaceGPUData& face : modelComp->_topology)
-		{
-			triangle = Triangle3D(modelComp->_geometry[face._vertices.x]._position, modelComp->_geometry[face._vertices.y]._position, modelComp->_geometry[face._vertices.z]._position);
-			maxArea = std::max(maxArea, triangle.area());
-		}
-
-		ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::SAMPLER_SHADER);
-
-		unsigned numPoints = 0, noiseBufferSize = 0;
-		unsigned maxPoints = maxSamples * modelComp->_topology.size();
-
-		const GLuint vertexSSBO = ComputeShader::setReadBuffer(modelComp->_geometry, GL_STATIC_DRAW);
-		const GLuint faceSSBO = ComputeShader::setReadBuffer(modelComp->_topology, GL_STATIC_DRAW);
-		const GLuint pointCloudSSBO = ComputeShader::setWriteBuffer(vec4(), maxPoints, GL_DYNAMIC_DRAW);
-		const GLuint countingSSBO = ComputeShader::setReadBuffer(&numPoints, 1, GL_DYNAMIC_DRAW);
 		const GLuint noiseSSBO = ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
 
-		shader->use();
-		shader->bindBuffers(std::vector<GLuint> { vertexSSBO, faceSSBO, pointCloudSSBO, countingSSBO, noiseSSBO });
-		shader->setUniform("maxArea", maxArea);
-		//shader->setUniform("noiseBufferSize", static_cast<unsigned>(noiseBuffer.size()));
-		shader->setUniform("numSamples", maxSamples);
-		shader->setUniform("numTriangles", static_cast<unsigned>(modelComp->_topology.size()));
-		if (modelComp->_material) modelComp->_material->applyTexture(shader, Texture::KAD_TEXTURE);
-		shader->execute(ComputeShader::getNumGroups(maxSamples * modelComp->_topology.size()), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+		// Other GPU buffers
+		unsigned numPoints = 0;
+		const GLuint pointCloudSSBO = ComputeShader::setWriteBuffer(vec4(), maxSamples * 1.2f, GL_DYNAMIC_DRAW);
+		const GLuint countingSSBO = ComputeShader::setReadBuffer(&numPoints, 1, GL_DYNAMIC_DRAW);
 
-		numPoints = *ComputeShader::readData(countingSSBO, unsigned());
-		vec4* pointCloudData = ComputeShader::readData(pointCloudSSBO, vec4());
+		// Max. triangle area
+		float sumArea = 0.0f;
+		std::vector<float> triangleArea(component->_topology.size());
+		this->getSortedTriangleAreas(component, triangleArea, sumArea);
 
-		pointCloud = new PointCloud3D;
-		pointCloud->push_back(pointCloudData, numPoints);
+		if (maxSamples > component->_topology.size())
+		{
+			ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::SAMPLER_SHADER);
 
-		ComputeShader::deleteBuffers(std::vector<GLuint>{ vertexSSBO, faceSSBO, pointCloudSSBO, countingSSBO, noiseSSBO });
+			shader->use();
+			shader->bindBuffers(std::vector<GLuint> { component->_geometrySSBO, component->_topologySSBO, pointCloudSSBO, countingSSBO, noiseSSBO });
+			shader->setUniform("numSamples", maxSamples);
+			shader->setUniform("numTriangles", static_cast<unsigned>(component->_topology.size()));
+			shader->setUniform("sumArea", sumArea);
+			shader->execute(ComputeShader::getNumGroups(component->_topology.size()), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+			numPoints = *ComputeShader::readData(countingSSBO, unsigned());
+			vec4* pointCloudData = ComputeShader::readData(pointCloudSSBO, vec4());
+			pointCloud->push_back(pointCloudData, numPoints);
+			pointCloud->subselect(maxSamples);
+		}
+		else
+		{
+			ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::SAMPLER_ALT_SHADER);
+
+			int activeFaces = 0, randomFace;
+			std::vector<uint8_t> activeBuffer(component->_topology.size(), uint8_t(0));
+			while (activeFaces < maxSamples)
+			{
+				randomFace = RandomUtilities::getUniformRandomInt(0, component->_topology.size() - 1);
+				if (activeBuffer[randomFace] == 0)
+				{
+					activeBuffer[randomFace] = 1;
+					++activeFaces;
+				}
+			}
+
+			const GLuint activeSSBO = ComputeShader::setReadBuffer(activeBuffer, GL_STATIC_DRAW);
+
+			shader->use();
+			shader->bindBuffers(std::vector<GLuint> { component->_geometrySSBO, component->_topologySSBO, pointCloudSSBO, countingSSBO, noiseSSBO, activeSSBO });
+			shader->setUniform("noiseBufferSize", maxSamples * 2);
+			shader->setUniform("numTriangles", static_cast<unsigned>(component->_topology.size()));
+			shader->execute(ComputeShader::getNumGroups(component->_topology.size()), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+			numPoints = *ComputeShader::readData(countingSSBO, unsigned());
+			vec4* pointCloudData = ComputeShader::readData(pointCloudSSBO, vec4());
+			pointCloud->push_back(pointCloudData, numPoints);
+
+			ComputeShader::deleteBuffers(std::vector<GLuint>{ activeSSBO });
+		}
+
+		ComputeShader::deleteBuffers(std::vector<GLuint>{ pointCloudSSBO, countingSSBO, noiseSSBO });
 	}
 
 	return pointCloud;
 }
 
-bool CADModel::save(const std::string& filename, bool compress)
+bool CADModel::save(const std::string& filename)
 {
-	return this->saveAssimp(filename, compress);
+	return this->saveAssimp(filename);
 }
 
 void CADModel::simplify(unsigned numFaces, bool cgal, bool verbose)
@@ -735,7 +761,7 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vecto
 	}
 }
 
-bool CADModel::saveAssimp(const std::string& filename, bool compress)
+bool CADModel::saveAssimp(const std::string& filename)
 {
 	aiScene* scene = new aiScene;
 	scene->mRootNode = new aiNode();
@@ -803,39 +829,19 @@ bool CADModel::saveAssimp(const std::string& filename, bool compress)
 	}
 
 	// Out of main thread
-	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename, compress);
+	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename);
 	writeModel.detach();
 
 	return true;
 	//return _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
 }
 
-void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename, bool zip)
+void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename)
 {
 	const std::string file = filename.substr(filename.find_last_of('/') + 1);
 	Assimp::Exporter exporter;
 	exporter.Export(scene, "stl", filename);
 	delete scene;
-
-	// Zip file
-	//if (zip)
-	//{
-	//	std::string directory = filename.substr(0, filename.find_last_of('/'));
-	//	std::string changeDirectory = "cd " + directory;
-	//	std::string changeStorageUnit = filename.substr(0, 2);
-	//	std::string compress = "tar -cf " + file + ".zip " + file + " >nul 2>nul";
-	//	std::string remove = changeDirectory + " && " + changeStorageUnit + " && " + "del " + file;
-	//	std::string command = changeDirectory + " && " + changeStorageUnit + " && " + compress;
-
-	//	do
-	//	{
-	//		system(command.c_str());
-	//		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	//	} 
-	//	while (std::filesystem::file_size(directory + "/" + file + ".zip") <= 1024);
-
-	//	system(remove.c_str());
-	//}
 }
 
 bool CADModel::writeBinary(const std::string& path)

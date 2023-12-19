@@ -235,73 +235,25 @@ void Model3D::setMaterial(std::vector<Material*> material)
 
 /// [Protected methods]
 
-void Model3D::captureTexture(FBOScreenshot* fbo, const std::vector<vec4>& pixels, const uvec2& dimension, const std::string& filename)
+void Model3D::getSortedTriangleAreas(ModelComponent* component, std::vector<float>& areas, float& sumArea)
 {
-	float* imageData = new float[pixels.size() * 4];
-	for (int i = 0; i < pixels.size(); ++i)
+	size_t numTriangles = component->_topology.size();
+	areas.resize(numTriangles);
+	float globalArea = 0.0f;
+
+#pragma omp parallel for reduction(+:globalArea)
+	for (int i = 0; i < numTriangles; ++i)
 	{
-		imageData[i * 4] = pixels[i].x;
-		imageData[i * 4 + 1] = pixels[i].y;
-		imageData[i * 4 + 2] = pixels[i].z;
-		imageData[i * 4 + 3] = 1.0f;
+		Triangle3D triangle(component->_geometry[component->_topology[i]._vertices.x]._position,
+			component->_geometry[component->_topology[i]._vertices.y]._position,
+			component->_geometry[component->_topology[i]._vertices.z]._position);
+
+		areas[i] = triangle.area();
+		globalArea += areas[i];
 	}
 
-	Texture* tex = new Texture(imageData, dimension.x, dimension.y, GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST, true);
-	const ivec2 canvasSize = Window::getInstance()->getSize();
-	VAO* quadVAO = Primitives::getQuadVAO();
-
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo->getIdentifier());
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glViewport(0, 0, fbo->getSize().x, fbo->getSize().y);
-
-		RenderingShader* shader = ShaderList::getInstance()->getRenderingShader(RendEnum::DEBUG_QUAD_SHADER);
-		shader->use();
-		tex->applyTexture(shader, 0, "texSampler");
-		shader->applyActiveSubroutines();
-
-		quadVAO->drawObject(RendEnum::IBO_TRIANGLE_MESH, GL_TRIANGLES, 2 * 4);
-	}
-
-	{
-		fbo->saveImage(filename);
-
-		// Go back to initial state
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, canvasSize.x, canvasSize.y);
-	}
-
-	delete tex;
-}
-
-void Model3D::computeTangents(ModelComponent* modelComp)
-{
-	ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::COMPUTE_TANGENTS_1);
-	const int numVertices = modelComp->_geometry.size(), numTriangles = modelComp->_topology.size();
-	int numGroups = ComputeShader::getNumGroups(numTriangles);
-
-	GLuint geometryBufferID, meshBufferID, outBufferID;
-	geometryBufferID = ComputeShader::setReadBuffer(modelComp->_geometry);
-	meshBufferID = ComputeShader::setReadBuffer(modelComp->_topology);
-	outBufferID = ComputeShader::setWriteBuffer(vec4(), numVertices);
-
-	shader->bindBuffers(std::vector<GLuint> { geometryBufferID, meshBufferID, outBufferID });
-	shader->use();
-	shader->setUniform("numTriangles", numTriangles);
-	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	shader = ShaderList::getInstance()->getComputeShader(RendEnum::COMPUTE_TANGENTS_2);
-	numGroups = ComputeShader::getNumGroups(numVertices);
-
-	shader->bindBuffers(std::vector<GLuint> { geometryBufferID, outBufferID });
-	shader->use();
-	shader->setUniform("numVertices", numVertices);
-	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	VertexGPUData* data = ComputeShader::readData(geometryBufferID, VertexGPUData());
-	modelComp->_geometry = std::move(std::vector<VertexGPUData>(data, data + numVertices));
-
-	ComputeShader::deleteBuffers(std::vector<GLuint>{ geometryBufferID, meshBufferID, outBufferID });
+	std::sort(areas.begin(), areas.end());
+	sumArea = globalArea;
 }
 
 void Model3D::setModelMatrix(std::vector<mat4>& matrix)

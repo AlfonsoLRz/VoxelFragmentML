@@ -52,6 +52,7 @@ protected:
 	ComputeShader* _countVoxelTriangleShader;
 	ComputeShader* _erodeShader;
 	ComputeShader* _pickVoxelTriangleShader;
+	ComputeShader* _removeIsolatedRegionsShader;
 	ComputeShader* _resetCounterShader;					//!< Shader to reset the counter
 	ComputeShader* _undoMaskShader;
 
@@ -95,6 +96,11 @@ protected:
 	*	@brief Traverses the grid using the Amanatides-Woo algorithm.
 	*/
 	uvec3 rayTraversalAmanatidesWoo(const Model3D::RayGPUData& ray);
+
+	/**
+	*	@brief Removes isolated regions from the grid.
+	*/
+	void removeIsolatedRegions();
 
 	/**
 	*	@brief Resets buffer to a given value.
@@ -151,7 +157,7 @@ public:
 	/**
 	*	@brief Exports fragments into several models in a PLY file.
 	*/
-	void exportGrid();
+	void exportGrid(bool squared = false, const std::string& filename = "");
 
 	/**
 	*	@brief

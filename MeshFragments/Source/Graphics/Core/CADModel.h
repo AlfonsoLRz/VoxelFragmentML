@@ -16,7 +16,6 @@
 *	@date 11/28/2020
 */
 
-#define COMMENT_CHAR "#"
 #define CGAL_SIMPLIFICATION true
 #define SIMPLIFY_SIMPLIFICATION true
 
@@ -39,7 +38,7 @@ protected:
 	std::string			_filename;								//!< File path (without extension)
 	bool				_fuseComponents;						//!< Fuse all the components found in the cad model
 	bool				_fuseVertices;							//!< Fuse vertices which are too close
-	const aiScene* _scene;									//!< Scene from assimp library	
+	const aiScene*		_scene;									//!< Scene from assimp library	
 	bool				_useBinary;								//!< Use binary file instead of original obj models
 
 protected:
@@ -91,12 +90,12 @@ protected:
 	/**
 	*	@brief Saves current model using assimp.
 	*/
-	bool saveAssimp(const std::string& filename, bool compress = true);
+	bool saveAssimp(const std::string& filename);
 
 	/**
 	*	@brief Saves current model using assimp.
 	*/
-	void threadedSaveAssimp(aiScene* scene, const std::string& filename, bool zip);
+	void threadedSaveAssimp(aiScene* scene, const std::string& filename);
 
 	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
@@ -188,7 +187,7 @@ public:
 	/**
 	*	@brief Saves the model using assimp.
 	*/
-	bool save(const std::string& filename, bool compress = true);
+	bool save(const std::string& filename);
 
 	/**
 	*	@brief

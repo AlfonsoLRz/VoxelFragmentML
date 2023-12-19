@@ -1,6 +1,8 @@
 #version 450
 
 #extension GL_ARB_compute_variable_group_size: enable
+#extension GL_NV_gpu_shader5 : enable
+
 layout (local_size_variable) in;
 								
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
@@ -11,10 +13,10 @@ layout (std430, binding = 1) buffer FaceBuffer		{ FaceGPUData		face[]; };
 layout (std430, binding = 2) buffer PointBuffer		{ vec4				newPoint[]; };
 layout (std430, binding = 3) buffer PointCounter	{ uint				pointIndex; };
 layout (std430, binding = 4) buffer NoiseBuffer		{ float				noise[]; };
+layout (std430, binding = 5) buffer ActivationBuffer { uint8_t			activation[]; };
 
-uniform uint		numSamples;
+uniform uint		noiseBufferSize;
 uniform uint		numTriangles;
-uniform float		sumArea;
 
 vec2 getTextCoord(vec3 position, uint a, uint b, uint c)
 {
@@ -36,22 +38,17 @@ vec2 getTextCoord(vec3 position, uint a, uint b, uint c)
 void main()
 {
 	const uint index = gl_GlobalInvocationID.x;
-	if (index >= numTriangles)
+	if (index >= numTriangles || activation[index] == uint8_t(0))
 		return;
 	
 	vec3 v1 = vertex[face[index].vertices.x].position, v2 = vertex[face[index].vertices.y].position, v3 = vertex[face[index].vertices.z].position;
 	vec3 u = v2 - v1, v = v3 - v1;
-	float area = length(cross(u, v)) / 2.0f;
-	int numTriangleSamples = max(int(round(area / sumArea * numSamples)), 1);
-	uint newPointIndex = atomicAdd(pointIndex, numTriangleSamples), end = min(newPointIndex + numTriangleSamples, numSamples);
 
-	for (uint i = newPointIndex; i < end; i++)
-	{
-		vec2 randomFactors = vec2(noise[i * 2 + 0], noise[i * 2 + 1]);
-		if (randomFactors.x + randomFactors.y >= 1.0f)
-			randomFactors = 1.0f - randomFactors;
+	uint newPointIndex = atomicAdd(pointIndex, 1);
+	vec2 randomFactors = vec2(noise[index % noiseBufferSize], noise[(index + 1) % noiseBufferSize]);
+	if (randomFactors.x + randomFactors.y >= 1.0f)
+		randomFactors = 1.0f - randomFactors;
 
-		vec3 point = v1 + u * randomFactors.x + v * randomFactors.y;
-		newPoint[i] = vec4(point, 1.0f);
-	}
+	vec3 point = v1 + u * randomFactors.x + v * randomFactors.y;
+	newPoint[newPointIndex] = vec4(point, 1.0f);
 }

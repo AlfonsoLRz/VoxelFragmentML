@@ -331,6 +331,7 @@
     <None Include="Assets\Shaders\Compute\Fracturer\markBoundaryTriangles-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\naiveFracturer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegions-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegionsGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\resetBuffer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\resetLaplacianBuffer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\selectVoxelTriangle-comp.glsl" />
@@ -342,7 +343,7 @@
     <None Include="Assets\Shaders\Compute\Model\computeFaceAABB-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\computeNormals-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\sampler-comp.glsl" />
-    <None Include="Assets\Shaders\Compute\PlanarSurface\planarSurfaceFaces-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Model\samplerAlt-comp.glsl" />
     <None Include="Assets\Shaders\Compute\RadixSort\bitMask-radixSort-comp.glsl" />
     <None Include="Assets\Shaders\Compute\BVHGeneration\buildClusterBuffer-comp.glsl" />
     <None Include="Assets\Shaders\Compute\BVHGeneration\clusterMerging-comp.glsl" />
@@ -354,7 +355,6 @@
     <None Include="Assets\Shaders\Compute\BVHGeneration\findBestNeighbor-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\modelMeshGeneration-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Model\modelApplyModelMatrix-comp.glsl" />
-    <None Include="Assets\Shaders\Compute\PlanarSurface\planarSurfaceGeometryTopology-comp.glsl" />
     <None Include="Assets\Shaders\Compute\BVHGeneration\reallocateClusters-comp.glsl" />
     <None Include="Assets\Shaders\Compute\RadixSort\reallocateIndices-radixSort-comp.glsl" />
     <None Include="Assets\Shaders\Compute\PrefixScan\reduce-prefixScan-comp.glsl" />

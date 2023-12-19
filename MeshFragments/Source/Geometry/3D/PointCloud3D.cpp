@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "PointCloud3D.h"
 
+#include "happly.h"
+
 /// [Public methods]
 
 PointCloud3D::PointCloud3D()
@@ -92,4 +94,28 @@ void PointCloud3D::push_back(const vec4* points, unsigned numPoints)
 		//vec4 color = glm::unpackUnorm4x8(points[idx].w);
 		_color.push_back(points[idx].w);
 	}
+}
+
+bool PointCloud3D::save(const std::string& filename)
+{
+	// Export using PLY format
+	std::vector<std::array<double, 3>> vertices (_points.size());
+#pragma omp parallel for
+	for (int idx = 0; idx < _points.size(); ++idx)
+		vertices[idx] = { _points[idx].x, _points[idx].y, _points[idx].z };
+
+	// Create an empty object
+	happly::PLYData plyOut;
+	plyOut.addVertexPositions(vertices);
+	plyOut.write(filename, happly::DataFormat::Binary);
+}
+
+void PointCloud3D::subselect(unsigned numPoints)
+{
+	if (numPoints >= _points.size()) return;
+
+	// Randomly select points
+	std::shuffle(_points.begin(), _points.end(), std::mt19937(std::random_device()()));
+	// Cut
+	_points.resize(numPoints);
 }

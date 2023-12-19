@@ -18,18 +18,8 @@
 #include "Utilities/ChronoUtilities.h"
 #include "Utilities/FileManagement.h"
 
-
-#include "Graphics/Application/SSAOScene.h"
-
-
 /// Initialization of static attributes
-const std::string CADScene::SCENE_ROOT_FOLDER = "Assets/Scene/Basement/";
-const std::string CADScene::SCENE_SETTINGS_FOLDER = "Assets/Scene/Settings/Basement/";
-
-const std::string CADScene::SCENE_CAMERA_FILE = "Camera.txt";
-const std::string CADScene::SCENE_LIGHTS_FILE = "Lights.txt";
-
-const std::string CADScene::VESSEL_PATH = "E:/Research/Ajax.obj";
+const std::string CADScene::TARGET_PATH = "D:/PyCharm/BlenderRenderer/assets/GU_033.obj";
 
 // [Public methods]
 
@@ -59,6 +49,21 @@ void CADScene::exportGrid()
 	_meshGrid->exportGrid();
 }
 
+void CADScene::exportFragments(const FractureParameters& fractureParameters, const std::string& extension)
+{
+	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
+		dynamic_cast<CADModel*>(_fractureMeshes[idx])->save("Output/" + _mesh->getShortName() + "_" + std::to_string(idx) + extension);
+
+	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
+	{
+		for (int targetCount : fractureParameters._targetTriangles)
+		{
+			dynamic_cast<CADModel*>(_fractureMeshes[idx])->simplify(targetCount);
+			dynamic_cast<CADModel*>(_fractureMeshes[idx])->save("Output/" + _mesh->getShortName() + "_" + std::to_string(idx) + "_" + std::to_string(targetCount) + extension);
+		}	
+	}
+}
+
 std::string CADScene::fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters)
 {
 	this->eraseFragmentContent();
@@ -74,7 +79,18 @@ std::string CADScene::fractureGrid(const std::string& path, std::vector<Fragment
 	this->eraseFragmentContent();
 
 	if (!path.empty())
+	{
 		this->loadModel(path);
+		if (fractureParameters._exportProcessedMesh)
+		{
+			for (int targetPoints : fractureParameters._targetPoints)
+			{
+				PointCloud3D* pointCloud = _mesh->sample(targetPoints, fractureParameters._pointCloudSeedingRandom);
+				pointCloud->save("Output/" + _mesh->getShortName() + "_" + std::to_string(targetPoints) + "_points.ply");
+				delete pointCloud;
+			}
+		}
+	}
 
 	if (!_generateDataset)
 	{
@@ -124,23 +140,23 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 		// Calculate size of voxelization according to model size
 		const AABB aabb = _mesh->getAABB();
-		fractureProcedure._fractureParameters._gridSubdivisions = glm::ceil(aabb.size() * vec3(fractureProcedure._fractureParameters._voxelPerMetricUnit));
-		if (fractureProcedure._fractureParameters._gridSubdivisions.x > fractureProcedure._fractureParameters._clampVoxelMetricUnit or
-			fractureProcedure._fractureParameters._gridSubdivisions.y > fractureProcedure._fractureParameters._clampVoxelMetricUnit or
-			fractureProcedure._fractureParameters._gridSubdivisions.z > fractureProcedure._fractureParameters._clampVoxelMetricUnit)
+		fractureProcedure._fractureParameters._voxelizationSize = glm::ceil(aabb.size() * vec3(fractureProcedure._fractureParameters._voxelPerMetricUnit));
+		if (fractureProcedure._fractureParameters._voxelizationSize.x > fractureProcedure._fractureParameters._clampVoxelMetricUnit or
+			fractureProcedure._fractureParameters._voxelizationSize.y > fractureProcedure._fractureParameters._clampVoxelMetricUnit or
+			fractureProcedure._fractureParameters._voxelizationSize.z > fractureProcedure._fractureParameters._clampVoxelMetricUnit)
 		{
-			fractureProcedure._fractureParameters._gridSubdivisions =
+			fractureProcedure._fractureParameters._voxelizationSize =
 				glm::floor(vec3(fractureProcedure._fractureParameters._clampVoxelMetricUnit) *
 					aabb.size() / glm::max(aabb.size().x, glm::max(aabb.size().y, aabb.size().z)));
 			std::cout << modelName << " - " << "Voxelization size clamped to " << fractureProcedure._fractureParameters._clampVoxelMetricUnit << std::endl;
 		}
-		while (fractureProcedure._fractureParameters._gridSubdivisions.x % 4 != 0) ++fractureProcedure._fractureParameters._gridSubdivisions.x;
-		while (fractureProcedure._fractureParameters._gridSubdivisions.z % 4 != 0) ++fractureProcedure._fractureParameters._gridSubdivisions.z;
+		while (fractureProcedure._fractureParameters._voxelizationSize.x % 4 != 0) ++fractureProcedure._fractureParameters._voxelizationSize.x;
+		while (fractureProcedure._fractureParameters._voxelizationSize.z % 4 != 0) ++fractureProcedure._fractureParameters._voxelizationSize.z;
 
-		std::cout << modelName << " - " << fractureProcedure._fractureParameters._gridSubdivisions.x << "x" << fractureProcedure._fractureParameters._gridSubdivisions.y << "x" << fractureProcedure._fractureParameters._gridSubdivisions.z << std::endl;
+		std::cout << modelName << " - " << fractureProcedure._fractureParameters._voxelizationSize.x << "x" << fractureProcedure._fractureParameters._voxelizationSize.y << "x" << fractureProcedure._fractureParameters._voxelizationSize.z << std::endl;
 
 		// Initialize grid content
-		_meshGrid->setAABB(_mesh->getAABB(), fractureProcedure._fractureParameters._gridSubdivisions);
+		_meshGrid->setAABB(_mesh->getAABB(), fractureProcedure._fractureParameters._voxelizationSize);
 		_meshGrid->fill(_mesh->getModelComponent(0));
 		_meshGrid->resetMarchingCubes();
 		_mesh->getModelComponent(0)->releaseMemory();
@@ -180,7 +196,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 						{
 							simplificationFilename = filename + "_" + std::to_string(targetCount) + fractureProcedure._saveExtension;
 							cadModel->simplify(targetCount);
-							cadModel->save(simplificationFilename, fractureProcedure._compressFiles);
+							cadModel->save(simplificationFilename);
 
 							fragmentMetadata[idx]._vesselName = simplificationFilename;
 							fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
@@ -190,7 +206,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 					}
 					else
 					{
-						cadModel->save(filename + fractureProcedure._saveExtension, fractureProcedure._compressFiles);
+						cadModel->save(filename + fractureProcedure._saveExtension);
 
 						fragmentMetadata[idx]._vesselName = filename + fractureProcedure._saveExtension;
 						fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
@@ -261,22 +277,27 @@ void CADScene::allocateMemoryDataset(FragmentationProcedure& fractureProcedure)
 	else
 		fracturer = fracturer::FloodFracturer::getInstance();
 
-	fractureProcedure._fractureParameters._gridSubdivisions = ivec3(fractureProcedure._fractureParameters._clampVoxelMetricUnit);
+	fractureProcedure._fractureParameters._voxelizationSize = ivec3(fractureProcedure._fractureParameters._clampVoxelMetricUnit);
 	fracturer->prepareSSBOs(&fractureProcedure._fractureParameters);
 }
 
 void CADScene::allocateMeshGrid(FractureParameters& fractParameters)
 {
 	const AABB aabb = _mesh->getAABB();
-	fractParameters._gridSubdivisions =
-		glm::floor(vec3(fractParameters._gridSubdivisions.x) * aabb.size() / glm::max(aabb.size().x, glm::max(aabb.size().y, aabb.size().z)));
+	fractParameters._voxelizationSize =
+		glm::floor(vec3(fractParameters._voxelizationSize.x) * aabb.size() / glm::max(aabb.size().x, glm::max(aabb.size().y, aabb.size().z)));
 
-	while (fractParameters._gridSubdivisions.x % 4 != 0) ++fractParameters._gridSubdivisions.x;
-	while (fractParameters._gridSubdivisions.z % 4 != 0) ++fractParameters._gridSubdivisions.z;
+	while (fractParameters._voxelizationSize.x % 4 != 0) ++fractParameters._voxelizationSize.x;
+	while (fractParameters._voxelizationSize.z % 4 != 0) ++fractParameters._voxelizationSize.z;
 
-	_meshGrid->setAABB(aabb, fractParameters._gridSubdivisions);
+	_meshGrid->setAABB(aabb, fractParameters._voxelizationSize);
 	_meshGrid->fill(_mesh->getModelComponent(0));
 	_meshGrid->resetMarchingCubes();
+
+	if (fractParameters._exportStartingGrid)
+	{
+		_meshGrid->exportGrid(true, "Output/" + _mesh->getShortName() + "_grid.vox");
+	}
 }
 
 void CADScene::eraseFragmentContent()
@@ -331,20 +352,20 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 
 	if (_impactSeeds.empty())
 	{
-		if (fractParameters._biasSeeds == 0)
+		if (fractParameters._numImpacts == 0)
 		{
 			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom);
 		}
 		else
 		{
-			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._biasSeeds, fractParameters._seedingRandom);
-			seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numSeeds - fractParameters._biasSeeds, fractParameters._spreading);
+			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom);
+			seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numImpacts, fractParameters._biasSeeds, fractParameters._biasFocus);
 		}
 	}
 	else
 	{
 		seeds = _impactSeeds;
-		seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numSeeds - 1, fractParameters._spreading);
+		seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, 1, fractParameters._biasSeeds, fractParameters._biasFocus);
 	}
 
 	if (fractParameters._numExtraSeeds > 0)
@@ -379,12 +400,15 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 		_meshGrid->updateSSBO();
 	}
 
-	_meshGrid->detectBoundaries(fractParameters._boundarySize);
 	if (fractParameters._erode)
 	{
 		_meshGrid->erode(static_cast<FractureParameters::ErosionType>(
 			fractParameters._erosionConvolution), fractParameters._erosionSize, fractParameters._erosionIterations,
 			fractParameters._erosionProbability, fractParameters._erosionThreshold);
+	}
+	else
+	{
+		_meshGrid->detectBoundaries(1);
 	}
 
 	return "";
@@ -458,17 +482,12 @@ void CADScene::loadCameras()
 	ivec2 canvasSize = _window->getSize();
 	Camera* camera = new Camera(canvasSize[0], canvasSize[1]);
 
-	this->readCameraFromSettings(camera);
 	_cameraManager->insertCamera(camera);
 }
 
 void CADScene::loadLights()
 {
-	if (!this->readLightsFromSettings())
-	{
-		this->loadDefaultLights();
-	}
-
+	this->loadDefaultLights();
 	Scene::loadLights();
 }
 
@@ -476,7 +495,7 @@ void CADScene::loadModels()
 {
 	_fragmentMetadata.clear();
 
-	this->fractureGrid(VESSEL_PATH, _fragmentMetadata, _fractParameters);
+	this->fractureGrid(TARGET_PATH, _fragmentMetadata, _fractParameters);
 	this->loadDefaultCamera(_cameraManager->getActiveCamera());
 }
 
@@ -537,193 +556,6 @@ void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<Fra
 
 		}
 	}
-}
-
-bool CADScene::readCameraFromSettings(Camera* camera)
-{
-	const std::string filename = SCENE_SETTINGS_FOLDER + SCENE_CAMERA_FILE;
-	std::string currentLine, lineHeader;
-	std::stringstream line;
-	std::ifstream inputStream;
-	vec3 value;
-
-	inputStream.open(filename.c_str());
-
-	if (inputStream.fail()) return false;
-
-	while (!(inputStream >> std::ws).eof())
-	{
-		std::getline(inputStream, currentLine);
-
-		line.clear();
-		line.str(currentLine);
-		std::getline(line, lineHeader, ' ');
-
-		if (lineHeader.find(COMMENT_CHAR) == std::string::npos)
-		{
-			for (int i = 0; i < 3; ++i)
-			{
-				line >> value[i];
-				line.ignore();
-			}
-
-			if (lineHeader == CAMERA_POS_HEADER)
-			{
-				camera->setPosition(value);
-			}
-			else if (lineHeader == CAMERA_LOOKAT_HEADER)
-			{
-				camera->setLookAt(value);
-			}
-		}
-	}
-
-	inputStream.close();
-
-	return true;
-}
-
-bool CADScene::readLightsFromSettings()
-{
-	// File management
-	const std::string filename = SCENE_SETTINGS_FOLDER + SCENE_LIGHTS_FILE;
-	std::string currentLine, lineHeader;
-	std::stringstream line;
-	std::ifstream inputStream;
-
-	Light* light = nullptr;
-	vec3 vec3val;
-	vec2 vec2val;
-	float floatval;
-	std::string stringval;
-
-	inputStream.open(filename.c_str());
-
-	if (inputStream.fail()) return false;
-
-	while (!(inputStream >> std::ws).eof())
-	{
-		std::getline(inputStream, currentLine);
-
-		line.clear();
-		line.str(currentLine);
-		std::getline(line, lineHeader, '\t');
-
-		if (lineHeader.empty())
-		{
-			std::getline(line, lineHeader, ' ');
-		}
-
-		if (lineHeader.find(COMMENT_CHAR) == std::string::npos)
-		{
-			if (lineHeader == NEW_LIGHT)
-			{
-				if (light) _lights.push_back(std::unique_ptr<Light>(light));
-
-				light = new Light();
-			}
-			else if (light)
-			{
-				if (lineHeader.find(LIGHT_POSITION) != std::string::npos)
-				{
-					for (int i = 0; i < 3; ++i) { line >> vec3val[i]; line.ignore(); }
-
-					light->setPosition(vec3val);
-				}
-				else if (lineHeader.find(LIGHT_DIRECTION) != std::string::npos)
-				{
-					for (int i = 0; i < 3; ++i) { line >> vec3val[i]; line.ignore(); }
-
-					light->setDirection(vec3val);
-				}
-				else if (lineHeader.find(LIGHT_TYPE) != std::string::npos)
-				{
-					line >> stringval;
-
-					Light::LightModels type = Light::stringToLightModel(stringval);
-					light->setLightType(type);
-				}
-				else if (lineHeader.find(AMBIENT_INTENSITY) != std::string::npos)
-				{
-					for (int i = 0; i < 3; ++i) { line >> vec3val[i]; line.ignore(); }
-
-					light->setIa(vec3val);
-				}
-				else if (lineHeader.find(DIFFUSE_INTENSITY) != std::string::npos)
-				{
-					for (int i = 0; i < 3; ++i) { line >> vec3val[i]; line.ignore(); }
-
-					light->setId(vec3val);
-				}
-				else if (lineHeader.find(SPECULAR_INTENSITY) != std::string::npos)
-				{
-					for (int i = 0; i < 3; ++i) { line >> vec3val[i]; line.ignore(); }
-
-					light->setIs(vec3val);
-				}
-				else if (lineHeader.find(SHADOW_MAP_SIZE) != std::string::npos)
-				{
-					for (int i = 0; i < 2; ++i) { line >> vec2val[i]; line.ignore(); }
-
-					light->getShadowMap()->modifySize(vec2val.x, vec2val.y);
-				}
-				else if (lineHeader.find(BLUR_SHADOW_SIZE) != std::string::npos)
-				{
-					line >> floatval;
-
-					light->setBlurFilterSize(floatval);
-				}
-				else if (lineHeader.find(ORTHO_SIZE) != std::string::npos)
-				{
-					for (int i = 0; i < 2; ++i) { line >> vec2val[i]; line.ignore(); }
-
-					light->getCamera()->setBottomLeftCorner(vec2val);
-				}
-				else if (lineHeader.find(SHADOW_INTENSITY) != std::string::npos)
-				{
-					for (int i = 0; i < 2; ++i) { line >> vec2val[i]; line.ignore(); }
-
-					light->setShadowIntensity(vec2val.x, vec2val.y);
-				}
-				else if (lineHeader.find(CAST_SHADOWS) != std::string::npos)
-				{
-					line >> stringval;
-
-					light->castShadows(stringval == "true" || stringval == "True");
-				}
-				else if (lineHeader.find(SHADOW_CAMERA_ANGLE_X) != std::string::npos)
-				{
-					line >> floatval;
-
-					light->getCamera()->setFovX(floatval);
-				}
-				else if (lineHeader.find(SHADOW_CAMERA_ANGLE_Y) != std::string::npos)
-				{
-					line >> floatval;
-
-					light->getCamera()->setFovY(floatval);
-				}
-				else if (lineHeader.find(SHADOW_CAMERA_RASPECT) != std::string::npos)
-				{
-					for (int i = 0; i < 2; ++i) { line >> vec2val[i]; line.ignore(); }
-
-					light->getCamera()->setRaspect(vec2val.x, vec2val.y);
-				}
-				else if (lineHeader.find(SHADOW_RADIUS) != std::string::npos)
-				{
-					line >> floatval;
-
-					light->setShadowRadius(floatval);
-				}
-			}
-		}
-	}
-
-	if (light) _lights.push_back(std::unique_ptr<Light>(light));
-
-	inputStream.close();
-
-	return true;
 }
 
 void CADScene::rebuildGrid(FractureParameters& fractureParameters)

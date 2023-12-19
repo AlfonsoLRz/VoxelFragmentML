@@ -218,7 +218,7 @@ void GUI::showFractureSettings()
 
 		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);
 
-		ImGui::SliderInt("Grid Subdivisions", &_fractureParameters->_gridSubdivisions[0], 1, _fractureParameters->_clampVoxelMetricUnit);
+		ImGui::SliderInt("Grid Subdivisions", &_fractureParameters->_voxelizationSize[0], 1, _fractureParameters->_clampVoxelMetricUnit);
 
 		ImGui::PushItemWidth(150.0f);
 		{
@@ -229,11 +229,10 @@ void GUI::showFractureSettings()
 			ImGui::Combo("Seed Random Distribution", &_fractureParameters->_seedingRandom, FractureParameters::Random_STR, IM_ARRAYSIZE(FractureParameters::Random_STR));
 			ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR)); ImGui::SameLine(0, 20);
 			ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
+			ImGui::SliderInt("Impacts", &_fractureParameters->_numImpacts, 0, 6); ImGui::SameLine(0, 20);
 			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6); ImGui::SameLine(0, 20);
-			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_spreading, 2, 10);
-			ImGui::Checkbox("Fill Shape", &_fractureParameters->_fillShape);
+			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_biasFocus, 2, 10);
 			ImGui::SliderInt("Boundary Size", &_fractureParameters->_boundarySize, 1, 10);
-			ImGui::SameLine(0, 20); ImGui::Checkbox("Compute Fragment Meshes (Marching cubes)", &_fractureParameters->_computeMCFragments);
 		}
 		ImGui::PopItemWidth();
 
@@ -254,10 +253,14 @@ void GUI::showFractureSettings()
 		ImGui::PopItemWidth();
 
 		this->leaveSpace(3); ImGui::Text("Save Result"); ImGui::Separator(); this->leaveSpace(2);
-		if (ImGui::Button("Export Fragments"))
-		{
+		if (ImGui::Button("Export Voxels"))
 			_scene->exportGrid();
-		}
+
+		ImGui::Combo("Mesh extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportMesh_STR, IM_ARRAYSIZE(FractureParameters::ExportMesh_STR));
+		ImGui::SameLine(0, 20);
+
+		if (ImGui::Button("Export Fracture Meshes"))
+			_scene->exportFragments(*_fractureParameters, FractureParameters::ExportMesh_STR[_fractureParameters->_exportMeshExtension]);
 	}
 
 	ImGui::End();

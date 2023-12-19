@@ -47,7 +47,7 @@ namespace fracturer {
     	/**
     	*   @brief Creates seeds near the current ones. 
     	*/
-        static std::vector<glm::uvec4> nearSeeds(const RegularGrid& grid, const std::vector<glm::uvec4>& frags, unsigned numSeeds, unsigned spreading);
+        static std::vector<glm::uvec4> nearSeeds(const RegularGrid& grid, const std::vector<glm::uvec4>& frags, unsigned numImpacts, unsigned numSeeds, unsigned spreading);
     	
         /**
         *   Merge seeds randomly until there are no extra seeds.

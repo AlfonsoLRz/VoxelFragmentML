@@ -90,8 +90,18 @@ public:
 	void push_back(const vec4* points, unsigned numPoints);
 
 	/**
+	*	@return True if the point cloud was successfully saved.
+	*/
+	bool save(const std::string& filename);
+
+	/**
 	*	@brief Number of points that this cloud contains.
 	*/
 	size_t size() const { return _points.size(); }
+
+	/**
+	*	@brief Subselects a number of points from the cloud.
+	*/
+	void subselect(unsigned numPoints);
 };
 

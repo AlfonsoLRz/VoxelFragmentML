@@ -47,15 +47,8 @@ class PointCloud3D;
 class CADScene : public SSAOScene
 {
 protected:
-	const static std::string SCENE_ROOT_FOLDER;				//!< 
-	const static std::string SCENE_SETTINGS_FOLDER;			//!<	
-
-	// Settings constraints
-	const static std::string SCENE_CAMERA_FILE;				//!<
-	const static std::string SCENE_LIGHTS_FILE;				//!<
-
 	// Meshes to be tested
-	const static std::string VESSEL_PATH;					//!< Location of the first mesh in the file system
+	const static std::string TARGET_PATH;						//!< Location of the default mesh in the file system
 
 protected:
 	AABBSet*					_aabbRenderer;					//!< Buffer of voxels
@@ -139,16 +132,6 @@ protected:
 	void prepareScene(FractureParameters& fractureParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FragmentationProcedure* datasetProcedure = nullptr);
 
 	/**
-	*	@brief Loads camera values from a file, if possible.
-	*/
-	bool readCameraFromSettings(Camera* camera);
-
-	/**
-	*	@brief Load lights from a file, if possible.
-	*/
-	bool readLightsFromSettings();
-
-	/**
 	*	@brief Rebuilds the whole grid to adapt it to a different number of subdivisions.
 	*/
 	void rebuildGrid(FractureParameters& fractParameters);
@@ -222,6 +205,11 @@ public:
 	*	@brief
 	*/
 	void exportGrid();
+
+	/**
+	*	@brief Exports fragments into several models in a given extension.
+	*/
+	void exportFragments(const FractureParameters& fractureParameters, const std::string& extension = ".obj");
 
 	/**
 	*	@brief Fractures voxelized model.

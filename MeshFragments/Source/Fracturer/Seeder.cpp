@@ -32,7 +32,7 @@ namespace fracturer
         }
     }
 
-    std::vector<glm::uvec4> Seeder::nearSeeds(const RegularGrid& grid, const std::vector<glm::uvec4>& frags, unsigned numSeeds, unsigned spreading)
+    std::vector<glm::uvec4> Seeder::nearSeeds(const RegularGrid& grid, const std::vector<glm::uvec4>& frags, unsigned numImpacts, unsigned numSeeds, unsigned spreading)
 	{
         // Custom glm::uvec3 comparator
         auto comparator = [](const glm::uvec3& lhs, const glm::uvec3& rhs) {
@@ -43,12 +43,14 @@ namespace fracturer
 
         // Set where to store seeds
         std::set<glm::uvec3, decltype(comparator)> seeds(comparator);
-        unsigned maxFragmentsSeed = (numSeeds / frags.size()) * 2, currentSeeds, nseeds;
+        unsigned currentSeeds, nseeds, numPendingSeeds = numSeeds;
         uvec3 numDivs = grid.getNumSubdivisions(), numDivs2 = numDivs / uvec3(2);
+        unsigned minDiv = glm::min(numDivs.x, glm::min(numDivs.y, numDivs.z)) / 2;
 
-		for (const uvec4& frag: frags)
+		for (int idx = 0; idx < numImpacts; ++idx)
 		{
-            nseeds = frags.size() == 1 ? numSeeds : glm::clamp(RandomUtilities::getUniformRandomInt(1, maxFragmentsSeed), 1, int(numSeeds));
+            uvec4 frag = frags[RandomUtilities::getUniformRandomInt(0, frags.size() - 1)];
+            nseeds = RandomUtilities::getUniformRandomInt(1, numPendingSeeds);
             currentSeeds = 0;
 			
             // Bruteforce seed search
@@ -64,6 +66,7 @@ namespace fracturer
                 z = (frag.z + z + numDivs.z) % numDivs.z;
             	
                 glm::uvec3 voxel(x, y, z);
+                if (glm::distance(vec3(frag), vec3(voxel)) > minDiv) continue; // Skip if too far from fragment
 
                 // Is occupied the voxel?
                 bool occupied = grid.isOccupied(x, y, z);
@@ -71,24 +74,26 @@ namespace fracturer
                 // Is repeated?
                 bool isFree = seeds.find(voxel) == seeds.end();
 
-                if (occupied && isFree)
+                // Is on the surface
+                bool isBoundary = grid.isBoundary(x, y, z);
+
+                if (occupied && isFree && isBoundary)
                 {
                     seeds.insert(voxel);
                     ++currentSeeds;
                 }
             }
 
-            numSeeds -= nseeds;
+            numPendingSeeds -= nseeds;
 		}
 
         // Array of generated seeds
-        std::vector<glm::uvec4> result;
+        std::vector<glm::uvec4> result = frags;
 
         // Generate array of seed
-        unsigned int nseed = VOXEL_FREE + 1;         // 2 because first seed id must be greater than 1
-
+        unsigned int nseed = result.empty() ? VOXEL_FREE: result[result.size() - 1].w;
         for (glm::uvec3 seed : seeds)
-            result.push_back(glm::uvec4(seed, nseed++));
+            result.push_back(glm::uvec4(seed, ++nseed));
 
         return result;
 	}

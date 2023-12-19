@@ -15,7 +15,7 @@ layout (std430, binding = 2) buffer NoiseBuffer		{ float			noise[]; };
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
 uniform float erosionThreshold, erosionProbability;
-uniform uint numActivations;
+uniform float numActivationsFloat;
 uniform uint numCells;
 uniform uint maskSize;
 uniform uint maskSize2;
@@ -32,9 +32,9 @@ void main()
 		ivec3 indices = ivec3(getPosition(index));
 		ivec3 maxBounds = indices + ivec3(maskSize2);
 		ivec3 minBounds = indices - ivec3(maskSize2);
-		ivec3 maxBoundsClamped = clamp(maxBounds, ivec3(0), ivec3(gridDims) + ivec3(maskSize2));
-		ivec3 minBoundsClamped = clamp(minBounds, ivec3(0), ivec3(gridDims) - ivec3(maskSize2));
-		uint count = 0;
+		ivec3 maxBoundsClamped = clamp(maxBounds, ivec3(0), ivec3(gridDims) - ivec3(1));
+		ivec3 minBoundsClamped = clamp(minBounds, ivec3(0), ivec3(gridDims) - ivec3(1));
+		uint count = 0, globalCount = 0;
 
 		for (int x = minBoundsClamped.x; x <= maxBoundsClamped.x; ++x)
 		{
@@ -43,11 +43,13 @@ void main()
 				for (int z = minBoundsClamped.z; z <= maxBoundsClamped.z; ++z)
 				{
 					count += uint(uint(grid[getPositionIndex(uvec3(x, y, z))].value == grid[index].value) * convolution[(x - minBounds.x) * maskSize * maskSize + (y - minBounds.y) * maskSize + (z - minBounds.z)]);
+					++globalCount;
 				}
 			}
 		}
 
-		if (count < numActivations * erosionThreshold)
+		float activation = float(count) / float(globalCount);
+		if (activation < numActivationsFloat * erosionThreshold)
 			grid[index].value = VOXEL_EMPTY;
 	}
 }

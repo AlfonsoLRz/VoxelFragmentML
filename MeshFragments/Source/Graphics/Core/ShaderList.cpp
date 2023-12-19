@@ -45,11 +45,13 @@ std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::REALLOCATE_RADIX_SORT, "Assets/Shaders/Compute/RadixSort/reallocateIndices-radixSort"},
 		{RendEnum::REDUCE_PREFIX_SCAN, "Assets/Shaders/Compute/PrefixScan/reduce-prefixScan"},
 		{RendEnum::REMOVE_ISOLATED_REGIONS, "Assets/Shaders/Compute/Fracturer/removeIsolatedRegions"},
+		{RendEnum::REMOVE_ISOLATED_REGIONS_GRID, "Assets/Shaders/Compute/Fracturer/removeIsolatedRegionsGrid"},
 		{RendEnum::RESET_BUFFER_INDEX, "Assets/Shaders/Compute/Generic/resetBufferIndex"},
 		{RendEnum::RESET_BUFFER, "Assets/Shaders/Compute/Fracturer/resetBuffer"},
 		{RendEnum::RESET_LAPLACIAN_SMOOTHING, "Assets/Shaders/Compute/Fracturer/resetLaplacianBuffer"},
 		{RendEnum::RESET_LAST_POSITION_PREFIX_SCAN, "Assets/Shaders/Compute/PrefixScan/resetLastPosition-prefixScan"},
 		{RendEnum::SAMPLER_SHADER, "Assets/Shaders/Compute/Model/sampler"},
+		{RendEnum::SAMPLER_ALT_SHADER, "Assets/Shaders/Compute/Model/samplerAlt"},
 		{RendEnum::SELECT_VOXEL_TRIANGLE, "Assets/Shaders/Compute/Fracturer/selectVoxelTriangle"},
 		{RendEnum::UNDO_MASK_SHADER, "Assets/Shaders/Compute/Fracturer/undoMask"}
 };

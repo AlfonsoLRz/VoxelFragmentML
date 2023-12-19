@@ -412,7 +412,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 		}
 	}
 
-	//if (_gridSubdivisions > 1)
+	//if (_voxelizationSize > 1)
 	//{
 	//    ComputeShader::updateReadBuffer(_verticesSSBO, triangleVertices.data(), triangleVertices.size(), GL_DYNAMIC_DRAW);
 	//    ComputeShader::updateReadBuffer(_faceSSBO, triangleIndices.data(), triangleIndices.size(), GL_DYNAMIC_DRAW);

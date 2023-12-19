@@ -37,10 +37,10 @@ namespace fracturer {
 
 	void FloodFracturer::init(FractureParameters* fractParameters)
 	{
-		_numCells = fractParameters->_gridSubdivisions.x * fractParameters->_gridSubdivisions.y * fractParameters->_gridSubdivisions.z;
+		_numCells = fractParameters->_voxelizationSize.x * fractParameters->_voxelizationSize.y * fractParameters->_voxelizationSize.z;
 		_stack1SSBO = ComputeShader::setWriteBuffer(GLuint(), _numCells, GL_DYNAMIC_DRAW);
 		_stack2SSBO = ComputeShader::setWriteBuffer(GLuint(), _numCells, GL_DYNAMIC_DRAW);
-		_neighborSSBO = ComputeShader::setReadBuffer(_dfunc == 1 ? VON_NEUMANN : MOORE, GL_STATIC_DRAW);
+		_neighborSSBO = ComputeShader::setReadBuffer(fractParameters->_neighbourhoodType == FractureParameters::VON_NEUMANN ? VON_NEUMANN : MOORE, GL_STATIC_DRAW);
 		_stackSizeSSBO = ComputeShader::setWriteBuffer(GLuint(), 1, GL_DYNAMIC_DRAW);
 	}
 
@@ -86,6 +86,7 @@ namespace fracturer {
 
 		// Input data
 		uvec3 numDivs = grid.getNumSubdivisions();
+		unsigned iteration = 0;
 		unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
 		unsigned nullCount = 0;
 		unsigned stackSize = seeds.size();
@@ -125,6 +126,12 @@ namespace fracturer {
 
 			//  Swap buffers
 			std::swap(_stack1SSBO, _stack2SSBO);
+
+			++iteration;
+			//if (iteration > 5)
+			//{
+			//	break;
+			//}
 		}
 
 		//RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());

@@ -145,7 +145,7 @@ public:
 
 public:
 	// [Rendering]
-	const static GLuint	RESTART_PRIMITIVE_INDEX;			//!< Index which marks the end of a primitive
+	const static GLuint				RESTART_PRIMITIVE_INDEX;			//!< Index which marks the end of a primitive
 
 protected:
 	// Textures which are initialized just once
@@ -164,14 +164,9 @@ protected:
 
 protected:
 	/**
-	*	@brief Renders and save an image with the help of a framebuffer.
+	*	@brief Computes the summed area and sorted areas for each triangle of the model.
 	*/
-	static void captureTexture(FBOScreenshot* fbo, const std::vector<vec4>& pixels, const uvec2& dimension, const std::string& filename);
-
-	/**
-	*	@brief Computes the tangents for a model component with an already loaded geometry and topology.
-	*/
-	virtual void computeTangents(ModelComponent* modelComp);
+	void getSortedTriangleAreas(ModelComponent* component, std::vector<float>& areas, float& sumArea);
 
 	/**
 	*	@brief Sets the model matrix of the model within the matrix buffer. 
