@@ -230,8 +230,8 @@ void GUI::showFractureSettings()
 			ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR)); ImGui::SameLine(0, 20);
 			ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
 			ImGui::SliderInt("Impacts", &_fractureParameters->_numImpacts, 0, 6); ImGui::SameLine(0, 20);
-			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 6); ImGui::SameLine(0, 20);
-			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_biasFocus, 2, 10);
+			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 128); ImGui::SameLine(0, 20);
+			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_biasFocus, 1, 15);
 			ImGui::SliderInt("Boundary Size", &_fractureParameters->_boundarySize, 1, 10);
 		}
 		ImGui::PopItemWidth();

@@ -157,14 +157,16 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 void RegularGrid::exportGrid(bool squared, const std::string& filename)
 {
 	vox::VoxWriter vox;
+	vox.ClearVoxels();
 
 	// Check if squared is required
-	uvec3 end = _numDivs, start = uvec3(0);
+
 	if (squared)
 	{
+		uvec3 end = _numDivs;
 		ivec3 currentPosition;
 		end.x = end.y = end.z = glm::max(end.x, glm::max(end.y, end.z));
-		start = (end - _numDivs) / uvec3(2);
+		uvec3 start = (end - _numDivs) / uvec3(2);
 
 		// Reset first
 		for (int x = 0; x < end.x; ++x)
@@ -194,8 +196,8 @@ void RegularGrid::exportGrid(bool squared, const std::string& filename)
 				for (int z = 0; z < _numDivs.z; ++z)
 				{
 					positionIndex = this->getPositionIndex(x, y, z);
-					if (_grid[positionIndex]._value >= VOXEL_FREE)
-						vox.AddVoxel(x + start.x, z + start.z, y + start.y, _grid[positionIndex]._value - VOXEL_EMPTY);
+					if (_grid[positionIndex]._value > VOXEL_FREE)
+						vox.AddVoxel(x, z, y, _grid[positionIndex]._value - VOXEL_FREE);
 				}
 			}
 		}

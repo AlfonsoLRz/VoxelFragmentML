@@ -533,7 +533,7 @@ void MarchingCubes::smoothSurface(unsigned numVertices, unsigned numFaces, unsig
 		_finishLaplacianShader->bindBuffers(std::vector<GLuint> { _vertexSSBO, _laplacianSSBO });
 		_finishLaplacianShader->use();
 		_finishLaplacianShader->setUniform("numVertices", numVertices);
-		_finishLaplacianShader->setUniform("weight", i >= boundaryIterations ? 0.08f : .0f);
+		_finishLaplacianShader->setUniform("weight", i >= boundaryIterations ? 0.3f : .0f);
 		_finishLaplacianShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 		//ivec4* data = ComputeShader::readData(_laplacianSSBO, ivec4());

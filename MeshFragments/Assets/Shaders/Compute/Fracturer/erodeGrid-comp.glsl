@@ -48,6 +48,8 @@ void main()
 			}
 		}
 
+		barrier();
+
 		float activation = float(count) / float(globalCount);
 		if (activation < numActivationsFloat * erosionThreshold)
 			grid[index].value = VOXEL_EMPTY;

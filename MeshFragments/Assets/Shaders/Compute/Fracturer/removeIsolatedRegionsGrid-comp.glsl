@@ -18,7 +18,7 @@ void main()
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= numCells) return;
 
-	uint count = 0;
+	int count = -1;
 	ivec3 indices = ivec3(getPosition(index));
 	ivec3 maxBoundsClamped = clamp(indices + ivec3(1), ivec3(0), ivec3(gridDims) - ivec3(1));
 	ivec3 minBoundsClamped = clamp(indices - ivec3(1), ivec3(0), ivec3(gridDims) - ivec3(1));
@@ -29,7 +29,7 @@ void main()
 		{
 			for (int z = minBoundsClamped.z; z <= maxBoundsClamped.z; ++z)
 			{
-				count += uint(grid[getPositionIndex(uvec3(x, y, z))].value == grid[index].value);
+				count += int(grid[getPositionIndex(uvec3(x, y, z))].value == grid[index].value);
 			}
 		}
 	}

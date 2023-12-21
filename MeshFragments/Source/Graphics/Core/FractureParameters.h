@@ -80,7 +80,7 @@ public:
 	FractureParameters() :
 		_biasSeeds(32),
 		_boundarySize(1),
-		_clampVoxelMetricUnit(256),
+		_clampVoxelMetricUnit(512),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
 		_erosionProbability(.5f),
@@ -97,7 +97,7 @@ public:
 		_numExtraSeeds(64),
 		_numImpacts(0),
 		_numSeeds(8),
-		_pointCloudSeedingRandom(STD_UNIFORM),
+		_pointCloudSeedingRandom(HALTON),
 		_removeIsolatedRegions(true),
 		_seed(80),
 		_seedingRandom(HALTON),
@@ -105,15 +105,15 @@ public:
 		_targetPoints({ 500, 1000 }),
 		_targetTriangles({ 500, 1000 }),
 		_voxelPerMetricUnit(90),
-		_voxelizationSize(128),
+		_voxelizationSize(256),
 
 		_renderGrid(true),
 		_renderMesh(true),
 		_renderPointCloud(false),
 
 		_exportMeshExtension(OBJ),
-		_exportProcessedMesh(true),
-		_exportStartingGrid(true)
+		_exportProcessedMesh(false),
+		_exportStartingGrid(false)
 	{
 		std::qsort(_targetTriangles.data(), _targetTriangles.size(), sizeof(int), [](const void* a, const void* b) {
 			return *(int*)b - *(int*)a;

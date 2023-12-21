@@ -274,20 +274,21 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 		Model3D::ModelComponent* component = _modelComp[0];
 		pointCloud = new PointCloud3D;
 
-		// Noise to generate randomized points within each triangle
-		std::vector<float> noiseBuffer;
-		fracturer::Seeder::getFloatNoise(maxSamples, maxSamples * 2, randomFunction, noiseBuffer);
-		const GLuint noiseSSBO = ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
-
 		// Other GPU buffers
 		unsigned numPoints = 0;
 		const GLuint pointCloudSSBO = ComputeShader::setWriteBuffer(vec4(), maxSamples * 1.2f, GL_DYNAMIC_DRAW);
 		const GLuint countingSSBO = ComputeShader::setReadBuffer(&numPoints, 1, GL_DYNAMIC_DRAW);
 
 		// Max. triangle area
-		float sumArea = 0.0f;
+		float sumArea = 0.0f, maxArea = .0f;
 		std::vector<float> triangleArea(component->_topology.size());
-		this->getSortedTriangleAreas(component, triangleArea, sumArea);
+		this->getSortedTriangleAreas(component, triangleArea, sumArea, maxArea);
+
+		// Noise to generate randomized points within each triangle
+		std::vector<float> noiseBuffer;
+		unsigned noiseBufferSize = glm::ceil(maxArea / sumArea * maxSamples);
+		fracturer::Seeder::getFloatNoise(noiseBufferSize, noiseBufferSize * 2, randomFunction, noiseBuffer);
+		const GLuint noiseSSBO = ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
 
 		if (maxSamples > component->_topology.size())
 		{

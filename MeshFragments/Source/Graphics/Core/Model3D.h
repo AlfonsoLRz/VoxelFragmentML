@@ -166,7 +166,7 @@ protected:
 	/**
 	*	@brief Computes the summed area and sorted areas for each triangle of the model.
 	*/
-	void getSortedTriangleAreas(ModelComponent* component, std::vector<float>& areas, float& sumArea);
+	void getSortedTriangleAreas(ModelComponent* component, std::vector<float>& areas, float& sumArea, float& maxArea);
 
 	/**
 	*	@brief Sets the model matrix of the model within the matrix buffer. 

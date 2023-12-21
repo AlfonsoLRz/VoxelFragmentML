@@ -1195,11 +1195,11 @@
     <None Include="Assets\Shaders\Compute\Fracturer\fillRegularGridVertical-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
-    <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegionsGrid-comp.glsl">
-      <Filter>Archivos de recursos\Shaders\Triangles</Filter>
-    </None>
     <None Include="Assets\Shaders\Compute\Model\samplerAlt-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Model</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegionsGrid-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
   </ItemGroup>
 </Project>

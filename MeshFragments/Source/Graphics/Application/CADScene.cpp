@@ -19,7 +19,8 @@
 #include "Utilities/FileManagement.h"
 
 /// Initialization of static attributes
-const std::string CADScene::TARGET_PATH = "D:/PyCharm/BlenderRenderer/assets/GU_033.obj";
+//const std::string CADScene::TARGET_PATH = "D:/PyCharm/BlenderRenderer/assets/GU_033.obj";
+const std::string CADScene::TARGET_PATH = "E:/Research/dragon.obj";
 
 // [Public methods]
 
@@ -67,6 +68,8 @@ void CADScene::exportFragments(const FractureParameters& fractureParameters, con
 std::string CADScene::fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters)
 {
 	this->eraseFragmentContent();
+	if (!_generateDataset && _meshGrid)
+		this->allocateMeshGrid(_fractParameters);
 	this->rebuildGrid(fractureParameters);
 	std::string result = this->fractureModel(fractureParameters);
 	this->prepareScene(fractureParameters, fragmentMetadata);
@@ -284,8 +287,9 @@ void CADScene::allocateMemoryDataset(FragmentationProcedure& fractureProcedure)
 void CADScene::allocateMeshGrid(FractureParameters& fractParameters)
 {
 	const AABB aabb = _mesh->getAABB();
-	fractParameters._voxelizationSize =
-		glm::floor(vec3(fractParameters._voxelizationSize.x) * aabb.size() / glm::max(aabb.size().x, glm::max(aabb.size().y, aabb.size().z)));
+	fractParameters._voxelizationSize = 
+		glm::floor(vec3(glm::max(fractParameters._voxelizationSize.x, glm::max(fractParameters._voxelizationSize.y, fractParameters._voxelizationSize.z))) 
+			* aabb.size() / glm::max(aabb.size().x, glm::max(aabb.size().y, aabb.size().z)));
 
 	while (fractParameters._voxelizationSize.x % 4 != 0) ++fractParameters._voxelizationSize.x;
 	while (fractParameters._voxelizationSize.z % 4 != 0) ++fractParameters._voxelizationSize.z;

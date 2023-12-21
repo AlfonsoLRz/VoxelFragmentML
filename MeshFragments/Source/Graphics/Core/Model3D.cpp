@@ -235,7 +235,7 @@ void Model3D::setMaterial(std::vector<Material*> material)
 
 /// [Protected methods]
 
-void Model3D::getSortedTriangleAreas(ModelComponent* component, std::vector<float>& areas, float& sumArea)
+void Model3D::getSortedTriangleAreas(ModelComponent* component, std::vector<float>& areas, float& sumArea, float& maxArea)
 {
 	size_t numTriangles = component->_topology.size();
 	areas.resize(numTriangles);
@@ -250,6 +250,10 @@ void Model3D::getSortedTriangleAreas(ModelComponent* component, std::vector<floa
 
 		areas[i] = triangle.area();
 		globalArea += areas[i];
+#pragma omp critical
+		{
+			maxArea = std::max(maxArea, areas[i]);
+		}
 	}
 
 	std::sort(areas.begin(), areas.end());
