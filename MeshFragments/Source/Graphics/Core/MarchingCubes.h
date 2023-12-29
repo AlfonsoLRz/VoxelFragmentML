@@ -12,7 +12,7 @@ protected:
 
 protected:
 	unsigned        _gridSubdivisions;
-	unsigned* _indices;
+	unsigned*		_indices;
 	unsigned        _maxTriangles;
 	uvec3           _numDivs;
 	unsigned        _numGroups;
@@ -112,5 +112,12 @@ public:
 	*   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
 	*/
 	CADModel* triangulateFieldGPU(GLuint gridSSBO, uint8_t targetValue, FractureParameters& fractureParams, const mat4& modelMatrix);
+
+	// Getters
+
+	/**
+	*	@brief Returns the SSBO containing the grid.
+	*/
+	GLuint getGridSSBO() const { return _gridSSBO; }
 };
 

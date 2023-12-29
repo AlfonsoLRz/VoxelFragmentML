@@ -133,7 +133,7 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 	{
 		this->detectBoundaries(1);
 
-		_erodeShader->bindBuffers(std::vector<GLuint>{ _ssbo, maskSSBO, noiseSSBO });
+		_erodeShader->bindBuffers(std::vector<GLuint>{ _ssbo, _marchingCubes->getGridSSBO(), maskSSBO, noiseSSBO });
 		_erodeShader->use();
 		_erodeShader->setUniform("numActivationsFloat", activations);
 		_erodeShader->setUniform("gridDims", numDivs);
@@ -144,6 +144,11 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 		_erodeShader->setUniform("erosionProbability", erosionProbability);
 		_erodeShader->setUniform("erosionThreshold", erosionThreshold);
 		_erodeShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+		_copyGridShader->bindBuffers(std::vector<GLuint>{ _ssbo, _marchingCubes->getGridSSBO() });
+		_copyGridShader->use();
+		_copyGridShader->setUniform("numCells", numCells);
+		_copyGridShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 	}
 
 	this->removeIsolatedRegions();
@@ -206,7 +211,8 @@ void RegularGrid::exportGrid(bool squared, const std::string& filename)
 	// If path is empty then save in a file with random numbering
 	std::string filePath = filename;
 	if (filePath.empty())
-		filePath = "Output/grid" + std::to_string(rand()) + ".vox";
+		filePath = "Output/grid";
+	filePath += std::to_string(RandomUtilities::getUniformRandomInt(0, 10e6)) + ".vox";
 
 	vox.SaveToFile(filePath);
 	vox.PrintStats();
@@ -651,6 +657,7 @@ size_t RegularGrid::countValues(std::unordered_map<uint8_t, unsigned>& values)
 void RegularGrid::getComputeShaders()
 {
 	_assignVertexClusterShader = ShaderList::getInstance()->getComputeShader(RendEnum::ASSIGN_VERTEX_CLUSTER);
+	_copyGridShader = ShaderList::getInstance()->getComputeShader(RendEnum::COPY_GRID);
 	_countQuadrantOccupancyShader = ShaderList::getInstance()->getComputeShader(RendEnum::COUNT_QUADRANT_OCCUPANCY);
 	_countVoxelTriangleShader = ShaderList::getInstance()->getComputeShader(RendEnum::COUNT_VOXEL_TRIANGLE);
 	_erodeShader = ShaderList::getInstance()->getComputeShader(RendEnum::ERODE_GRID);

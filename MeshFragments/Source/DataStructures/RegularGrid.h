@@ -48,6 +48,7 @@ protected:
 
 	// Compute shaders
 	ComputeShader* _assignVertexClusterShader;			//!< Shader to assign a cluster to each vertex
+	ComputeShader* _copyGridShader;						//!< Copies the content of one grid into another
 	ComputeShader* _countQuadrantOccupancyShader;		//!< Shader to count the number of occupied voxels per quadrant
 	ComputeShader* _countVoxelTriangleShader;
 	ComputeShader* _erodeShader;

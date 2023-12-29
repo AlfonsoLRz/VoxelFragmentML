@@ -1,4 +1,4 @@
-#define MASK_POSITION 15
+#define MASK_POSITION 7
 
 uint8_t masked(uint8_t value)
 {

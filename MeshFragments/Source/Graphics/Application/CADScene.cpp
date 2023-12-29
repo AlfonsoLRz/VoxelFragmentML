@@ -47,20 +47,27 @@ CADScene::~CADScene()
 
 void CADScene::exportGrid()
 {
-	_meshGrid->exportGrid();
+	const std::string filename = "Output/" + _mesh->getShortName() + "/";
+	if (!std::filesystem::exists(filename)) std::filesystem::create_directory(filename);
+
+	_meshGrid->exportGrid(false, filename + "grid");
 }
 
 void CADScene::exportFragments(const FractureParameters& fractureParameters, const std::string& extension)
 {
+	// Is folder created
+	const std::string folder = "Output/" + _mesh->getShortName() + "/";
+	if (!std::filesystem::exists(folder)) std::filesystem::create_directory(folder);
+
 	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
-		dynamic_cast<CADModel*>(_fractureMeshes[idx])->save("Output/" + _mesh->getShortName() + "_" + std::to_string(idx) + extension);
+		dynamic_cast<CADModel*>(_fractureMeshes[idx])->save(folder + "mesh_" + std::to_string(idx) + extension);
 
 	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
 	{
 		for (int targetCount : fractureParameters._targetTriangles)
 		{
 			dynamic_cast<CADModel*>(_fractureMeshes[idx])->simplify(targetCount);
-			dynamic_cast<CADModel*>(_fractureMeshes[idx])->save("Output/" + _mesh->getShortName() + "_" + std::to_string(idx) + "_" + std::to_string(targetCount) + extension);
+			dynamic_cast<CADModel*>(_fractureMeshes[idx])->save(folder + "mesh_" + std::to_string(idx) + "_" + std::to_string(targetCount) + extension);
 		}	
 	}
 }

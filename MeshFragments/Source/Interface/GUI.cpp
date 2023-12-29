@@ -250,10 +250,9 @@ void GUI::showFractureSettings()
 			ImGui::SliderFloat("Erosion Probability", &_fractureParameters->_erosionProbability, 0.0f, 1.0f);
 			ImGui::SameLine(0, 20); ImGui::SliderFloat("Erosion Threshold", &_fractureParameters->_erosionThreshold, 0.0f, 1.0f);
 		}
-		ImGui::PopItemWidth();
 
 		this->leaveSpace(3); ImGui::Text("Save Result"); ImGui::Separator(); this->leaveSpace(2);
-		if (ImGui::Button("Export Voxels"))
+		if (ImGui::Button("Export Fragments (.vox)"))
 			_scene->exportGrid();
 
 		ImGui::Combo("Mesh extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportMesh_STR, IM_ARRAYSIZE(FractureParameters::ExportMesh_STR));
@@ -261,6 +260,8 @@ void GUI::showFractureSettings()
 
 		if (ImGui::Button("Export Fracture Meshes"))
 			_scene->exportFragments(*_fractureParameters, FractureParameters::ExportMesh_STR[_fractureParameters->_exportMeshExtension]);
+
+		ImGui::PopItemWidth();
 	}
 
 	ImGui::End();
