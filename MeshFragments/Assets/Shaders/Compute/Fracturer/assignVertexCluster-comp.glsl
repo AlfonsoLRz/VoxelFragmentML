@@ -32,7 +32,7 @@ void main()
 	if (index >= numVertices) return;
 
 	uvec3 gridIndex = getPositionIndex(vertex[index].xyz);
-	uint16_t clusterID = grid[getPositionIndex(gridIndex)].value;
+	uint8_t clusterID = grid[getPositionIndex(gridIndex)].value;
 
 	clusterIdx[index] = clusterID;
 }

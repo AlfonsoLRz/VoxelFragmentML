@@ -24,7 +24,7 @@ void main()
 	ivec3 gridIndex_minusOne = clamp(gridIndex - ivec3(boundarySize), ivec3(0), ivec3(gridDims) - ivec3(1));
 	ivec3 gridIndex_plusOne = clamp(gridIndex + ivec3(boundarySize), ivec3(0), ivec3(gridDims) - ivec3(1));
 	bool boundary = false;
-	uint16_t value;
+	uint8_t value;
 
 	for (int x = gridIndex_minusOne.x; x <= gridIndex_plusOne.x && !boundary; ++x)
 	{

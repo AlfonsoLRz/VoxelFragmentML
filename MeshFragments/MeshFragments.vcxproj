@@ -311,6 +311,7 @@
     <None Include="Assets\Shaders\Compute\Collision\fillRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\assignFaceCluster-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\assignPointCluster-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\assignVertexCluster-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\buildMarchingCubesFaces-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\buildRegularGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\computeMortonCodes-comp.glsl" />

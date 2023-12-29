@@ -1201,5 +1201,8 @@
     <None Include="Assets\Shaders\Compute\Fracturer\removeIsolatedRegionsGrid-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\assignVertexCluster-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
   </ItemGroup>
 </Project>

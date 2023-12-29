@@ -8,7 +8,7 @@ layout (local_size_variable) in;
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
 
-layout (std430, binding = 0) buffer GridBuffer		{ uint16_t	grid[]; };
+layout (std430, binding = 0) buffer GridBuffer		{ uint8_t	grid[]; };
 layout (std430, binding = 1) buffer VertexBuffer	{ vec4		vertexData[]; };
 layout (std430, binding = 2) buffer FaceCounter		{ uint		numVertices; };
 layout (std430, binding = 3) buffer TriangleTable	{ int		triangleTable[]; };
@@ -108,7 +108,7 @@ void march(in uint index, in ivec3 cellIndices)
 	for (int i = 0; i < 8; ++i)
 	{
 		// Sample the volume texture at this neighbor's coordinates
-		values[i] = float(unmasked(grid[getPositionIndex(cellIndices + neighbors[i])]) == uint16_t(targetValue));
+		values[i] = float(unmasked(grid[getPositionIndex(cellIndices + neighbors[i])]) == uint8_t(targetValue));
 
 		// Compare the sampled value to the user-specified isolevel
 		if (values[i] < isolevel)

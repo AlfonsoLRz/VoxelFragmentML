@@ -1,13 +1,13 @@
 #define MASK_POSITION 15
 
-uint16_t masked(uint16_t value)
+uint8_t masked(uint8_t value)
 {
-	return value | uint16_t(1 << MASK_POSITION);
+	return value | uint8_t(1 << MASK_POSITION);
 }
 
-uint16_t unmasked(uint16_t value)
+uint8_t unmasked(uint8_t value)
 {
-	return value & uint16_t(~(1 << MASK_POSITION));
+	return value & uint8_t(~(1 << MASK_POSITION));
 }
 
 int unmasked_f(float value)
@@ -15,9 +15,9 @@ int unmasked_f(float value)
 	return int(value) & (~(1 << MASK_POSITION));
 }
 
-bool isBoundary(uint16_t value)
+bool isBoundary(uint8_t value)
 {
-	return (value >> MASK_POSITION) != uint16_t(0);
+	return (value >> MASK_POSITION) != uint8_t(0);
 }
 
 float isBoundary_f(float value)

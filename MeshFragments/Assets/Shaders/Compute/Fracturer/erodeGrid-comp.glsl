@@ -26,7 +26,7 @@ void main()
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= numCells) return;
 
-	bool isBoundary = bool((grid[index].value >> 15) & uint16_t(1));
+	bool isBoundary = bool((grid[index].value >> 7) & uint8_t(1));
 	if (grid[index].value > VOXEL_FREE && isBoundary && noise[index % noiseBufferSize] < erosionProbability)
 	{
 		ivec3 indices = ivec3(getPosition(index));

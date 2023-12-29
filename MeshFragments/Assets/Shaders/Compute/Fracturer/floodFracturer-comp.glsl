@@ -41,7 +41,7 @@ void main()
 
 		if (!isOutside)
 		{
-			grid[neighborIdx].value = uint16_t(gridPos.w);
+			grid[neighborIdx].value = uint8_t(gridPos.w);
 			stack02[atomicAdd(stackCounter, 1)] = neighborIdx;
 		}
 	}

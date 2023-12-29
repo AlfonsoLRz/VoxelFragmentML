@@ -26,14 +26,14 @@ class RegularGrid
 public:
 	struct CellGrid
 	{
-		uint16_t _value;
+		uint8_t _value;
 
 		CellGrid() : _value(VOXEL_EMPTY)/*, _boundary(0), _padding(.0f) */ {}
-		CellGrid(uint16_t value) : _value(value)/*, _boundary(0), _padding(.0f)*/ {}
+		CellGrid(uint8_t value) : _value(value)/*, _boundary(0), _padding(.0f)*/ {}
 	};
 
 protected:
-	const unsigned MASK_POSITION = 15;
+	const unsigned MASK_POSITION = 7;
 
 protected:
 	std::vector<CellGrid>		_grid;					//!< Color index of regular grid
@@ -70,7 +70,7 @@ protected:
 	/**
 	*	@return Number of different values in grid.
 	*/
-	size_t countValues(std::unordered_map<uint16_t, unsigned>& values);
+	size_t countValues(std::unordered_map<uint8_t, unsigned>& values);
 
 	/**
 	*	@brief Retrieves compute shaders from the shader list.
@@ -110,7 +110,7 @@ protected:
 	/**
 	*	@return
 	*/
-	uint16_t unmask(uint16_t value) const;
+	uint8_t unmask(uint8_t value) const;
 
 public:
 	/**
@@ -267,7 +267,7 @@ public:
 	*   @param[in] z Voxel z coord.
 	*   @return Read voxel value.
 	*/
-	uint16_t at(int x, int y, int z) const;
+	uint8_t at(int x, int y, int z) const;
 
 	/**
 	*   Voxel space dimensions.

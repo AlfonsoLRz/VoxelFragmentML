@@ -1,4 +1,4 @@
 struct CellGrid
 {
-	uint16_t	value;
+	uint8_t	value;
 };

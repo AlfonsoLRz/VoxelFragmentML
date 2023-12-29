@@ -23,7 +23,7 @@ struct FragmentationProcedure
 
 	struct FragmentMetadata
 	{
-		uint16_t	_id;
+		uint8_t		_id;
 		std::string _vesselName;
 
 		uint32_t	_numVertices, _numFaces;
