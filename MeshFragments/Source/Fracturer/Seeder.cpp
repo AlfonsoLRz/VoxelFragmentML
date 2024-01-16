@@ -77,7 +77,7 @@ namespace fracturer
                 // Is on the surface
                 bool isBoundary = grid.isBoundary(x, y, z);
 
-                if (occupied && isFree && isBoundary)
+                if (occupied && isFree/* && isBoundary*/)
                 {
                     seeds.insert(voxel);
                     ++currentSeeds;

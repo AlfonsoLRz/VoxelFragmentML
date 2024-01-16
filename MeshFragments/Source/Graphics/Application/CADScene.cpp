@@ -20,7 +20,7 @@
 
 /// Initialization of static attributes
 //const std::string CADScene::TARGET_PATH = "D:/PyCharm/BlenderRenderer/assets/GU_033.obj";
-const std::string CADScene::TARGET_PATH = "E:/Research/dragon.obj";
+const std::string CADScene::TARGET_PATH = "E:/Research/teapot.obj";
 
 // [Public methods]
 
@@ -60,15 +60,30 @@ void CADScene::exportFragments(const FractureParameters& fractureParameters, con
 	if (!std::filesystem::exists(folder)) std::filesystem::create_directory(folder);
 
 	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
-		dynamic_cast<CADModel*>(_fractureMeshes[idx])->save(folder + "mesh_" + std::to_string(idx) + extension);
+		dynamic_cast<CADModel*>(_fractureMeshes[idx])->save(folder + "mesh_" + std::to_string(idx) + "." + extension, extension);
 
 	for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
 	{
 		for (int targetCount : fractureParameters._targetTriangles)
 		{
 			dynamic_cast<CADModel*>(_fractureMeshes[idx])->simplify(targetCount);
-			dynamic_cast<CADModel*>(_fractureMeshes[idx])->save(folder + "mesh_" + std::to_string(idx) + "_" + std::to_string(targetCount) + extension);
+			dynamic_cast<CADModel*>(_fractureMeshes[idx])->save(folder + "mesh_" + std::to_string(idx) + "_" + std::to_string(targetCount) + "." + extension, extension);
 		}	
+	}
+}
+
+void CADScene::exportPointClouds(const FractureParameters& fractureParameters)
+{
+	const std::string folder = "Output/" + _mesh->getShortName() + "/";
+	if (!std::filesystem::exists(folder)) std::filesystem::create_directory(folder);
+
+	for (int idx = 0; idx < _fragmentMetadata.size(); ++idx)
+	{
+		for (int targetCount : fractureParameters._targetPoints)
+		{
+			PointCloud3D* pc = dynamic_cast<CADModel*>(_fractureMeshes[idx])->sampleCPU(std::round(targetCount * _fragmentMetadata[idx]._percentage), fractureParameters._pointCloudSeedingRandom);
+			pc->save(folder + "pc_" + std::to_string(idx) + "_" + std::to_string(targetCount) + ".ply");
+		}
 	}
 }
 
@@ -204,9 +219,9 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 					{
 						for (int targetCount : fractureProcedure._fractureParameters._targetTriangles)
 						{
-							simplificationFilename = filename + "_" + std::to_string(targetCount) + fractureProcedure._saveExtension;
+							simplificationFilename = filename + "_" + std::to_string(targetCount) + "." + fractureProcedure._saveExtension;
 							cadModel->simplify(targetCount);
-							cadModel->save(simplificationFilename);
+							cadModel->save(simplificationFilename, fractureProcedure._saveExtension);
 
 							fragmentMetadata[idx]._vesselName = simplificationFilename;
 							fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
@@ -216,7 +231,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 					}
 					else
 					{
-						cadModel->save(filename + fractureProcedure._saveExtension);
+						cadModel->save(filename + "." + fractureProcedure._saveExtension, fractureProcedure._saveExtension);
 
 						fragmentMetadata[idx]._vesselName = filename + fractureProcedure._saveExtension;
 						fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
@@ -516,6 +531,8 @@ void CADScene::loadModel(const std::string& path)
 	_mesh = new CADModel(path, true, true, false);
 	_mesh->load();
 	_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
+
+	_mesh->sampleCPU(50000000, 0)->save("Output/teapot/complete.ply");
 }
 
 void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FragmentationProcedure* datasetProcedure)

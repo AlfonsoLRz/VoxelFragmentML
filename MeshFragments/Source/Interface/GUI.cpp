@@ -261,6 +261,9 @@ void GUI::showFractureSettings()
 		if (ImGui::Button("Export Fracture Meshes"))
 			_scene->exportFragments(*_fractureParameters, FractureParameters::ExportMesh_STR[_fractureParameters->_exportMeshExtension]);
 
+		if (ImGui::Button("Export Point Clouds (.ply)"))
+			_scene->exportPointClouds(*_fractureParameters);
+
 		ImGui::PopItemWidth();
 	}
 

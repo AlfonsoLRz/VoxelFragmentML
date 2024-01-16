@@ -90,12 +90,12 @@ protected:
 	/**
 	*	@brief Saves current model using assimp.
 	*/
-	bool saveAssimp(const std::string& filename);
+	bool saveAssimp(const std::string& filename, const std::string& extension);
 
 	/**
 	*	@brief Saves current model using assimp.
 	*/
-	void threadedSaveAssimp(aiScene* scene, const std::string& filename);
+	void threadedSaveAssimp(aiScene* scene, const std::string& filename, const std::string& extension = "stl");
 
 	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
@@ -185,9 +185,14 @@ public:
 	PointCloud3D* sample(unsigned maxSamples, int randomFunction);
 
 	/**
+	*	@brief Samples the mesh as a set of points.
+	*/
+	PointCloud3D* sampleCPU(unsigned maxSamples, int randomFunction);
+
+	/**
 	*	@brief Saves the model using assimp.
 	*/
-	bool save(const std::string& filename);
+	bool save(const std::string& filename, const std::string& extension);
 
 	/**
 	*	@brief

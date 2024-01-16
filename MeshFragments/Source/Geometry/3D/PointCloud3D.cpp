@@ -102,7 +102,7 @@ bool PointCloud3D::save(const std::string& filename)
 	std::vector<std::array<double, 3>> vertices (_points.size());
 #pragma omp parallel for
 	for (int idx = 0; idx < _points.size(); ++idx)
-		vertices[idx] = { _points[idx].x, _points[idx].y, _points[idx].z };
+		vertices[idx] = { _points[idx].x, _points[idx].z, _points[idx].y };
 
 	// Create an empty object
 	happly::PLYData plyOut;

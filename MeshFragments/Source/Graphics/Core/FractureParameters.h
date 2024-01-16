@@ -31,7 +31,7 @@ public:
 	inline static const char* Neighbourhood_STR[NUM_NEIGHBOURHOODS] = { "Von Neumann", "Moore" };
 
 	enum ExportMeshExtension { OBJ, PLY, STL, NUM_EXPORT_MESH_EXTENSIONS };
-	inline static const char* ExportMesh_STR[NUM_EXPORT_MESH_EXTENSIONS] = { ".obj", ".ply", ".stl"};
+	inline static const char* ExportMesh_STR[NUM_EXPORT_MESH_EXTENSIONS] = { "obj", "ply", "stl"};
 	 
 public:
 	int				_biasFocus;
@@ -102,7 +102,7 @@ public:
 		_seed(80),
 		_seedingRandom(HALTON),
 		_biasFocus(5),
-		_targetPoints({ 500, 1000 }),
+		_targetPoints({ 50000, 100000 }),
 		_targetTriangles({ 500, 1000 }),
 		_voxelPerMetricUnit(90),
 		_voxelizationSize(256),

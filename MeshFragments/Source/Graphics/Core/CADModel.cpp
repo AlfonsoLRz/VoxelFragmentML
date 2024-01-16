@@ -343,9 +343,109 @@ PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
 	return pointCloud;
 }
 
-bool CADModel::save(const std::string& filename)
+PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 {
-	return this->saveAssimp(filename);
+	PointCloud3D* pointCloud = nullptr;
+
+	if (!_modelComp.empty())
+	{
+		Model3D::ModelComponent* component = _modelComp[0];
+		pointCloud = new PointCloud3D;
+
+		unsigned numPoints = 0;
+		float sumArea = 0.0f, maxArea = .0f;
+		std::vector<float> triangleArea(component->_topology.size());
+		this->getSortedTriangleAreas(component, triangleArea, sumArea, maxArea);
+
+		// Noise to generate randomized points within each triangle
+		std::vector<float> noiseBuffer;
+		unsigned noiseBufferSize = glm::ceil(maxArea / sumArea * maxSamples);
+		fracturer::Seeder::getFloatNoise(noiseBufferSize, noiseBufferSize * 2, randomFunction, noiseBuffer);
+
+		// Data in common for the two branchs
+		int pointIndex = 0;
+		std::vector<vec4> newPoint(maxSamples);
+
+		if (maxSamples > component->_topology.size())
+		{
+			#pragma omp parallel for
+			for (int index = 0; index < component->_topology.size(); ++index)
+			{
+				vec3 v1 = component->_geometry[component->_topology[index]._vertices.x]._position,
+					 v2 = component->_geometry[component->_topology[index]._vertices.y]._position,
+					 v3 = component->_geometry[component->_topology[index]._vertices.z]._position;
+				vec3 u = v2 - v1, v = v3 - v1;
+				float area = length(cross(u, v)) / 2.0f;
+				glm::uint numTriangleSamples = std::max(int(glm::ceil(area / sumArea * maxSamples)), 1), newPointIndex, end;
+
+				#pragma omp critical
+				{
+					newPointIndex = pointIndex;
+					pointIndex += numTriangleSamples;
+				}
+
+				end = min(newPointIndex + numTriangleSamples, maxSamples);
+
+				for (int i = newPointIndex; i < end; i++)
+				{
+					vec2 randomFactors = vec2(noiseBuffer[i % noiseBufferSize], noiseBuffer[(i + 1) % noiseBufferSize]);
+					if ((randomFactors.x + randomFactors.y) >= 1.0f)
+						randomFactors = 1.0f - randomFactors;
+
+					vec3 point = v1 + u * randomFactors.x + v * randomFactors.y;
+					newPoint[i] = vec4(point, 1.0f);
+				}
+			}
+		}
+		else
+		{
+			// Randomly select which faces are active
+			int activeFaces = 0, randomFace;
+			std::vector<uint8_t> activeBuffer(component->_topology.size(), uint8_t(0));
+			while (activeFaces < maxSamples)
+			{
+				randomFace = RandomUtilities::getUniformRandomInt(0, component->_topology.size() - 1);
+				if (activeBuffer[randomFace] == 0)
+				{
+					activeBuffer[randomFace] = 1;
+					++activeFaces;
+				}
+			}
+
+			#pragma omp parallel for
+			for (int index = 0; index < component->_topology.size(); ++index)
+			{
+				if (activeBuffer[index] != uint8_t(0))
+				{
+					vec3 v1 = component->_geometry[component->_topology[index]._vertices.x]._position,
+						v2 = component->_geometry[component->_topology[index]._vertices.y]._position,
+						v3 = component->_geometry[component->_topology[index]._vertices.z]._position;
+					vec3 u = v2 - v1, v = v3 - v1;
+					glm::uint newPointIndex;
+
+					#pragma omp critical
+					newPointIndex = pointIndex++;
+
+					vec2 randomFactors = vec2(noiseBuffer[index % noiseBufferSize], noiseBuffer[(index + 1) % noiseBufferSize]);
+					if (randomFactors.x + randomFactors.y >= 1.0f)
+						randomFactors = 1.0f - randomFactors;
+
+					vec3 point = v1 + u * randomFactors.x + v * randomFactors.y;
+					newPoint[newPointIndex] = vec4(point, 1.0f);
+				}
+			}
+		}
+
+		newPoint.resize(pointIndex);
+		pointCloud->push_back(newPoint.data(), newPoint.size());
+	}
+
+	return pointCloud;
+}
+
+bool CADModel::save(const std::string& filename, const std::string& extension)
+{
+	return this->saveAssimp(filename, extension);
 }
 
 void CADModel::simplify(unsigned numFaces, bool cgal, bool verbose)
@@ -359,7 +459,7 @@ void CADModel::simplify(unsigned numFaces, bool cgal, bool verbose)
 				//if (modelComponent->_topology.size() > 10000)
 				//	this->simplify(10000, false);
 
-				this->save("Temp/temp.stl");
+				//this->save("Temp/temp.stl");
 
 				Mesh mesh;
 				CGAL::Polygon_mesh_processing::IO::read_polygon_mesh("Temp/temp.stl", mesh);
@@ -762,7 +862,7 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vecto
 	}
 }
 
-bool CADModel::saveAssimp(const std::string& filename)
+bool CADModel::saveAssimp(const std::string& filename, const std::string& extension)
 {
 	aiScene* scene = new aiScene;
 	scene->mRootNode = new aiNode();
@@ -830,18 +930,17 @@ bool CADModel::saveAssimp(const std::string& filename)
 	}
 
 	// Out of main thread
-	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename);
+	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename, extension);
 	writeModel.detach();
 
 	return true;
-	//return _assimpExporter.Export(&scene, "stl", filename) == AI_SUCCESS;
 }
 
-void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename)
+void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename, const std::string& extension)
 {
 	const std::string file = filename.substr(filename.find_last_of('/') + 1);
 	Assimp::Exporter exporter;
-	exporter.Export(scene, "stl", filename);
+	exporter.Export(scene, extension, filename);
 	delete scene;
 }
 

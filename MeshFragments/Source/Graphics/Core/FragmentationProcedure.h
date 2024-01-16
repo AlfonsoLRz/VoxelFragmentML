@@ -17,7 +17,7 @@ struct FragmentationProcedure
 	std::string			_destinationFolder = "E:/Fragmentos_Testing/";
 	std::string			_onlineFolder = "E:/Online_Testing/";
 	std::string			_startVessel = "";
-	std::string			_saveExtension = ".stl";
+	std::string			_saveExtension = "stl";
 	bool				_saveScreenshots = false;
 	std::string			_searchExtension = ".stl";
 

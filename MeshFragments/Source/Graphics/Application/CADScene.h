@@ -60,7 +60,7 @@ protected:
 	std::vector<Texture*>		_fragmentTextures;				//!< Texture for each fragment, built with marching cubes
 	bool						_generateDataset;
 	std::vector<uvec4>			_impactSeeds;					//!< Seeds obtained by impacting the user's ray to the voxelization
-	CADModel*					_mesh;							//!< Jar mesh
+	CADModel*					_mesh;							//!< Mesh to be fractured
 	RegularGrid*				_meshGrid;						//!< Mesh regular grid
 	PointCloud3D*				_pointCloud;					//!<
 	DrawPointCloud*				_pointCloudRenderer;			//!<
@@ -210,6 +210,11 @@ public:
 	*	@brief Exports fragments into several models in a given extension.
 	*/
 	void exportFragments(const FractureParameters& fractureParameters, const std::string& extension = ".obj");
+
+	/**
+	*	@brief 
+	*/
+	void exportPointClouds(const FractureParameters& fractureParameters);
 
 	/**
 	*	@brief Fractures voxelized model.

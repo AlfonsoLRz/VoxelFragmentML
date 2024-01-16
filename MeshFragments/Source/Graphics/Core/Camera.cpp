@@ -15,7 +15,7 @@ const vec3 Camera::LOOK_AT				= vec3(0.0f, 3.0f, 0.0f);
 const vec3 Camera::UP					= vec3(0.0f, 1.0f, 0.0f);
 
 const float Camera::ZNEAR				= 0.1f;
-const float Camera::ZFAR				= 80.0f;
+const float Camera::ZFAR				= 200.0f;
 
 const float Camera::FOV_X				= 80.0f * glm::pi<float>() / 180.0f;
 
