@@ -74,7 +74,7 @@ namespace fracturer
                 // Is repeated?
                 bool isFree = seeds.find(voxel) == seeds.end();
 
-                // Is on the surface
+                // Is on the surface?
                 bool isBoundary = grid.isBoundary(x, y, z);
 
                 if (occupied && isFree/* && isBoundary*/)
@@ -91,14 +91,17 @@ namespace fracturer
         std::vector<glm::uvec4> result = frags;
 
         // Generate array of seed
-        unsigned int nseed = result.empty() ? VOXEL_FREE: result[result.size() - 1].w;
+        unsigned int nseed = result.empty() ? VOXEL_FREE: result.back().w;
         for (glm::uvec3 seed : seeds)
             result.push_back(glm::uvec4(seed, ++nseed));
 
         return result;
 	}
 	
-    void Seeder::mergeSeeds(const std::vector<glm::uvec4>& frags, std::vector<glm::uvec4>& seeds, DistanceFunction dfunc) {
+    void Seeder::mergeSeeds(const std::vector<glm::uvec4>& frags, std::vector<glm::uvec4>& seeds, DistanceFunction dfunc) 
+    {
+        std::vector<int> idFragment(256, 0);
+
         for (auto& seed : seeds) 
         {
             float min   = std::numeric_limits<float>::max();
@@ -130,7 +133,7 @@ namespace fracturer
             }
 
             // Nearest found?
-            seed.w = frags[nearest].w;
+            seed.w = frags[nearest].w | (idFragment[frags[nearest].w]++ << 16);
         }
     }
 

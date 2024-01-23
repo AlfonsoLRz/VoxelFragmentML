@@ -224,13 +224,13 @@ void GUI::showFractureSettings()
 		{
 			ImGui::Combo("Base Algorithm", &_fractureParameters->_fractureAlgorithm, FractureParameters::Fracture_STR, IM_ARRAYSIZE(FractureParameters::Fracture_STR)); ImGui::SameLine(0, 20);
 			ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
-			ImGui::SliderInt("Num. seeds", &_fractureParameters->_numSeeds, 2, 1000); ImGui::SameLine(0, 20);
-			ImGui::SliderInt("Num. Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, 1000); ImGui::SameLine(0, 20);
+			ImGui::SliderInt("Num. Seeds", &_fractureParameters->_numSeeds, 1, 256); ImGui::SameLine(0, 20);
+			ImGui::SliderInt("Num. Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, std::max(256 - _fractureParameters->_numSeeds - _fractureParameters->_biasSeeds, 0)); ImGui::SameLine(0, 20);
 			ImGui::Combo("Seed Random Distribution", &_fractureParameters->_seedingRandom, FractureParameters::Random_STR, IM_ARRAYSIZE(FractureParameters::Random_STR));
 			ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR)); ImGui::SameLine(0, 20);
 			ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
-			ImGui::SliderInt("Impacts", &_fractureParameters->_numImpacts, 0, 6); ImGui::SameLine(0, 20);
-			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 128); ImGui::SameLine(0, 20);
+			ImGui::SliderInt("Impacts", &_fractureParameters->_numImpacts, 0, 10); ImGui::SameLine(0, 20);
+			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 256 - _fractureParameters->_numSeeds); ImGui::SameLine(0, 20);
 			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_biasFocus, 1, 15);
 			ImGui::SliderInt("Boundary Size", &_fractureParameters->_boundarySize, 1, 10);
 		}

@@ -128,10 +128,6 @@ namespace fracturer {
 			std::swap(_stack1SSBO, _stack2SSBO);
 
 			++iteration;
-			//if (iteration > 5)
-			//{
-			//	break;
-			//}
 		}
 
 		//RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());

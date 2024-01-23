@@ -20,7 +20,7 @@
 
 /// Initialization of static attributes
 //const std::string CADScene::TARGET_PATH = "D:/PyCharm/BlenderRenderer/assets/GU_033.obj";
-const std::string CADScene::TARGET_PATH = "E:/Research/teapot.obj";
+const std::string CADScene::TARGET_PATH = "E:/Research/Armadillo.obj";
 
 // [Public methods]
 
@@ -401,7 +401,7 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 		extraSeeds.insert(extraSeeds.begin(), seeds.begin(), seeds.end());
 
 		fracturer::Seeder::mergeSeeds(seeds, extraSeeds, mergeDFunc);
-		seeds = extraSeeds;
+		seeds.insert(seeds.end(), extraSeeds.begin(), extraSeeds.end());
 	}
 
 	if (fractParameters._fractureAlgorithm != FractureParameters::VORONOI)
