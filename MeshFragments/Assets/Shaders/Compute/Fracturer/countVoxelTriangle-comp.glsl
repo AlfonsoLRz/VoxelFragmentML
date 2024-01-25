@@ -53,6 +53,6 @@ void main()
 	//if (grid[getPositionIndex(gridIndex)].value > VOXEL_FREE)
 	//{
 	//	atomicAdd(count[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], 1);
-	//	atomicAdd(boundary[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], uint(grid[getPositionIndex(gridIndex)].boundary > uint8_t(0)));
+	//	atomicAdd(boundary[faceIdx * numFragments + int(grid[getPositionIndex(gridIndex)].value) - (int(VOXEL_FREE) + 1)], uint(grid[getPositionIndex(gridIndex)].boundary > uint16_t(0)));
 	//}
 }

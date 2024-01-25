@@ -78,7 +78,7 @@ void RegularGrid::detectBoundaries(int boundarySize)
 	std::copy(gridData, gridData + numCells, _grid.begin());
 }
 
-void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint8_t numIterations, float erosionProbability, float erosionThreshold)
+void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint16_t numIterations, float erosionProbability, float erosionThreshold)
 {
 	if (!(convolutionSize % 2))
 		++convolutionSize;
@@ -227,7 +227,7 @@ void RegularGrid::fill(Model3D::ModelComponent* modelComponent)
 	tetravoxelizer.deleteModelResources();
 	tetravoxelizer.deleteResources();
 
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int y = 0; y < _numDivs.y; ++y)
 	{
 		glm::uint positionIndex;
@@ -284,7 +284,7 @@ void RegularGrid::fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numS
 
 void RegularGrid::getAABBs(std::vector<AABB>& aabb)
 {
-	vec3 max, min;
+	glm::vec3 min, max;
 
 	for (int x = 0; x < _numDivs.x; ++x)
 	{
@@ -329,7 +329,7 @@ void RegularGrid::queryCluster(
 	const std::vector<Model3D::VertexGPUData>& vertices, const std::vector<Model3D::FaceGPUData>& faces, std::vector<float>& clusterIdx,
 	std::vector<unsigned>& boundaryFaces, std::vector<std::unordered_map<unsigned, float>>& faceClusterOccupancy)
 {
-	std::unordered_map<uint8_t, unsigned> values;
+	std::unordered_map<uint16_t, unsigned> values;
 	faceClusterOccupancy.resize(faces.size());
 
 	size_t numFragments = this->countValues(values);
@@ -453,7 +453,7 @@ void RegularGrid::resetFilling()
 	size_t numCells = _numDivs.x * _numDivs.y * _numDivs.z;
 #pragma omp parallel for
 	for (int idx = 0; idx < numCells; ++idx)
-		_grid[idx]._value = glm::clamp(_grid[idx]._value, uint8_t(VOXEL_EMPTY), uint8_t(VOXEL_FREE + 1));
+		_grid[idx]._value = glm::clamp(_grid[idx]._value, uint16_t(VOXEL_EMPTY), uint16_t(VOXEL_FREE + 1));
 }
 
 void RegularGrid::resetMarchingCubes()
@@ -482,8 +482,8 @@ void RegularGrid::setAABB(const AABB& aabb, const ivec3& gridDims)
 std::vector<Model3D*> RegularGrid::toTriangleMesh(FractureParameters& fractParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata)
 {
 	std::vector<Model3D*> meshes;
-	std::unordered_map<uint8_t, unsigned> valuesSet;
-	std::vector<uint8_t> values;
+	std::unordered_map<uint16_t, unsigned> valuesSet;
+	std::vector<uint16_t> values;
 	unsigned globalCount = 0;
 
 	this->countValues(valuesSet);
@@ -499,7 +499,7 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh(FractureParameters& fractParam
 		values.push_back(std::move(valuesSet.extract(it++).key()));
 	}
 
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int idx = 0; idx < values.size(); ++idx)
 	{
 		fragmentMetadata[idx]._id = idx;
@@ -532,6 +532,9 @@ void RegularGrid::undoMask()
 	_undoMaskShader->bindBuffers(std::vector<GLuint>{ _ssbo });
 	_undoMaskShader->use();
 	_undoMaskShader->setUniform("numCells", numCells);
+	_undoMaskShader->setUniform("position", MASK_POSITION);
+	_undoMaskShader->setSubroutineUniform(GL_COMPUTE_SHADER, "unmaskUniform", "unmaskBit");
+	_undoMaskShader->applyActiveSubroutines();
 	_undoMaskShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
@@ -550,7 +553,7 @@ RegularGrid::CellGrid* RegularGrid::data()
 	return _grid.data();
 }
 
-uint8_t RegularGrid::at(int x, int y, int z) const
+uint16_t RegularGrid::at(int x, int y, int z) const
 {
 	return _grid[this->getPositionIndex(x, y, z)]._value;
 }
@@ -603,7 +606,7 @@ size_t RegularGrid::length() const
 	return _numDivs.x * _numDivs.y * _numDivs.z;
 }
 
-void RegularGrid::set(int x, int y, int z, uint8_t i)
+void RegularGrid::set(int x, int y, int z, uint16_t i)
 {
 	_grid[this->getPositionIndex(x, y, z)]._value = i;
 }
@@ -628,10 +631,10 @@ void RegularGrid::cleanGrid()
 	ComputeShader::updateReadBufferSubset(_ssbo, _grid.data(), 0, numCells);
 }
 
-size_t RegularGrid::countValues(std::unordered_map<uint8_t, unsigned>& values)
+size_t RegularGrid::countValues(std::unordered_map<uint16_t, unsigned>& values)
 {
 	unsigned index;
-	uint8_t value;
+	uint16_t value;
 	auto it = values.begin();
 
 	for (unsigned int x = 0; x < _numDivs.x; ++x)
@@ -853,9 +856,9 @@ void RegularGrid::resetBuffer(GLuint ssbo, unsigned value, unsigned count)
 	_resetCounterShader->execute(ComputeShader::getNumGroups(count), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 }
 
-uint8_t RegularGrid::unmask(uint8_t value) const
+uint16_t RegularGrid::unmask(uint16_t value) const
 {
-	return value & uint8_t(~(1 << MASK_POSITION));
+	return value & uint16_t(~(1 << MASK_POSITION));
 }
 
 unsigned RegularGrid::getPositionIndex(int x, int y, int z, const uvec3& numDivs)

@@ -26,14 +26,14 @@ class RegularGrid
 public:
 	struct CellGrid
 	{
-		uint8_t _value;
+		uint16_t _value;
 
 		CellGrid() : _value(VOXEL_EMPTY)/*, _boundary(0), _padding(.0f) */ {}
-		CellGrid(uint8_t value) : _value(value)/*, _boundary(0), _padding(.0f)*/ {}
+		CellGrid(uint16_t value) : _value(value)/*, _boundary(0), _padding(.0f)*/ {}
 	};
 
 protected:
-	const unsigned MASK_POSITION = 7;
+	const unsigned MASK_POSITION = 15;
 
 protected:
 	std::vector<CellGrid>		_grid;					//!< Color index of regular grid
@@ -71,7 +71,7 @@ protected:
 	/**
 	*	@return Number of different values in grid.
 	*/
-	size_t countValues(std::unordered_map<uint8_t, unsigned>& values);
+	size_t countValues(std::unordered_map<uint16_t, unsigned>& values);
 
 	/**
 	*	@brief Retrieves compute shaders from the shader list.
@@ -111,7 +111,7 @@ protected:
 	/**
 	*	@return
 	*/
-	uint8_t unmask(uint8_t value) const;
+	uint16_t unmask(uint16_t value) const;
 
 public:
 	/**
@@ -153,7 +153,7 @@ public:
 	/**
 	*	@brief
 	*/
-	void erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint8_t numIterations, float erosionProbability, float erosionThreshold);
+	void erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint16_t numIterations, float erosionProbability, float erosionThreshold);
 
 	/**
 	*	@brief Exports fragments into several models in a PLY file.
@@ -268,7 +268,7 @@ public:
 	*   @param[in] z Voxel z coord.
 	*   @return Read voxel value.
 	*/
-	uint8_t at(int x, int y, int z) const;
+	uint16_t at(int x, int y, int z) const;
 
 	/**
 	*   Voxel space dimensions.
@@ -326,6 +326,6 @@ public:
 	*   @param[in] z Voxel z coord.
 	*   @param[in] i Voxel new color index.
 	*/
-	void set(int x, int y, int z, uint8_t i);
+	void set(int x, int y, int z, uint16_t i);
 };
 

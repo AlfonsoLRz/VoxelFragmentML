@@ -6,6 +6,7 @@
 layout(local_size_variable) in;
 
 #include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelMask.glsl>
 
 layout(std430, binding = 0) buffer GridBuffer		{ CellGrid  grid[]; };
 layout(std430, binding = 1) buffer Stack01Buffer	{ uint		stack01[]; };
@@ -33,15 +34,30 @@ void main()
 	uint neighborIdx = getPositionIndex(neighbor.xyz);
 
 	bool isFree = grid[neighborIdx].value == VOXEL_FREE;
+	bool isOutside = neighbor.x < 0 || neighbor.x >= gridDims.x ||
+		neighbor.y < 0 || neighbor.y >= gridDims.y ||
+		neighbor.z < 0 || neighbor.z >= gridDims.z;
+
 	if (isFree)
 	{
-		bool isOutside = neighbor.x < 0 || neighbor.x >= gridDims.x ||
-						 neighbor.y < 0 || neighbor.y >= gridDims.y ||
-						 neighbor.z < 0 || neighbor.z >= gridDims.z;
-
 		if (!isOutside)
 		{
-			grid[neighborIdx].value = uint8_t(gridPos.w);
+			grid[neighborIdx].value = uint16_t(gridPos.w);
+			stack02[atomicAdd(stackCounter, 1)] = neighborIdx;
+		}
+	}
+	else if (!isOutside && unmasked(grid[neighborIdx].value, MASK_ID_POSITION) == unmasked(grid[stack01[stackIdx]].value, MASK_ID_POSITION))
+	{
+		const uint16_t prefix01 = grid[stack01[stackIdx]].value >> MASK_ID_POSITION, prefix02 = grid[neighborIdx].value >> MASK_ID_POSITION;
+
+		if (prefix01 > prefix02)
+		{
+			grid[stack01[stackIdx]].value = grid[neighborIdx].value;
+			stack02[atomicAdd(stackCounter, 1)] = stack01[stackIdx];
+		}
+		else if (prefix02 > prefix01)
+		{
+			grid[neighborIdx].value = uint16_t(gridPos.w);
 			stack02[atomicAdd(stackCounter, 1)] = neighborIdx;
 		}
 	}

@@ -319,6 +319,8 @@
     <None Include="Assets\Shaders\Compute\Fracturer\countQuadrantOccupancy-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\countVoxelTriangle-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\detectBoundaries-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\disjointSet-comp.glsl" />
+    <None Include="Assets\Shaders\Compute\Fracturer\disjointSetStack-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\distance.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\erodeGrid-comp.glsl" />
     <None Include="Assets\Shaders\Compute\Fracturer\fillRegularGrid-comp.glsl" />

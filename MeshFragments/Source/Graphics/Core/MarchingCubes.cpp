@@ -350,7 +350,7 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), maxNumPoints / 3, GL_DYNAMIC_DRAW);
 
 	_laplacianSSBO = ComputeShader::setWriteBuffer(ivec4(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_gridSSBO = ComputeShader::setWriteBuffer(uint8_t(), _numDivs.x * _numDivs.y * _numDivs.z, GL_STATIC_DRAW);
+	_gridSSBO = ComputeShader::setWriteBuffer(uint16_t(), _numDivs.x * _numDivs.y * _numDivs.z, GL_STATIC_DRAW);
 }
 
 MarchingCubes::~MarchingCubes()
@@ -363,7 +363,7 @@ MarchingCubes::~MarchingCubes()
 	delete[] _indices;
 }
 
-CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint8_t targetValue, FractureParameters& fractureParams, const mat4& modelMatrix)
+CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetValue, FractureParameters& fractureParams, const mat4& modelMatrix)
 {
 	CADModel* model = new CADModel();
 	unsigned numSteps = _gridSubdivisions * _gridSubdivisions * _gridSubdivisions, stepIdx = 0;
@@ -548,7 +548,7 @@ void MarchingCubes::smoothSurface(unsigned numVertices, unsigned numFaces, unsig
 
 void MarchingCubes::setGrid(RegularGrid& regularGrid)
 {
-	uint8_t* gridData = (uint8_t*)malloc(sizeof(float) * _numDivs.x * _numDivs.y * _numDivs.z);
+	uint16_t* gridData = (uint16_t*)malloc(sizeof(float) * _numDivs.x * _numDivs.y * _numDivs.z);
 #pragma omp parallel for
 	for (int x = 0; x < _numDivs.x; ++x)
 		for (int y = 0; y < _numDivs.y; ++y)

@@ -28,6 +28,15 @@ namespace fracturer {
 
 	FloodFracturer::FloodFracturer() : _dfunc(MANHATTAN_DISTANCE)
 	{
+		_fractureShader = ShaderList::getInstance()->getComputeShader(RendEnum::FLOOD_FRACTURER);
+		_disjointSetShader = ShaderList::getInstance()->getComputeShader(RendEnum::DISJOINT_SET);
+		_disjointSetStackShader = ShaderList::getInstance()->getComputeShader(RendEnum::DISJOINT_SET_STACK);
+		_unmaskShader = ShaderList::getInstance()->getComputeShader(RendEnum::UNDO_MASK_SHADER);
+
+		_disjointCounterSSBO = std::numeric_limits<GLuint>::max();
+		_disjointSetSSBO = std::numeric_limits<GLuint>::max();
+		_disjointSetZero = nullptr;
+
 		_numCells = 0;
 		_neighborSSBO = std::numeric_limits<GLuint>::max();
 		_stackSizeSSBO = std::numeric_limits<GLuint>::max();
@@ -37,6 +46,11 @@ namespace fracturer {
 
 	void FloodFracturer::init(FractureParameters* fractParameters)
 	{
+		_disjointCounterSSBO = ComputeShader::setWriteBuffer(GLuint(), 1, GL_DYNAMIC_DRAW);
+		_disjointSetSSBO = ComputeShader::setWriteBuffer(GLuint(), std::pow(2, Seeder::VOXEL_ID_POSITION), GL_DYNAMIC_DRAW);
+		_disjointSetZero = (uint16_t*)malloc(std::pow(2, Seeder::VOXEL_ID_POSITION) * sizeof(GLuint));
+		std::iota(_disjointSetZero, _disjointSetZero + glm::uint(std::pow(2, Seeder::VOXEL_ID_POSITION)), std::numeric_limits<GLuint>::max());
+
 		_numCells = fractParameters->_voxelizationSize.x * fractParameters->_voxelizationSize.y * fractParameters->_voxelizationSize.z;
 		_stack1SSBO = ComputeShader::setWriteBuffer(GLuint(), _numCells, GL_DYNAMIC_DRAW);
 		_stack2SSBO = ComputeShader::setWriteBuffer(GLuint(), _numCells, GL_DYNAMIC_DRAW);
@@ -47,6 +61,14 @@ namespace fracturer {
 	void FloodFracturer::destroy()
 	{
 		_numCells = 0;
+
+		if (_disjointSetSSBO != std::numeric_limits<GLuint>::max())
+		{
+			ComputeShader::deleteBuffer(_disjointCounterSSBO);
+			ComputeShader::deleteBuffer(_disjointSetSSBO);
+			_disjointSetSSBO = std::numeric_limits<GLuint>::max();
+			free(_disjointSetZero);
+		}
 
 		if (_stack1SSBO != std::numeric_limits<GLuint>::max())
 		{
@@ -82,8 +104,6 @@ namespace fracturer {
 
 		grid.updateSSBO();
 
-		ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::FLOOD_FRACTURER);
-
 		// Input data
 		uvec3 numDivs = grid.getNumSubdivisions();
 		unsigned iteration = 0;
@@ -109,26 +129,59 @@ namespace fracturer {
 
 		ComputeShader::updateReadBufferSubset(_stack1SSBO, seedsInt.data(), 0, seeds.size());
 
-		shader->use();
-		shader->setUniform("gridDims", numDivs);
-		shader->setUniform("numNeighbors", numNeigh);
-
-		while (stackSize > 0)
+		glm::uint numDisjointVoxels = stackSize;
+		while (numDisjointVoxels != 0)
 		{
-			unsigned numGroups = ComputeShader::getNumGroups(stackSize * numNeigh);
+			std::cout << "Iteration " << iteration << " - " << numDisjointVoxels << " voxels to process" << std::endl;
+
+			_fractureShader->use();
+			_fractureShader->setUniform("gridDims", numDivs);
+			_fractureShader->setUniform("numNeighbors", numNeigh);
+
+			while (stackSize > 0)
+			{
+				unsigned numGroups = ComputeShader::getNumGroups(stackSize * numNeigh);
+				ComputeShader::updateReadBufferSubset(_stackSizeSSBO, &nullCount, 0, 1);
+
+				_fractureShader->bindBuffers(std::vector<GLuint>{ grid.ssbo(), _stack1SSBO, _stack2SSBO, _stackSizeSSBO, _neighborSSBO });
+				_fractureShader->setUniform("stackSize", stackSize);
+				_fractureShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+				stackSize = *ComputeShader::readData(_stackSizeSSBO, GLuint());
+
+				//  Swap buffers
+				std::swap(_stack1SSBO, _stack2SSBO);
+
+				++iteration;
+			}
+
+			// Now we have to remove isolated regions
+			ComputeShader::updateReadBufferSubset(_disjointSetSSBO, _disjointSetZero, 0, std::pow(2, Seeder::VOXEL_ID_POSITION));
+			ComputeShader::updateReadBufferSubset(_disjointCounterSSBO, &nullCount, 0, 1);
 			ComputeShader::updateReadBufferSubset(_stackSizeSSBO, &nullCount, 0, 1);
 
-			shader->bindBuffers(std::vector<GLuint>{ grid.ssbo(), _stack1SSBO, _stack2SSBO, _stackSizeSSBO, _neighborSSBO });
-			shader->setUniform("stackSize", stackSize);
-			shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+			_disjointSetShader->use();
+			_disjointSetShader->bindBuffers(std::vector<GLuint>{ grid.ssbo(), _disjointSetSSBO });
+			_disjointSetShader->setUniform("gridDims", numDivs);
+			_disjointSetShader->execute(ComputeShader::getNumGroups(numCells), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+			_disjointSetStackShader->use();
+			_disjointSetStackShader->bindBuffers(std::vector<GLuint>{ grid.ssbo(), _disjointSetSSBO, _stack1SSBO, _stackSizeSSBO, _disjointCounterSSBO });
+			_disjointSetStackShader->setUniform("gridDims", numDivs);
+			_disjointSetStackShader->execute(ComputeShader::getNumGroups(numCells), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 			stackSize = *ComputeShader::readData(_stackSizeSSBO, GLuint());
-
-			//  Swap buffers
-			std::swap(_stack1SSBO, _stack2SSBO);
-
-			++iteration;
+			numDisjointVoxels = *ComputeShader::readData(_disjointCounterSSBO, GLuint());
 		}
+
+		// Remove mask
+		_unmaskShader->use();
+		_unmaskShader->bindBuffers(std::vector<GLuint>{ grid.ssbo() });
+		_unmaskShader->setUniform("numCells", numCells);
+		_unmaskShader->setUniform("position", glm::uint(Seeder::VOXEL_ID_POSITION));
+		_unmaskShader->setSubroutineUniform(GL_COMPUTE_SHADER, "unmaskUniform", "unmaskRightMost");
+		_unmaskShader->applyActiveSubroutines();
+		_unmaskShader->execute(ComputeShader::getNumGroups(numCells), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 		//RegularGrid::CellGrid* resultPointer = ComputeShader::readData(grid.ssbo(), RegularGrid::CellGrid());
 		//std::vector<RegularGrid::CellGrid> resultBuffer = std::vector<RegularGrid::CellGrid>(resultPointer, resultPointer + numCells);

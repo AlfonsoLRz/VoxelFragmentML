@@ -217,7 +217,7 @@ void Tetravoxelizer::initializeModel(const std::vector<Model3D::VertexGPUData>& 
 	centroid = scaleToNDC(centroid, centerBBox, maxDimBBox);
 	tetrahedraVertices.resize(meshFaces.size() * 4);
 
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int i = 0; i < meshFaces.size(); ++i) {
 		tetrahedraVertices[i * 4 + 0] = scaleToNDC(meshVertices[meshFaces[i]._vertices.x]._position, centerBBox, maxDimBBox);
 		tetrahedraVertices[i * 4 + 1] = scaleToNDC(meshVertices[meshFaces[i]._vertices.y]._position, centerBBox, maxDimBBox);

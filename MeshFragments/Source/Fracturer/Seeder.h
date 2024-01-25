@@ -5,9 +5,12 @@
 #include "Utilities/HaltonEnum.h"
 #include "Utilities/HaltonSampler.h"
 
-namespace fracturer {
-
+namespace fracturer 
+{
     class Seeder {
+    public:
+        const static glm::uint VOXEL_ID_POSITION = 12;       //!< Position of the voxel id in the voxel mask
+
     public:
         /**
         *   Exception raised when the seeder cannot proceed.
@@ -17,6 +20,8 @@ namespace fracturer {
         public:
             explicit SeederSearchError(const std::string& msg) : std::runtime_error(msg) {  }
         };
+
+        enum Location { INNER, OUTER, BOTH };
 
     public:
         typedef std::function<void(int size)> RandomInitFunction;
@@ -64,6 +69,6 @@ namespace fracturer {
         *   Warning! every seeds has: x, y, z, colorIndex. Min colorIndex is 2
         *   becouse in Flood algorithm colorIndex 1 is reserved for 'free' voxel.
         */
-        static std::vector<glm::uvec4> uniform(const RegularGrid& grid, unsigned int nseeds, int randomSeedFunction);
+        static std::vector<glm::uvec4> uniform(const RegularGrid& grid, unsigned int nseeds, int randomSeedFunction, Location location = OUTER);
     };
 }

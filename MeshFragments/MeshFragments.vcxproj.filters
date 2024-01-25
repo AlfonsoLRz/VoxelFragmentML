@@ -1207,5 +1207,11 @@
     <None Include="Assets\Shaders\Compute\Fracturer\copyGrid-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\disjointSet-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
+    <None Include="Assets\Shaders\Compute\Fracturer\disjointSetStack-comp.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -111,7 +111,7 @@ public:
 	/**
 	*   @brief Triangulate a scalar field represented by `scalarFunction`. `isovalue` should be used for isovalue computation.
 	*/
-	CADModel* triangulateFieldGPU(GLuint gridSSBO, uint8_t targetValue, FractureParameters& fractureParams, const mat4& modelMatrix);
+	CADModel* triangulateFieldGPU(GLuint gridSSBO, uint16_t targetValue, FractureParameters& fractureParams, const mat4& modelMatrix);
 
 	// Getters
 

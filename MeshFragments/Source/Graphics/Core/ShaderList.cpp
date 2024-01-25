@@ -22,6 +22,8 @@ std::unordered_map<uint8_t, std::string> ShaderList::COMP_SHADER_SOURCE {
 		{RendEnum::COUNT_QUADRANT_OCCUPANCY, "Assets/Shaders/Compute/Fracturer/countQuadrantOccupancy"},
 		{RendEnum::COUNT_VOXEL_TRIANGLE, "Assets/Shaders/Compute/Fracturer/countVoxelTriangle"},
 		{RendEnum::DETECT_BOUNDARIES, "Assets/Shaders/Compute/Fracturer/detectBoundaries"},
+		{RendEnum::DISJOINT_SET, "Assets/Shaders/Compute/Fracturer/disjointSet"},
+		{RendEnum::DISJOINT_SET_STACK, "Assets/Shaders/Compute/Fracturer/disjointSetStack"},
 		{RendEnum::DOWN_SWEEP_PREFIX_SCAN, "Assets/Shaders/Compute/PrefixScan/downSweep-prefixScan"},
 		{RendEnum::END_LOOP_COMPUTATIONS, "Assets/Shaders/Compute/BVHGeneration/endLoopComputations"},
 		{RendEnum::ERODE_GRID, "Assets/Shaders/Compute/Fracturer/erodeGrid"},

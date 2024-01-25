@@ -380,11 +380,11 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 	{
 		if (fractParameters._numImpacts == 0)
 		{
-			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom);
+			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom, fracturer::Seeder::BOTH);
 		}
 		else
 		{
-			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom);
+			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom, fracturer::Seeder::BOTH);
 			seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numImpacts, fractParameters._biasSeeds, fractParameters._biasFocus);
 		}
 	}
@@ -397,7 +397,7 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 	if (fractParameters._numExtraSeeds > 0)
 	{
 		fracturer::DistanceFunction mergeDFunc = static_cast<fracturer::DistanceFunction>(fractParameters._mergeSeedsDistanceFunction);
-		auto extraSeeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numExtraSeeds, fractParameters._seedingRandom);
+		auto extraSeeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numExtraSeeds, fractParameters._seedingRandom, fracturer::Seeder::BOTH);
 		extraSeeds.insert(extraSeeds.begin(), seeds.begin(), seeds.end());
 
 		fracturer::Seeder::mergeSeeds(seeds, extraSeeds, mergeDFunc);
@@ -532,7 +532,7 @@ void CADScene::loadModel(const std::string& path)
 	_mesh->load();
 	_mesh->setMaterial(MaterialList::getInstance()->getMaterial(CGAppEnum::MATERIAL_CAD_WHITE));
 
-	_mesh->sampleCPU(50000000, 0)->save("Output/teapot/complete.ply");
+	//_mesh->sampleCPU(50000000, 0)->save("Output/teapot/complete.ply");
 }
 
 void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FragmentationProcedure* datasetProcedure)

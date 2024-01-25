@@ -24,7 +24,7 @@ void main()
 	ivec3 gridIndex_minusOne = clamp(gridIndex - ivec3(boundarySize), ivec3(0), ivec3(gridDims) - ivec3(1));
 	ivec3 gridIndex_plusOne = clamp(gridIndex + ivec3(boundarySize), ivec3(0), ivec3(gridDims) - ivec3(1));
 	bool boundary = false;
-	uint8_t value;
+	uint16_t value;
 
 	for (int x = gridIndex_minusOne.x; x <= gridIndex_plusOne.x && !boundary; ++x)
 	{
@@ -32,12 +32,12 @@ void main()
 		{
 			for (int z = gridIndex_minusOne.z; z <= gridIndex_plusOne.z && !boundary; ++z)
 			{
-				value = unmasked(grid[getPositionIndex(uvec3(x, y, z))].value);
+				value = unmaskedBit(grid[getPositionIndex(uvec3(x, y, z))].value, MASK_BOUNDARY_POSITION);
 				boundary = boundary || (value > VOXEL_FREE && value != grid[index].value);
 			}
 		}
 	}
 
 	if (boundary)
-		grid[index].value = masked(grid[index].value);
+		grid[index].value = maskedBit(grid[index].value, MASK_BOUNDARY_POSITION);
 }

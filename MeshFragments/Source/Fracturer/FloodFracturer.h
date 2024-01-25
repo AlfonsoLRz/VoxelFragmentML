@@ -16,11 +16,18 @@ namespace fracturer {
 		friend class Singleton<FloodFracturer>;
 
 	protected:
-		GLuint  _numCells;
-		GLuint  _neighborSSBO;
-		GLuint  _stack1SSBO;
-		GLuint  _stack2SSBO;
-		GLuint  _stackSizeSSBO;
+		GLuint		_numCells;
+		GLuint		_neighborSSBO;
+		GLuint		_stack1SSBO;
+		GLuint		_stack2SSBO;
+		GLuint		_stackSizeSSBO;
+
+		GLuint		_disjointCounterSSBO;
+		GLuint		_disjointSetSSBO;
+		uint16_t*	_disjointSetZero;
+
+	protected:
+		ComputeShader*	_fractureShader, *_disjointSetShader, *_disjointSetStackShader, *_unmaskShader;
 
 	protected:
 		/**

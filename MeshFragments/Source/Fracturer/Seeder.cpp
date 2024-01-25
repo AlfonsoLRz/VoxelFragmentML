@@ -77,7 +77,7 @@ namespace fracturer
                 // Is on the surface?
                 bool isBoundary = grid.isBoundary(x, y, z);
 
-                if (occupied && isFree/* && isBoundary*/)
+                if (occupied && isFree && isBoundary)
                 {
                     seeds.insert(voxel);
                     ++currentSeeds;
@@ -100,7 +100,7 @@ namespace fracturer
 	
     void Seeder::mergeSeeds(const std::vector<glm::uvec4>& frags, std::vector<glm::uvec4>& seeds, DistanceFunction dfunc) 
     {
-        std::vector<int> idFragment(256, 0);
+        std::vector<int> idFragment(std::pow(2, VOXEL_ID_POSITION), 0);
 
         for (auto& seed : seeds) 
         {
@@ -133,11 +133,11 @@ namespace fracturer
             }
 
             // Nearest found?
-            seed.w = frags[nearest].w | (idFragment[frags[nearest].w]++ << 16);
+            seed.w = frags[nearest].w | (++idFragment[frags[nearest].w] << Seeder::VOXEL_ID_POSITION);
         }
     }
 
-    std::vector<glm::uvec4> Seeder::uniform(const RegularGrid& grid, unsigned int nseeds, int randomSeedFunction) {
+    std::vector<glm::uvec4> Seeder::uniform(const RegularGrid& grid, unsigned int nseeds, int randomSeedFunction, Location location) {
         // Custom glm::uvec3 comparator
         auto comparator = [](const glm::uvec3& lhs, const glm::uvec3& rhs) {
             if      (lhs.x != rhs.x) return lhs.x < rhs.x;
@@ -174,8 +174,9 @@ namespace fracturer
             // Is repeated?
             bool isFree = seeds.find(voxel) == seeds.end();
 
-            if (occupied && isFree && isBoundary)
-                seeds.insert(voxel);
+            if (occupied && isFree)
+                if ((location == OUTER && isBoundary) || (location == INNER && !isBoundary) || location == BOTH)
+                    seeds.insert(voxel);
 
             attempt++;
         }
