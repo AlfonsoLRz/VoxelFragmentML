@@ -105,7 +105,7 @@ public:
 		_targetPoints({ 50000, 100000 }),
 		_targetTriangles({ 500, 1000 }),
 		_voxelPerMetricUnit(90),
-		_voxelizationSize(256),
+		_voxelizationSize(128),
 
 		_renderGrid(true),
 		_renderMesh(true),

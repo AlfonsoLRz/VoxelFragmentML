@@ -380,11 +380,11 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 	{
 		if (fractParameters._numImpacts == 0)
 		{
-			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom, fracturer::Seeder::BOTH);
+			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom, fracturer::Seeder::OUTER);
 		}
 		else
 		{
-			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom, fracturer::Seeder::BOTH);
+			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom, fracturer::Seeder::OUTER);
 			seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numImpacts, fractParameters._biasSeeds, fractParameters._biasFocus);
 		}
 	}

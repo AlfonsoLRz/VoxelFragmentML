@@ -11,7 +11,9 @@ layout (std430, binding = 2) buffer LaplacianBuffer { ivec4 laplacian[]; };
 
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
 
-uniform uint numFaces;
+uniform uint	checkValidity;
+uniform uint	numFaces;
+uniform float	targetVertexType;
 
 void main()
 {
@@ -19,7 +21,14 @@ void main()
 	if (index >= numFaces)
 		return;
 
-	for (int i = 0; i < 3; ++i)
+	bool isFaceValid = true;
+	if (checkValidity == 1)
+	{
+		for (int i = 0; i < 3 && isFaceValid; ++i)
+			isFaceValid = isFaceValid && epsilonEqual(vertices[face[index][i]].w, targetVertexType);
+	}
+
+	for (int i = 0; i < 3 && isFaceValid; ++i)
 	{
 		ivec4 vertex = ivec4(ivec3(vertices[face[index][i]].xyz * UINT_MULT), 1);
 

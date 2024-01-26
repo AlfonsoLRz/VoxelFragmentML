@@ -11,6 +11,7 @@ layout (std430, binding = 1) buffer LaplacianBuffer { ivec4 laplacian[]; };
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
 
 uniform uint	numVertices;
+uniform float	targetVertexType;
 uniform float	weight;
 
 void main()
@@ -19,10 +20,8 @@ void main()
 	if (index >= numVertices)
 		return;
 
-	if (vertices[index].w == 1)
+	if (epsilonEqual(vertices[index].w, targetVertexType) && laplacian[index].w > 0)
 	{
 		vertices[index].xyz = mix(vertices[index].xyz, laplacian[index].xyz / float(laplacian[index].w) / UINT_MULT, weight);
 	}
-	else
-		vertices[index].xyz = laplacian[index].xyz / float(laplacian[index].w) / UINT_MULT;
 }

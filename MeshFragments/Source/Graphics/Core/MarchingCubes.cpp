@@ -401,7 +401,8 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 					unsigned newNumVertices = this->fuseSimilarVertices(numVertices, modelMatrix);
 					this->buildMarchingCubesFaces(numVertices);
 					this->markBoundaryTriangles(numVertices / 3);
-					this->smoothSurface(newNumVertices, numVertices / 3, 10, 3);
+					this->smoothSurface(newNumVertices, numVertices / 3, 10, 0.3f, false);
+					this->smoothSurface(newNumVertices, numVertices / 3, 10, 0.5f, true);
 
 					vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
 					uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * numVertices / 3);
@@ -445,17 +446,6 @@ void MarchingCubes::buildMarchingCubesFaces(unsigned numVertices)
 	_buildMarchingCubesShader->use();
 	_buildMarchingCubesShader->setUniform("numPoints", numVertices);
 	_buildMarchingCubesShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	//Model3D::FaceGPUData* faceData = ComputeShader::readData(_faceSSBO, Model3D::FaceGPUData());
-	//std::vector<Model3D::FaceGPUData> faces = std::vector<Model3D::FaceGPUData>(faceData, faceData + numVertices / 3);
-
-	//std::unordered_set<unsigned> indices;
-	//for (const Model3D::FaceGPUData& face : faces)
-	//{
-	//	indices.insert(face._vertices.x);
-	//	indices.insert(face._vertices.y);
-	//	indices.insert(face._vertices.z);
-	//}
 };
 
 void MarchingCubes::calculateMortonCodes(unsigned numVertices)
@@ -513,7 +503,7 @@ void MarchingCubes::markBoundaryTriangles(unsigned numFaces)
 	_markBoundaryTrianglesShader->execute(ComputeShader::getNumGroups(numFaces), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 }
 
-void MarchingCubes::smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations, unsigned boundaryIterations)
+void MarchingCubes::smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations, float weight, bool boundary)
 {
 	for (int i = 0; i < numIterations; ++i)
 	{
@@ -524,25 +514,17 @@ void MarchingCubes::smoothSurface(unsigned numVertices, unsigned numFaces, unsig
 
 		_laplacianShader->bindBuffers(std::vector<GLuint> { _vertexSSBO, _faceSSBO, _laplacianSSBO });
 		_laplacianShader->use();
+		_laplacianShader->setUniform("checkValidity", boundary ? GLuint(0) : GLuint(1));
 		_laplacianShader->setUniform("numFaces", numFaces);
+		_laplacianShader->setUniform("targetVertexType", boundary ? 1.0f : .0f);
 		_laplacianShader->execute(ComputeShader::getNumGroups(numFaces), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-		//vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, numVertices);
-		//std::vector<vec4> buffer2 = std::vector<vec4>(vertices, vertices + numVertices);
 
 		_finishLaplacianShader->bindBuffers(std::vector<GLuint> { _vertexSSBO, _laplacianSSBO });
 		_finishLaplacianShader->use();
 		_finishLaplacianShader->setUniform("numVertices", numVertices);
-		_finishLaplacianShader->setUniform("weight", i >= boundaryIterations ? 0.3f : .0f);
+		_finishLaplacianShader->setUniform("targetVertexType", boundary ? 1.0f : .0f);
+		_finishLaplacianShader->setUniform("weight", weight);
 		_finishLaplacianShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-		//ivec4* data = ComputeShader::readData(_laplacianSSBO, ivec4());
-		//std::vector<ivec4> buffer = std::vector<ivec4>(data, data + numVertices);
-
-		//vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, numVertices);
-		//buffer2 = std::vector<vec4>(vertices, vertices + numVertices);
-
-		//std::cout << std::endl;
 	}
 }
 

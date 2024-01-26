@@ -85,7 +85,7 @@ protected:
 	/**
 	*   @brief Smooths the surface using the Laplacian operator.
 	*/
-	void smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations, unsigned boundaryIterations);
+	void smoothSurface(unsigned numVertices, unsigned numFaces, unsigned numIterations, float weight = 1.0f, bool boundary = false);
 
 	/**
 	*   @brief Sorts previously computed Morton codes.
