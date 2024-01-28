@@ -20,7 +20,7 @@
 
 /// Initialization of static attributes
 //const std::string CADScene::TARGET_PATH = "D:/PyCharm/BlenderRenderer/assets/GU_033.obj";
-const std::string CADScene::TARGET_PATH = "E:/Research/Armadillo.obj";
+const std::string CADScene::TARGET_PATH = "D:/allopezr/Research/Armadillo.obj";
 
 // [Public methods]
 
@@ -369,74 +369,7 @@ void CADScene::exportMetadata(const std::string& filename, std::vector<Fragmenta
 
 std::string CADScene::fractureModel(FractureParameters& fractParameters)
 {
-	fracturer::DistanceFunction dfunc = static_cast<fracturer::DistanceFunction>(fractParameters._distanceFunction);
-
-	std::vector<uvec4> seeds;
-	std::vector<float> faceClusterIdx, vertexClusterIdx;
-	std::vector<unsigned> boundaryFaces;
-	std::vector<std::unordered_map<unsigned, float>> faceClusterOccupancy;
-
-	if (_impactSeeds.empty())
-	{
-		if (fractParameters._numImpacts == 0)
-		{
-			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom, fracturer::Seeder::OUTER);
-		}
-		else
-		{
-			seeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numSeeds, fractParameters._seedingRandom, fracturer::Seeder::OUTER);
-			seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, fractParameters._numImpacts, fractParameters._biasSeeds, fractParameters._biasFocus);
-		}
-	}
-	else
-	{
-		seeds = _impactSeeds;
-		seeds = fracturer::Seeder::nearSeeds(*_meshGrid, seeds, 1, fractParameters._biasSeeds, fractParameters._biasFocus);
-	}
-
-	if (fractParameters._numExtraSeeds > 0)
-	{
-		fracturer::DistanceFunction mergeDFunc = static_cast<fracturer::DistanceFunction>(fractParameters._mergeSeedsDistanceFunction);
-		auto extraSeeds = fracturer::Seeder::uniform(*_meshGrid, fractParameters._numExtraSeeds, fractParameters._seedingRandom, fracturer::Seeder::BOTH);
-		extraSeeds.insert(extraSeeds.begin(), seeds.begin(), seeds.end());
-
-		fracturer::Seeder::mergeSeeds(seeds, extraSeeds, mergeDFunc);
-		seeds.insert(seeds.end(), extraSeeds.begin(), extraSeeds.end());
-	}
-
-	if (fractParameters._fractureAlgorithm != FractureParameters::VORONOI)
-	{
-		fracturer::Fracturer* fracturer = nullptr;
-		if (fractParameters._fractureAlgorithm == FractureParameters::NAIVE)
-			fracturer = fracturer::NaiveFracturer::getInstance();
-		else
-			fracturer = fracturer::FloodFracturer::getInstance();
-
-		if (!fracturer->setDistanceFunction(dfunc)) return "Invalid distance function";
-		fracturer->build(*_meshGrid, seeds, &fractParameters);
-	}
-	else
-	{
-		std::vector<vec3> seeds3;
-		for (const vec4& seed : seeds)
-			seeds3.push_back(seed + vec4(.5f));
-
-		Voronoi voronoi(seeds3);
-		_meshGrid->fill(voronoi);
-		_meshGrid->updateSSBO();
-	}
-
-	if (fractParameters._erode)
-	{
-		_meshGrid->erode(static_cast<FractureParameters::ErosionType>(
-			fractParameters._erosionConvolution), fractParameters._erosionSize, fractParameters._erosionIterations,
-			fractParameters._erosionProbability, fractParameters._erosionThreshold);
-	}
-	else
-	{
-		_meshGrid->detectBoundaries(1);
-	}
-
+	_meshGrid->fracture(fractParameters._numSeeds);
 	return "";
 }
 

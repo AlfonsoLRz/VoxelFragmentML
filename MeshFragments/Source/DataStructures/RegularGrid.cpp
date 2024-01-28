@@ -9,6 +9,9 @@
 #include "Graphics/Core/ShaderList.h"
 #include "Graphics/Core/Tetravoxelizer.h"
 #include "Graphics/Core/Voronoi.h"
+#include "openvdb/openvdb.h"
+#include "openvdb/tools/LevelSetFracture.h"
+#include "openvdb/tools/LevelSetSphere.h"
 #include "tinyply.h"
 #include "Utilities/ChronoUtilities.h"
 #include "VoxWriter.h"
@@ -280,6 +283,107 @@ void RegularGrid::fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numS
 	{
 		noiseBuffer[sampleIdx] = RandomUtilities::getUniformRandom(.0f, 1.0f);
 	}
+}
+
+void RegularGrid::fracture(glm::uint numFragments)
+{
+	openvdb::initialize();
+
+	for (int x = 0; x < _numDivs.x; ++x)
+		for (int y = 0; y < _numDivs.y; ++y)
+			for (int z = 0; z < _numDivs.z; ++z)
+				if (_grid[this->getPositionIndex(x, y, z)]._value == VOXEL_FREE)
+					_grid[this->getPositionIndex(x, y, z)]._value += 1;
+
+	openvdb::math::CoordBBox box;
+	openvdb::tools::LevelSetFracture<openvdb::FloatGrid> fracture(nullptr);
+
+	for (int idx = 0; idx < numFragments; ++idx)
+	{
+		std::list<openvdb::FloatGrid::Ptr> grids;
+		uint16_t randomFragment = RandomUtilities::getUniformRandomInt(VOXEL_FREE + 1, VOXEL_FREE + idx + 2);
+
+		openvdb::FloatGrid::Ptr grid = openvdb::FloatGrid::create();
+		auto accessor = grid->getAccessor();
+		for (int x = 0; x < _numDivs.x; ++x)
+			for (int y = 0; y < _numDivs.y; ++y)
+				for (int z = 0; z < _numDivs.z; ++z)
+					if (_grid[this->getPositionIndex(x, y, z)]._value == randomFragment)
+						accessor.setValue(openvdb::Coord(x, y, z), 1.0);
+		std::cout << grid->voxelSize() << std::endl;
+
+		grid->setGridClass(openvdb::GRID_LEVEL_SET);
+		grids.push_back(grid);
+
+		openvdb::FloatGrid::Ptr cutter = grid->deepCopy();
+		grid->tree().evalActiveVoxelBoundingBox(box);
+
+		// Generate sphere from here
+		auto radius = box.extents();
+		int extent = glm::min(radius.x(), glm::min(radius.y(), radius.z())) * .5f;
+		glm::ivec3 min = glm::ivec3(box.min().x(), box.min().y(), box.min().z());
+		glm::ivec3 max = glm::ivec3(box.max().x(), box.max().y(), box.max().z());
+		extent *= RandomUtilities::getUniformRandom(.2f, 0.9f);
+
+		glm::ivec3 center(0);
+		while (center.x == 0)
+		{
+			const glm::ivec3 randomVoxel = glm::ivec3(
+				RandomUtilities::getUniformRandomInt(min.x, max.x + 1),
+				RandomUtilities::getUniformRandomInt(min.y, max.y + 1),
+				RandomUtilities::getUniformRandomInt(min.z, max.z + 1));
+			const openvdb::Coord coord(randomVoxel.x, randomVoxel.y, randomVoxel.z);
+			if (accessor.getValue(coord) > 0.5f)
+				center = randomVoxel;
+		}
+
+		min = center - extent;
+		max = center + extent;
+		accessor = cutter->getAccessor();
+
+		for (int x = 0; x < _numDivs.x; ++x)
+			for (int y = 0; y < _numDivs.y; ++y)
+				for (int z = 0; z < _numDivs.z; ++z)
+					if (glm::distance(vec3(x, y, z), vec3(center)) < extent && glm::distance(vec3(x, y, z), vec3(center)) >= (extent - 1))
+						accessor.setValue(openvdb::Coord(x, y, z), 1.0);
+					else
+						accessor.setValue(openvdb::Coord(x, y, z), 0.0);
+
+		openvdb::io::File("cutter.vdb").write({ cutter });
+
+		fracture.fracture(grids, *cutter);
+		//grids = fracture.fragments();
+
+		// Report values back to the grid
+		(*grids.begin())->tree().evalActiveVoxelBoundingBox(box);
+		min = glm::ivec3(box.min().x(), box.min().y(), box.min().z());
+		max = glm::ivec3(box.max().x(), box.max().y(), box.max().z());
+
+		auto size = box.extents();
+
+		accessor = (*grids.begin())->getAccessor();
+		#pragma omp parallel for
+		for (int x = min.x; x <= max.x; ++x)
+			for (int y = min.y; y <= max.y; ++y)
+				for (int z = min.z; z <= max.z; ++z)
+					if (accessor.getValue(openvdb::Coord(x, y, z)) > 0.5f && _grid[this->getPositionIndex(x, y, z)]._value > VOXEL_FREE)
+						_grid[this->getPositionIndex(x, y, z)]._value = idx + VOXEL_FREE + 2;
+
+		 // Create a VDB file object and write out the grid.
+		openvdb::io::File("fragment.vdb").write({ *grids.begin() });
+	}
+
+	this->updateSSBO();
+	//fracture.fracture(grids, cutter);
+
+	// Create a VDB file object.
+	//openvdb::io::File file("mygrids.vdb");
+	//// Add the grid pointer to a container.
+	//openvdb::GridPtrVec saveGrids;
+	//saveGrids.push_back(grid);
+	//// Write out the contents of the container.
+	//file.write(grids);
+	//file.close();
 }
 
 void RegularGrid::getAABBs(std::vector<AABB>& aabb)
