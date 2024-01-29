@@ -124,15 +124,17 @@ namespace fracturer {
 		}
 
 		// Load seeds as a subset
-		std::vector<GLuint> seedsInt;
-		for (auto& seed : seeds) seedsInt.push_back(RegularGrid::getPositionIndex(seed.x, seed.y, seed.z, numDivs));
+		std::vector<GLuint> seedsInt (seeds.size());
+		#pragma omp parallel for
+		for (int idx = 0; idx < seedsInt.size(); ++idx)
+			seedsInt[idx] = RegularGrid::getPositionIndex(seeds[idx].x, seeds[idx].y, seeds[idx].z, numDivs);
 
 		ComputeShader::updateReadBufferSubset(_stack1SSBO, seedsInt.data(), 0, seeds.size());
 
 		glm::uint numDisjointVoxels = stackSize;
 		while (numDisjointVoxels != 0)
 		{
-			std::cout << "Iteration " << iteration << " - " << numDisjointVoxels << " voxels to process" << std::endl;
+			//std::cout << "Iteration " << iteration << " - " << numDisjointVoxels << " voxels to process" << std::endl;
 
 			_fractureShader->use();
 			_fractureShader->setUniform("gridDims", numDivs);

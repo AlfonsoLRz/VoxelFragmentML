@@ -21,6 +21,7 @@ public:
 protected:
 	static std::vector<GLint> MAX_WORK_GROUP_SIZE;					//!< This value can be useful since the number of groups is not as limited as group size
 	static std::vector<GLint> MAX_NUM_WORK_GROUPS;					//!< Maximum number of invocable work groups
+	static GLint			  MAX_MEMORY;							//!< Maximum allocatable size in the GPU
 
 public:
 	class MemoryFootprint
@@ -83,6 +84,11 @@ public:
 	static void deleteBuffers(const std::vector<GLuint>& bufferID);
 
 	/**
+	*	@return Currently used memory.
+	*/
+	static size_t getMemoryFootprint() { return _memoryFootprint.size; }
+
+	/**
 	*	@return Maximum number of work groups.
 	*/
 	static std::vector<GLint> getMaxGlobalSize();
@@ -96,6 +102,11 @@ public:
 	*	@return Maximum number of threads per group in any axis.
 	*/
 	static GLint getMaxGroupSize(const WorkGroupAxis axis = X_AXIS) { return MAX_WORK_GROUP_SIZE[axis]; }
+
+	/**
+	*	@return Maximum allocatable size in the GPU.
+	*/
+	static size_t getMaxUsableMemory();
 
 	/**
 	*	@return Maximum number of elements of an SSBO composed of objects of size 'size'. 

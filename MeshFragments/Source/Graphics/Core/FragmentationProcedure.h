@@ -13,26 +13,26 @@ struct FragmentationProcedure
 	FractureParameters	_fractureParameters;
 	ivec2				_fragmentInterval = ivec2(2, 12);
 	ivec2				_iterationInterval = ivec2(15, 5);
-	std::string			_folder = "E:/stlmodels/";
-	std::string			_destinationFolder = "E:/Fragmentos_Testing/";
+	std::string			_folder = "D:/allopezr/Datasets/ModelNet40/ModelNet40/";
+	std::string			_destinationFolder = "D:/allopezr/Fragments/";
 	std::string			_onlineFolder = "E:/Online_Testing/";
 	std::string			_startVessel = "";
 	std::string			_saveExtension = "stl";
 	bool				_saveScreenshots = false;
-	std::string			_searchExtension = ".stl";
+	std::string			_searchExtension = ".off";
 
 	struct FragmentMetadata
 	{
 		uint8_t		_id;
 		std::string _vesselName;
 
-		uint32_t	_numVertices, _numFaces;
+		uint32_t	_numVertices, _numFaces, _numPoints;
 		glm::uint	_occupiedVoxels;
 		float		_percentage;
 		glm::uint	_voxels;
 		glm::ivec3	_voxelizationSize;
 
-		FragmentMetadata() : _id(0), _vesselName(""), _occupiedVoxels(0), _percentage(0.0f), _voxels(0), _voxelizationSize(0), _numFaces(0), _numVertices(0) {}
+		FragmentMetadata() : _id(0), _vesselName(""), _occupiedVoxels(0), _percentage(0.0f), _voxels(0), _voxelizationSize(0), _numFaces(0), _numVertices(0), _numPoints(0) {}
 	};
 
 	FragmentationProcedure()

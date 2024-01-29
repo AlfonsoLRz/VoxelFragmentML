@@ -44,7 +44,7 @@ void Renderer::prepareOpenGL(const uint16_t width, const uint16_t height)
 	glEnable(GL_PRIMITIVE_RESTART);						// Index which marks different primitives
 	glPrimitiveRestartIndex(Model3D::RESTART_PRIMITIVE_INDEX);
 
-	ComputeShader::initializeMaximumSize();			// Once the context is ready we can query for maximum work group size
+	ComputeShader::initializeMaximumSize();				// Once the context is ready we can query for maximum work group size
 	Model3D::buildShadowOffsetTexture();				// Alternative shadow technique
 	Model3D::buildSSAONoiseKernels();					// Ambient occlusion samples
 

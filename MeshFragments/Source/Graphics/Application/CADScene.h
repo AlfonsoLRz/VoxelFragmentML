@@ -217,6 +217,11 @@ public:
 	void exportPointClouds(const FractureParameters& fractureParameters);
 
 	/**
+	*	@brief Exports current mesh as a point cloud of variable number of points.
+	*/
+	void exportPointCloud(const FractureParameters& fractureParameters);
+
+	/**
 	*	@brief Fractures voxelized model.
 	*/
 	std::string fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters);

@@ -60,6 +60,11 @@ public:
 	std::vector<float>* getColors() { return &_color; }
 
 	/**
+	*	@brief Returns the number of points in the cloud.
+	*/
+	size_t getNumPoints() const { return _points.size(); }
+
+	/**
 	*	@return Point in index position in array.
 	*/
 	vec3 getPoint(const int index) const;

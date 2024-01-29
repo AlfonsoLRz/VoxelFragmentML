@@ -432,7 +432,12 @@ public:
 	/**
 	*	@brief Clear geometry and topology arrays to free memory linked to process.
 	*/
-	virtual void releaseMemory(bool geometry = true, bool topology = true);
+	virtual void releaseMemory(bool geometry = true, bool topologyIndices = true, bool topologyFaces = true);
+
+	/**
+	*	@brief Deletes GPU buffers.
+	*/
+	virtual void releaseSSBO();
 
 	/**
 	*	@brief Subdivides the faces to fit the maximum wanted area.

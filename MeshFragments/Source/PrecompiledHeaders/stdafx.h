@@ -1,3 +1,8 @@
+#define DATASET_GENERATION false
+
+#include <windows.h>								// DWORD is undefined otherwise
+#include <Psapi.h>
+
 // [Libraries]
 
 #include "GL/glew.h"								// Don't swap order between GL and GLFW includes!

@@ -170,16 +170,6 @@ public:
 	CADModel& operator=(const CADModel& model) = delete;
 
 	/**
-	*	@brief Reloads VAO content.
-	*/
-	void reload();
-
-	/**
-	*	@brief Removes non-manifold vertices.
-	*/
-	void removeNonManifoldVertices();
-
-	/**
 	*	@brief Samples the mesh as a set of points.
 	*/
 	PointCloud3D* sample(unsigned maxSamples, int randomFunction);

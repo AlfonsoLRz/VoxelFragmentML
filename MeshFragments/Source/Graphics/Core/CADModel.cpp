@@ -51,7 +51,7 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory,
 
 	for (ModelComponent* modelComponent : _modelComp)
 	{
-		modelComponent->releaseMemory(releaseMemory, releaseMemory);
+		modelComponent->releaseMemory(releaseMemory, releaseMemory, releaseMemory);
 	}
 }
 
@@ -84,7 +84,7 @@ void CADModel::endInsertionBatch(bool releaseMemory, bool buildVao)
 	}
 
 	for (ModelComponent* modelComponent : _modelComp)
-		modelComponent->releaseMemory(releaseMemory, releaseMemory);
+		modelComponent->releaseMemory(releaseMemory, releaseMemory, releaseMemory);
 }
 
 std::string CADModel::getShortName() const
@@ -160,18 +160,21 @@ bool CADModel::load()
 
 	for (ModelComponent* modelComponent : _modelComp)
 	{
-		modelComponent->buildTriangleMeshTopology();
 #if !DATASET_GENERATION
+		modelComponent->buildTriangleMeshTopology();
 		modelComponent->buildPointCloudTopology();
 		modelComponent->buildWireframeTopology();
 #endif
 	}
+
+#if !DATASET_GENERATION
 	this->setVAOData();
+#endif
 
 	for (ModelComponent* modelComponent : _modelComp)
 	{
-		modelComponent->releaseMemory(false, false);
 		modelComponent->updateSSBO();
+		modelComponent->releaseMemory(false, true, false);
 	}
 
 	return true;
@@ -186,81 +189,6 @@ void CADModel::modifyVertices(const mat4& mMatrix)
 		{
 			modelComponent->_geometry[idx]._position = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._position, 1.0f));
 			modelComponent->_geometry[idx]._normal = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._normal, 0.0f));
-		}
-	}
-}
-
-void CADModel::reload()
-{
-	for (ModelComponent* modelComponent : _modelComp)
-	{
-		modelComponent->buildTriangleMeshTopology();
-		modelComponent->buildPointCloudTopology();
-		modelComponent->buildWireframeTopology();
-
-		VAO* vao = modelComponent->_vao;
-		if (vao)
-		{
-			vao->setIBOData(RendEnum::IBO_POINT_CLOUD, modelComponent->_pointCloud);
-			vao->setIBOData(RendEnum::IBO_WIREFRAME, modelComponent->_wireframe);
-			vao->setIBOData(RendEnum::IBO_TRIANGLE_MESH, modelComponent->_triangleMesh);
-		}
-	}
-
-	for (ModelComponent* modelComponent : _modelComp)
-		modelComponent->releaseMemory(false, false);
-}
-
-void CADModel::removeNonManifoldVertices()
-{
-	for (ModelComponent* modelComponent : _modelComp)
-	{
-		std::unordered_map<int, std::unordered_map<int, int>> includedEdges;				// Already included edges
-
-		auto isEdgeIncluded = [&](int index1, int index2) -> std::unordered_map<int, std::unordered_map<int, int>>::iterator
-			{
-				std::unordered_map<int, std::unordered_map<int, int>>::iterator it;
-
-				if ((it = includedEdges.find(index1)) != includedEdges.end())			// p2, p1 and p1, p2 are considered to be the same edge
-				{
-					if (it->second.find(index2) != it->second.end())					// Already included
-					{
-						it->second[index2]++;
-						return it;
-					}
-				}
-
-				if ((it = includedEdges.find(index2)) != includedEdges.end())
-				{
-					if (it->second.find(index1) != it->second.end())					// Already included
-					{
-						it->second[index1]++;
-						return it;
-					}
-				}
-
-				includedEdges[index1][index2] = 1;
-
-				return includedEdges.end();
-			};
-
-		for (unsigned int i = 0; i < modelComponent->_topology.size(); i += 3)
-		{
-			for (int j = 0; j < 3; ++j)
-			{
-				isEdgeIncluded(modelComponent->_topology[i]._vertices[j], modelComponent->_topology[i]._vertices[(j + 1) % 3]);
-			}
-		}
-
-		for (const auto& edge : includedEdges)
-		{
-			for (const auto& edge2 : edge.second)
-			{
-				if (edge2.second > 2)
-				{
-					std::cout << "Edge " << edge.first << ", " << edge2.first << " is included " << edge2.second << " times" << std::endl;
-				}
-			}
 		}
 	}
 }
@@ -800,30 +728,34 @@ bool CADModel::readBinary(const std::string& filename, const std::vector<Model3D
 
 		fin.read((char*)&numIndices, sizeof(size_t));
 		component->_wireframe.resize(numIndices);
-		if (numIndices)
+		if (numIndices) 
 			fin.read((char*)&component->_wireframe[0], numIndices * sizeof(GLuint));
 
 		size_t length;
 		fin.read((char*)&length, sizeof(size_t));
 		component->_name.resize(length);
-		fin.read((char*)&component->_name[0], length);
+		if (length) 
+			fin.read((char*)&component->_name[0], length);
 
 		fin.read((char*)&component->_aabb, sizeof(AABB));
 
 		// Recover material description
 		fin.read((char*)&length, sizeof(size_t));
 		component->_materialDescription._rootFolder.resize(length);
-		fin.read((char*)&component->_materialDescription._rootFolder[0], length);
+		if (length) 
+			fin.read((char*)&component->_materialDescription._rootFolder[0], length);
 
 		fin.read((char*)&length, sizeof(size_t));
 		component->_materialDescription._name.resize(length);
-		fin.read((char*)&component->_materialDescription._name[0], length);
+		if (length) 
+			fin.read((char*)&component->_materialDescription._name[0], length);
 
 		for (int textureLayer = 0; textureLayer < Texture::NUM_TEXTURE_TYPES; textureLayer += 1)
 		{
 			fin.read((char*)&length, sizeof(size_t));
 			component->_materialDescription._textureImage[textureLayer].resize(length);
-			if (length) fin.read((char*)&component->_materialDescription._textureImage[textureLayer][0], length);
+			if (length) 
+				fin.read((char*)&component->_materialDescription._textureImage[textureLayer][0], length);
 			fin.read((char*)&component->_materialDescription._textureColor[textureLayer], sizeof(vec4));
 		}
 		fin.read((char*)&component->_materialDescription._ns, sizeof(float));
@@ -960,38 +892,38 @@ bool CADModel::writeBinary(const std::string& path)
 	{
 		const size_t numVertices = component->_geometry.size();
 		fout.write((char*)&numVertices, sizeof(size_t));
-		fout.write((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
+		if (numVertices) fout.write((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
 
 		const size_t numTriangles = component->_topology.size();
 		fout.write((char*)&numTriangles, sizeof(size_t));
-		fout.write((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
+		if (numTriangles) fout.write((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
 
 		numIndices = component->_triangleMesh.size();
 		fout.write((char*)&numIndices, sizeof(size_t));
-		fout.write((char*)&component->_triangleMesh[0], numIndices * sizeof(GLuint));
+		if (numIndices) fout.write((char*)&component->_triangleMesh[0], numIndices * sizeof(GLuint));
 
 		numIndices = component->_pointCloud.size();
 		fout.write((char*)&numIndices, sizeof(size_t));
-		fout.write((char*)&component->_pointCloud[0], numIndices * sizeof(GLuint));
+		if (numIndices) fout.write((char*)&component->_pointCloud[0], numIndices * sizeof(GLuint));
 
 		numIndices = component->_wireframe.size();
 		fout.write((char*)&numIndices, sizeof(size_t));
-		fout.write((char*)&component->_wireframe[0], numIndices * sizeof(GLuint));
+		if (numIndices) fout.write((char*)&component->_wireframe[0], numIndices * sizeof(GLuint));
 
 		size_t nameLength = component->_name.size();
 		fout.write((char*)&nameLength, sizeof(size_t));
-		fout.write((char*)&component->_name[0], nameLength);
+		if (nameLength) fout.write((char*)&component->_name[0], nameLength);
 
 		fout.write((char*)(&component->_aabb), sizeof(AABB));
 
 		// Write material description
 		size_t rootFolderLength = component->_materialDescription._rootFolder.size(), length;
 		fout.write((char*)&rootFolderLength, sizeof(size_t));
-		fout.write((char*)&component->_materialDescription._rootFolder[0], rootFolderLength);
+		if (rootFolderLength) fout.write((char*)&component->_materialDescription._rootFolder[0], rootFolderLength);
 
 		nameLength = component->_materialDescription._name.size();
 		fout.write((char*)&nameLength, sizeof(size_t));
-		fout.write((char*)&component->_materialDescription._name[0], nameLength);
+		if (nameLength) fout.write((char*)&component->_materialDescription._name[0], nameLength);
 
 		for (int textureLayer = 0; textureLayer < Texture::NUM_TEXTURE_TYPES; textureLayer += 1)
 		{

@@ -49,7 +49,6 @@ protected:
 	GLuint          _indicesBufferID_2;
 	GLuint          _pBitsBufferID;
 	GLuint          _nBitsBufferID;
-	GLuint          _positionBufferID;
 
 	GLuint          _vertexSSBO;
 	GLuint          _faceSSBO;

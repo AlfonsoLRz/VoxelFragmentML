@@ -134,6 +134,7 @@
     <ClInclude Include="Source\Utilities\HaltonSampler.h" />
     <ClInclude Include="Source\Utilities\Histogram.h" />
     <ClInclude Include="Source\Utilities\RandomUtilities.h" />
+    <ClInclude Include="Source\Utilities\ResourceTracker.h" />
     <ClInclude Include="Source\Utilities\Singleton.h" />
   </ItemGroup>
   <ItemGroup>
@@ -298,6 +299,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Source\Utilities\Histogram.cpp" />
+    <ClCompile Include="Source\Utilities\ResourceTracker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shaders\2D\blurSSAOShader-frag.glsl" />

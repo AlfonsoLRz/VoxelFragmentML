@@ -402,7 +402,8 @@ void Model3D::renderTriangles4Shadows(RenderingShader* shader, const RendEnum::R
 /// [Public methods]
 
 Model3D::ModelComponent::ModelComponent() :
-	_id(-1), _enabled(true), _material(nullptr), _topologyIndicesLength(RendEnum::numIBOTypes()), _vao(nullptr), _geometrySSBO(UINT_MAX), _topologySSBO(UINT_MAX)
+	_id(-1), _enabled(true), _material(nullptr), _topologyIndicesLength(RendEnum::numIBOTypes()), _vao(nullptr), 
+	_geometrySSBO(std::numeric_limits<unsigned>::max()), _topologySSBO(std::numeric_limits<unsigned>::max())
 {
 }
 
@@ -410,7 +411,8 @@ Model3D::ModelComponent::~ModelComponent()
 {
 	delete _vao;
 
-	this->releaseMemory(true, true);
+	this->releaseMemory(true, true, true);
+	this->releaseSSBO();
 }
 
 void Model3D::ModelComponent::assignModelCompIDFaces()
@@ -501,17 +503,23 @@ void Model3D::ModelComponent::buildTriangleMeshTopology()
 	_topologyIndicesLength[RendEnum::IBO_TRIANGLE_MESH] = _triangleMesh.size();
 }
 
-void Model3D::ModelComponent::releaseMemory(bool geometry, bool topology)
+void Model3D::ModelComponent::releaseMemory(bool geometry, bool topologyIndices, bool topologyFaces)
 {
 	if (geometry) std::vector<VertexGPUData>().swap(_geometry);
-	if (topology) std::vector<FaceGPUData>().swap(_topology);
-	std::vector<GLuint>().swap(_pointCloud);
-	std::vector<GLuint>().swap(_wireframe);
-	std::vector<GLuint>().swap(_triangleMesh);
+	if (topologyFaces) std::vector<FaceGPUData>().swap(_topology);
+	if (topologyIndices)
+	{
+		std::vector<GLuint>().swap(_pointCloud);
+		std::vector<GLuint>().swap(_wireframe);
+		std::vector<GLuint>().swap(_triangleMesh);
+	}
+}
 
-	// SSBOs
-	if (_geometrySSBO != UINT_MAX) ComputeShader::deleteBuffer(_geometrySSBO);
-	if (_topologySSBO != UINT_MAX) ComputeShader::deleteBuffer(_topologySSBO);
+void Model3D::ModelComponent::releaseSSBO()
+{
+	if (_geometrySSBO != std::numeric_limits<unsigned>::max()) ComputeShader::deleteBuffer(_geometrySSBO);
+	if (_topologySSBO != std::numeric_limits<unsigned>::max()) ComputeShader::deleteBuffer(_topologySSBO);
+	_geometrySSBO = _topologySSBO = std::numeric_limits<unsigned>::max();
 }
 
 bool Model3D::ModelComponent::subdivide(float maxArea, std::vector<unsigned>& maskFaces)
@@ -569,12 +577,12 @@ bool Model3D::ModelComponent::subdivide(float maxArea, std::vector<unsigned>& ma
 
 void Model3D::ModelComponent::updateSSBO()
 {
-	if (_geometrySSBO == UINT_MAX)
+	if (_geometrySSBO == std::numeric_limits<unsigned>::max())
 		_geometrySSBO = ComputeShader::setReadBuffer(_geometry, GL_STATIC_DRAW);
 	else
 		ComputeShader::updateReadBuffer(_geometrySSBO, _geometry.data(), _geometry.size(), GL_STATIC_DRAW);
 
-	if (_topologySSBO == UINT_MAX)
+	if (_topologySSBO == std::numeric_limits<unsigned>::max())
 		_topologySSBO = ComputeShader::setReadBuffer(_topology, GL_STATIC_DRAW);
 	else
 		ComputeShader::updateReadBuffer(_topologySSBO, _topology.data(), _topology.size(), GL_STATIC_DRAW);

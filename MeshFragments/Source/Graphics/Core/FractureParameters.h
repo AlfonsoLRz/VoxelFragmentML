@@ -70,7 +70,6 @@ public:
 
 	// Export		
 	int				_exportMeshExtension;
-	bool			_exportProcessedMesh;
 	bool			_exportStartingGrid;
 
 public:
@@ -80,7 +79,7 @@ public:
 	FractureParameters() :
 		_biasSeeds(32),
 		_boundarySize(1),
-		_clampVoxelMetricUnit(512),
+		_clampVoxelMetricUnit(256),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
 		_erosionProbability(.5f),
@@ -104,15 +103,14 @@ public:
 		_biasFocus(5),
 		_targetPoints({ 50000, 100000 }),
 		_targetTriangles({ 500, 1000 }),
-		_voxelPerMetricUnit(90),
-		_voxelizationSize(128),
+		_voxelPerMetricUnit(20),
+		_voxelizationSize(256),
 
 		_renderGrid(true),
 		_renderMesh(true),
 		_renderPointCloud(false),
 
 		_exportMeshExtension(OBJ),
-		_exportProcessedMesh(false),
 		_exportStartingGrid(false)
 	{
 		std::qsort(_targetTriangles.data(), _targetTriangles.size(), sizeof(int), [](const void* a, const void* b) {

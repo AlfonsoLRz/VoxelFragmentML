@@ -4,13 +4,15 @@
 /// [Static members initialization]
 
 std::vector<GLint> ComputeShader::MAX_WORK_GROUP_SIZE = { 1024, 1024, 64 };					//!< That value can't be queried before OpenGL is ready
-std::vector<GLint> ComputeShader::MAX_NUM_WORK_GROUPS = { 65536, 65536, 65536 };		
+std::vector<GLint> ComputeShader::MAX_NUM_WORK_GROUPS = { 65536, 65536, 65536 };
+GLint ComputeShader::MAX_MEMORY = 0;
 ComputeShader::MemoryFootprint ComputeShader::_memoryFootprint;
 
 /// [Public methods]
 
 ComputeShader::ComputeShader(): ShaderProgram()
 {
+
 }
 
 ComputeShader::~ComputeShader()
@@ -134,6 +136,11 @@ std::vector<GLint> ComputeShader::getMaxLocalSize()
 	return maxLocalSize;
 }
 
+size_t ComputeShader::getMaxUsableMemory()
+{
+	return MAX_MEMORY;
+}
+
 GLint ComputeShader::getMaxSSBOSize(unsigned elementSize)
 {
 	GLint limitedMemory;
@@ -156,6 +163,7 @@ void ComputeShader::initializeMaximumSize()
 {
 	ComputeShader::MAX_WORK_GROUP_SIZE = getMaxLocalSize();
 	ComputeShader::MAX_NUM_WORK_GROUPS = getMaxGlobalSize();
+	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &ComputeShader::MAX_MEMORY);
 }
 
 void ComputeShader::setImageUniform(const GLint id, const std::string& shaderVariable)

@@ -332,7 +332,7 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 
 	// Buffers 
 	_verticesSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_supportVerticesSSBO = ComputeShader::setWriteBuffer(vec4(), _numThreads * 12, GL_DYNAMIC_DRAW);
+	_supportVerticesSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints * 12, GL_DYNAMIC_DRAW);
 	_nonUpdatedVerticesSSBO = ComputeShader::setWriteBuffer(unsigned(), 1, GL_DYNAMIC_DRAW);
 	_numVerticesSSBO = ComputeShader::setWriteBuffer(unsigned(), 1, GL_DYNAMIC_DRAW);
 
@@ -344,7 +344,6 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_indicesBufferID_2 = ComputeShader::setWriteBuffer(GLuint(), maxNumPoints, GL_DYNAMIC_DRAW);					// Substitutes indicesBufferID_1 for the next iteration
 	_pBitsBufferID = ComputeShader::setWriteBuffer(GLuint(), maxNumPoints, GL_DYNAMIC_DRAW);
 	_nBitsBufferID = ComputeShader::setWriteBuffer(GLuint(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_positionBufferID = ComputeShader::setWriteBuffer(GLuint(), maxNumPoints, GL_DYNAMIC_DRAW);
 
 	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints, GL_DYNAMIC_DRAW);
 	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), maxNumPoints / 3, GL_DYNAMIC_DRAW);
@@ -357,7 +356,7 @@ MarchingCubes::~MarchingCubes()
 {
 	ComputeShader::deleteBuffers(std::vector<GLuint>{
 		_verticesSSBO, _edgeTableSSBO, _triangleTableSSBO, _supportVerticesSSBO, _nonUpdatedVerticesSSBO, _numVerticesSSBO, _mortonCodeSSBO,
-		_indicesBufferID_1, _indicesBufferID_2, _pBitsBufferID, _nBitsBufferID, _positionBufferID, _vertexSSBO, _faceSSBO, _laplacianSSBO
+		_indicesBufferID_1, _indicesBufferID_2, _pBitsBufferID, _nBitsBufferID, _vertexSSBO, _faceSSBO, _laplacianSSBO
 	});
 
 	delete[] _indices;
@@ -367,6 +366,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 {
 	CADModel* model = new CADModel();
 	unsigned numSteps = _gridSubdivisions * _gridSubdivisions * _gridSubdivisions, stepIdx = 0;
+	unsigned maxVoxels = glm::max(fractureParams._voxelizationSize.x, glm::max(fractureParams._voxelizationSize.y, fractureParams._voxelizationSize.z));
 
 	std::vector<vec4> triangleVertices;
 	std::vector<uvec4> triangleIndices;
@@ -401,8 +401,8 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 					unsigned newNumVertices = this->fuseSimilarVertices(numVertices, modelMatrix);
 					this->buildMarchingCubesFaces(numVertices);
 					this->markBoundaryTriangles(numVertices / 3);
-					this->smoothSurface(newNumVertices, numVertices / 3, 10, 0.3f, false);
-					this->smoothSurface(newNumVertices, numVertices / 3, 10, 0.5f, true);
+					this->smoothSurface(newNumVertices, numVertices / 3, maxVoxels * 0.04f, 0.3f, false);
+					this->smoothSurface(newNumVertices, numVertices / 3, maxVoxels * 0.04f, 0.5f, true);
 
 					vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
 					uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * numVertices / 3);
@@ -431,7 +431,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 	//    model->insert(vertices, newNumVertices, faces, numVertices / 3);
 	//}
 
-	model->endInsertionBatch(false, fractureParams._renderMesh);
+	model->endInsertionBatch(false, !DATASET_GENERATION);
 
 	return model;
 }
