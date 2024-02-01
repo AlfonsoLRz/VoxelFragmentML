@@ -30,6 +30,7 @@ class GUI: public Singleton<GUI>
 protected:
 	FractureParameters*				_fractureParameters;				//!< Fracture parameters
 	FragmentMetadataBuffer			_fragmentMetadata;					//!< Metadata of the current fragmentation procedure
+	std::vector<Model3D*>			_fragment;							//!< Model loaded from a file
 	ModelComponentBuffer			_modelComponents;					//!< Model component active on the scene
 	Renderer*						_renderer;							//!< Access to current scene
 	RenderingParameters*			_renderingParams;					//!< Reference to rendering parameters
@@ -72,7 +73,7 @@ protected:
 	/**
 	*	@brief  
 	*/
-	void loadImGUIStyle();
+	void loadStyle();
 
 	/**
 	*	@brief Renders a help icon with a message.

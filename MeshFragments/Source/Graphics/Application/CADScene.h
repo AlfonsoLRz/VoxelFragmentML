@@ -47,7 +47,7 @@ class PointCloud3D;
 class CADScene : public SSAOScene
 {
 protected:
-	// Meshes to be tested
+	const static std::string INTERACTIVE_APP_FOLDER;			//!< Location of the folder where data is saved in the interactive application
 	const static std::string TARGET_PATH;						//!< Location of the default mesh in the file system
 
 protected:
@@ -209,17 +209,27 @@ public:
 	/**
 	*	@brief Exports fragments into several models in a given extension.
 	*/
-	void exportFragments(const FractureParameters& fractureParameters, const std::string& extension = ".obj");
+	void exportFragments(const FractureParameters& fractureParameters, const std::string& extension = ".obj", bool compress = false);
+
+	/**
+	*	@brief Exports the starting mesh as a grid.
+	*/
+	void exportGrid(const FractureParameters& fractureParameters, const std::string& folder, bool compress = false);
+
+	/**
+	*	@brief Exports the starting mesh into the specified folder and extension.
+	*/
+	void exportMesh(const FractureParameters& fractureParameters, const std::string& folder, bool compress = false);
 
 	/**
 	*	@brief 
 	*/
-	void exportPointClouds(const FractureParameters& fractureParameters);
+	void exportPointClouds(const FractureParameters& fractureParameters, bool compress = false);
 
 	/**
 	*	@brief Exports current mesh as a point cloud of variable number of points.
 	*/
-	void exportPointCloud(const FractureParameters& fractureParameters);
+	void exportPointCloud(const FractureParameters& fractureParameters, const std::string& folder, bool compress = false);
 
 	/**
 	*	@brief Fractures voxelized model.
@@ -235,6 +245,11 @@ public:
 	*	@brief Generates a dataset of fractured models.
 	*/
 	void generateDataset(FragmentationProcedure& fractureProcedure, const std::string& folder, const std::string& extension, const std::string& destinationFolder);
+
+	/**
+	*	@return Current fracture models.
+	*/
+	std::vector<Model3D*> getFractureMeshes() { return _fractureMeshes; }
 
 	/**
 	*	@return Buffer with information of split fragments.

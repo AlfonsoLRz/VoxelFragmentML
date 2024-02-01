@@ -36,7 +36,6 @@ public:
 public:
 	int				_biasFocus;
 	int				_biasSeeds;
-	int				_boundarySize;
 	int				_clampVoxelMetricUnit;
 	bool			_erode;
 	int				_erosionConvolution;
@@ -71,6 +70,16 @@ public:
 	// Export		
 	int				_exportMeshExtension;
 	bool			_exportStartingGrid;
+	bool			_exportStartingPointCloud;
+
+	std::string 	_saveGridExtension = "quadstack";
+	std::string		_saveMeshExtension = "stl";
+	std::string		_savePointCloudExtension = "ply";
+
+	// Compression
+	bool			_compressPointCloud;
+	bool			_compressGrid;
+	bool			_compressMesh;
 
 public:
 	/**
@@ -78,7 +87,6 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(32),
-		_boundarySize(1),
 		_clampVoxelMetricUnit(256),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
@@ -111,7 +119,12 @@ public:
 		_renderPointCloud(false),
 
 		_exportMeshExtension(OBJ),
-		_exportStartingGrid(false)
+		_exportStartingGrid(true),
+		_exportStartingPointCloud(true),
+
+		_compressPointCloud(true),
+		_compressGrid(true),
+		_compressMesh(true)
 	{
 		std::qsort(_targetTriangles.data(), _targetTriangles.size(), sizeof(int), [](const void* a, const void* b) {
 			return *(int*)b - *(int*)a;
@@ -119,6 +132,9 @@ public:
 		std::qsort(_targetPoints.data(), _targetPoints.size(), sizeof(int), [](const void* a, const void* b) {
 			return *(int*)b - *(int*)a;
 			});
+
+		while (_voxelizationSize.x % 4 != 0)
+			_voxelizationSize -= ivec3(1);
 	}
 };
 

@@ -5,9 +5,7 @@
 
 struct FragmentationProcedure
 {
-	bool				_exportFragments = true;
-	bool				_exportMetadata = true;
-	bool				_compressFiles = true;
+	bool				_compressResultingFiles = false;
 	std::string			_currentDestinationFolder = "";
 
 	FractureParameters	_fractureParameters;
@@ -17,8 +15,6 @@ struct FragmentationProcedure
 	std::string			_destinationFolder = "D:/allopezr/Fragments/";
 	std::string			_onlineFolder = "E:/Online_Testing/";
 	std::string			_startVessel = "";
-	std::string			_saveExtension = "stl";
-	bool				_saveScreenshots = false;
 	std::string			_searchExtension = ".off";
 
 	struct FragmentMetadata
@@ -40,10 +36,6 @@ struct FragmentationProcedure
 		_fractureParameters._biasSeeds = 0;
 		_fractureParameters._erode = false;
 		_fractureParameters._metricVoxelization = true;
-
-		_fractureParameters._renderGrid = false;
-		_fractureParameters._renderPointCloud = false;
-		_fractureParameters._renderMesh = _saveScreenshots;
 	}
 };
 

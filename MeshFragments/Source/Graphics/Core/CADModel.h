@@ -16,9 +16,6 @@
 *	@date 11/28/2020
 */
 
-#define CGAL_SIMPLIFICATION true
-#define SIMPLIFY_SIMPLIFICATION true
-
 /**
 *	@brief Model loaded from an OBJ file.
 */
@@ -30,13 +27,13 @@ protected:
 
 public:
 	const static std::string BINARY_EXTENSION;					//!< File extension for binary models
+	const static std::string NUMPY_EXTENSION;
 
 protected:
 	AABB				_aabb;									//!< Boundaries 
 	Assimp::Importer	_assimpImporter;						//!< Assimp importer
 	Assimp::Exporter	_assimpExporter;						//!< 
 	std::string			_filename;								//!< File path (without extension)
-	bool				_fuseComponents;						//!< Fuse all the components found in the cad model
 	bool				_fuseVertices;							//!< Fuse vertices which are too close
 	const aiScene*		_scene;									//!< Scene from assimp library	
 	bool				_useBinary;								//!< Use binary file instead of original obj models
@@ -45,7 +42,7 @@ protected:
 	/**
 	*	@brief Computes a triangle mesh buffer composed only by indices.
 	*/
-	void computeMeshData(Model3D::ModelComponent* modelComp, bool computeNormals = false);
+	void computeMeshData(Model3D::ModelComponent* component);
 
 	/**
 	*	@brief Creates a new material from the attributes of a model component.
@@ -90,12 +87,22 @@ protected:
 	/**
 	*	@brief Saves current model using assimp.
 	*/
-	bool saveAssimp(const std::string& filename, const std::string& extension);
+	void saveAssimp(const std::string& filename, const std::string& extension);
+
+	/**
+	*	@brief Saves current model using the binary writer of C++.
+	*/
+	void saveBinary(const std::string& filename);
 
 	/**
 	*	@brief Saves current model using assimp.
 	*/
 	void threadedSaveAssimp(aiScene* scene, const std::string& filename, const std::string& extension = "stl");
+
+	/**
+	*	@brief Saves current model using the binary writer of C++.
+	*/
+	void threadedSaveBinary(const std::string& filename);
 
 	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
@@ -109,7 +116,7 @@ public:
 	*	@param filename Path where the model is located.
 	*	@param useBinary Use of previously written binary files.
 	*/
-	CADModel(const std::string& filename, const bool useBinary, const bool fuseComponents, const bool fuseVertices);
+	CADModel(const std::string& filename, const bool useBinary, const bool fuseVertices);
 
 	/**
 	*	@brief Model 3D constructor for a triangle mesh.
@@ -135,7 +142,7 @@ public:
 	/**
 	*	@brief Sends geometry & topology to GPU.
 	*/
-	void endInsertionBatch(bool releaseMemory = true, bool buildVao = true);
+	void endInsertionBatch(bool releaseMemory = true);
 
 	/**
 	*	@return Bounding box of the model.
@@ -159,11 +166,6 @@ public:
 	virtual bool load();
 
 	/**
-	*	@brief Transforms the vertices of the model.
-	*/
-	void modifyVertices(const mat4& mMatrix);
-
-	/**
 	*	@brief Deleted assignment operator.
 	*	@param model Model to copy attributes.
 	*/
@@ -182,16 +184,21 @@ public:
 	/**
 	*	@brief Saves the model using assimp.
 	*/
-	bool save(const std::string& filename, const std::string& extension);
+	void save(const std::string& filename, const std::string& extension, bool compress = false);
 
 	/**
 	*	@brief
 	*/
-	void simplify(unsigned numFaces, bool cgal = false, bool verbose = false);
+	void simplify(unsigned numFaces, bool verbose = false);
 
 	/**
 	*	@brief Subdivides mesh with the specified maximum area.
 	*/
 	bool subdivide(float maxArea);
+
+	/**
+	*	@brief Transforms the vertices of the model.
+	*/
+	void transformGeometry(const mat4& mMatrix);
 };
 

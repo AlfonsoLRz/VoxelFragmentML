@@ -212,7 +212,8 @@ void RegularGrid::exportGrid(bool squared, const std::string& filename)
 	std::string filePath = filename;
 	if (filePath.empty())
 		filePath = "Output/grid";
-	filePath += std::to_string(RandomUtilities::getUniformRandomInt(0, 10e6)) + ".vox";
+	if (filePath.find(".vox") == std::string::npos)
+		filePath += std::to_string(RandomUtilities::getUniformRandomInt(0, 10e6)) + ".vox";
 
 	vox.SaveToFile(filePath);
 	vox.PrintStats();

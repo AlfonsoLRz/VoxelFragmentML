@@ -191,6 +191,12 @@ public:
 	uvec3 getClosestEntryVoxel(const Model3D::RayGPUData& ray);
 
 	/**
+	*	@brief Creates a new grid with the same content as the current one.
+	*/
+	template<typename T>
+	void getData(std::vector<std::vector<std::vector<T>>>& data);
+
+	/**
 	*	@brief Inserts a new point in the grid.
 	*/
 	void insertPoint(const vec3& position, unsigned index);
@@ -329,3 +335,26 @@ public:
 	void set(int x, int y, int z, uint16_t i);
 };
 
+template<typename T>
+inline void RegularGrid::getData(std::vector<std::vector<std::vector<T>>>& data)
+{
+	if (data.size() < _numDivs.x) 		
+		data.resize(_numDivs.x);
+
+	for (int x = 0; x < _numDivs.x; ++x)
+	{
+		if (data[x].size() < _numDivs.y)
+			data[x].resize(_numDivs.y);
+
+		for (int y = 0; y < _numDivs.y; ++y)
+		{
+			if (data[x][y].size() < _numDivs.z)
+				data[x][y].resize(_numDivs.z);
+
+			for (int z = 0; z < _numDivs.z; ++z)
+			{
+				data[x][y][z] = static_cast<T>(_grid[getPositionIndex(x, y, z)]._value);
+			}
+		}
+	}
+}

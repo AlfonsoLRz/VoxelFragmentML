@@ -6,12 +6,14 @@
 #include "Interface/Fonts/font_awesome.hpp"
 #include "Interface/Fonts/lato.hpp"
 #include "Interface/Fonts/IconsFontAwesome5.h"
+#include "Fracturer/Seeder.h"
 
 /// [Protected methods]
 
 GUI::GUI() :
-	_showRenderingSettings(false), _showSceneSettings(false), _showScreenshotSettings(false), _showAboutUs(false), _showControls(false), _showFractureSettings(false), _showFileDialog(false),
-	_fractureText("")
+	_showRenderingSettings(false), _showSceneSettings(false), _showScreenshotSettings(false), _showAboutUs(false), 
+	_showControls(false), _showFractureSettings(false), _showFileDialog(false), _showFragmentList(false), 
+	_modelFilePath(""), _fractureText("")
 {
 	_renderer = Renderer::getInstance();
 	_renderingParams = Renderer::getInstance()->getRenderingParameters();
@@ -35,11 +37,10 @@ void GUI::createMenu()
 	{
 		if (ImGui::BeginMenu(ICON_FA_COG "Settings"))
 		{
-			ImGui::MenuItem(ICON_FA_CUBE "Rendering", NULL, &_showRenderingSettings);
+			ImGui::MenuItem(ICON_FA_PALETTE "Rendering", NULL, &_showRenderingSettings);
 			ImGui::MenuItem(ICON_FA_IMAGE "Screenshot", NULL, &_showScreenshotSettings);
-			ImGui::MenuItem(ICON_FA_TREE "Scene", NULL, &_showSceneSettings);
 			ImGui::MenuItem(ICON_FA_HEART_BROKEN "Fracture", NULL, &_showFractureSettings);
-			ImGui::MenuItem(ICON_FA_UTENSILS "Fracture List", NULL, &_showFragmentList);
+			ImGui::MenuItem(ICON_FA_LIST "Fracture List", NULL, &_showFragmentList);
 			ImGui::EndMenu();
 		}
 
@@ -149,7 +150,11 @@ void GUI::showFileDialog()
 
 void GUI::showFractureList()
 {
+	static int selectedFragment = 0;
+
 	if (_fragmentMetadata.empty()) _fragmentMetadata = _scene->getFragmentMetadata();
+	if (_fragment.empty()) _fragment = _scene->getFractureMeshes();
+	if (_fragmentMetadata.empty()) selectedFragment = 0;
 
 	ImGui::SetNextWindowSize(ImVec2(480, 440), ImGuiCond_FirstUseEver);
 
@@ -158,8 +163,6 @@ void GUI::showFractureList()
 		this->leaveSpace(2);
 
 		// Left
-		static int selectedFragment = 0;
-
 		ImGui::BeginChild("Fragments", ImVec2(200, 0), true);
 
 		for (int i = 0; i < _fragmentMetadata.size(); ++i)
@@ -175,20 +178,25 @@ void GUI::showFractureList()
 
 		// Right
 		ImGui::BeginGroup();
-		ImGui::BeginChild("Fragment View", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));		// Leave room for 1 line below us
+		ImGui::BeginChild("Fragment View", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysUseWindowPadding);		// Leave room for 1 line below us);		// Leave room for 1 line below us
 
-		const std::string name = "Fragment " + std::to_string(selectedFragment + 1);
-		ImGui::Text(name.c_str());
-		ImGui::Separator();
+		if (selectedFragment >= 0)
+		{
+			const std::string name = "Fragment " + std::to_string(selectedFragment + 1);
+			ImGui::Text(name.c_str());
+			ImGui::Separator();
 
-		this->leaveSpace(1);
+			this->leaveSpace(1);
 
-		const FragmentationProcedure::FragmentMetadata& metadata = _fragmentMetadata[selectedFragment];
-		this->renderText("File name: ", metadata._vesselName);
-		this->renderText("Number of voxels: ", std::to_string(metadata._voxels));
-		this->renderText("Number of voxels (percentage): ", std::to_string(metadata._percentage));
-		this->renderText("Number of occupied voxels in vessel: ", std::to_string(metadata._occupiedVoxels));
-		this->renderText("Voxelization size: ", std::to_string(metadata._voxelizationSize.x) + ", " + std::to_string(metadata._voxelizationSize.y) + ", " + std::to_string(metadata._voxelizationSize.z));
+			const FragmentationProcedure::FragmentMetadata& metadata = _fragmentMetadata[selectedFragment];
+			Model3D* fragment = _fragment[selectedFragment];
+
+			ImGui::Checkbox("Enabled", &fragment->getModelComponent(0)->_enabled);
+			this->renderText("Number of voxels: ", std::to_string(metadata._voxels));
+			this->renderText("Number of voxels (percentage): ", std::to_string(metadata._percentage));
+			this->renderText("Number of occupied voxels in vessel: ", std::to_string(metadata._occupiedVoxels));
+			this->renderText("Voxelization size: ", std::to_string(metadata._voxelizationSize.x) + ", " + std::to_string(metadata._voxelizationSize.y) + ", " + std::to_string(metadata._voxelizationSize.z));
+		}
 
 		ImGui::EndChild();
 		ImGui::EndGroup();
@@ -201,11 +209,10 @@ void GUI::showFractureSettings()
 {
 	if (ImGui::Begin("Fracture Settings", &_showFractureSettings))
 	{
-		this->leaveSpace(1);
-
 		if (ImGui::Button("Launch Algorithm"))
 		{
 			_fragmentMetadata.clear();
+			_fragment.clear();
 			_fractureText = _scene->fractureGrid(_fragmentMetadata, *_fractureParameters);
 		}
 
@@ -216,58 +223,74 @@ void GUI::showFractureSettings()
 			_showFileDialog = true;
 		}
 
-		this->leaveSpace(2); ImGui::Text("Algorithm Settings"); ImGui::Separator(); this->leaveSpace(2);
-
-		ImGui::SliderInt("Grid Subdivisions", &_fractureParameters->_voxelizationSize[0], 1, _fractureParameters->_clampVoxelMetricUnit);
-
-		ImGui::PushItemWidth(150.0f);
-		{
-			ImGui::Combo("Base Algorithm", &_fractureParameters->_fractureAlgorithm, FractureParameters::Fracture_STR, IM_ARRAYSIZE(FractureParameters::Fracture_STR)); ImGui::SameLine(0, 20);
-			ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
-			ImGui::SliderInt("Num. Seeds", &_fractureParameters->_numSeeds, 1, 256); ImGui::SameLine(0, 20);
-			ImGui::SliderInt("Num. Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, std::max(256 - _fractureParameters->_numSeeds - _fractureParameters->_biasSeeds, 0)); ImGui::SameLine(0, 20);
-			ImGui::Combo("Seed Random Distribution", &_fractureParameters->_seedingRandom, FractureParameters::Random_STR, IM_ARRAYSIZE(FractureParameters::Random_STR));
-			ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR)); ImGui::SameLine(0, 20);
-			ImGui::Checkbox("Remove Isolated Regions", &_fractureParameters->_removeIsolatedRegions);
-			ImGui::SliderInt("Impacts", &_fractureParameters->_numImpacts, 0, 10); ImGui::SameLine(0, 20);
-			ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, 256 - _fractureParameters->_numSeeds); ImGui::SameLine(0, 20);
-			ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_biasFocus, 1, 15);
-			ImGui::SliderInt("Boundary Size", &_fractureParameters->_boundarySize, 1, 10);
-		}
-		ImGui::PopItemWidth();
-
-		this->leaveSpace(3); ImGui::Text("Execution Settings"); ImGui::Separator(); this->leaveSpace(2);
 		ImGui::Checkbox("Use GPU", &_fractureParameters->_launchGPU); ImGui::SameLine(0, 20);
 		ImGui::InputInt("Seed", &_fractureParameters->_seed, 1);
 
-		this->leaveSpace(3); ImGui::Text("Erosion Settings"); ImGui::Separator(); this->leaveSpace(2);
-		ImGui::PushItemWidth(120.0f);
+		ImGui::PushItemWidth(300.0f);
+		if (ImGui::BeginTabBar("Fracture Tab Bar"))
 		{
-			ImGui::Checkbox("Erode", &_fractureParameters->_erode);
-			ImGui::Combo("Erosion Convolution", &_fractureParameters->_erosionConvolution, FractureParameters::Erosion_STR, IM_ARRAYSIZE(FractureParameters::Erosion_STR));
-			ImGui::SameLine(0, 20);  ImGui::SliderInt("Size", &_fractureParameters->_erosionSize, 3, 13);
-			ImGui::SameLine(0, 20);  ImGui::SliderInt("Iterations", &_fractureParameters->_erosionIterations, 1, 10);
-			ImGui::SliderFloat("Erosion Probability", &_fractureParameters->_erosionProbability, 0.0f, 1.0f);
-			ImGui::SameLine(0, 20); ImGui::SliderFloat("Erosion Threshold", &_fractureParameters->_erosionThreshold, 0.0f, 1.0f);
+			if (ImGui::BeginTabItem("General settings"))
+			{
+				ImGui::SliderInt("Grid Subdivisions", &_fractureParameters->_voxelizationSize[0], 1, _fractureParameters->_clampVoxelMetricUnit);
+
+				int maxSeeds = std::pow(2, fracturer::Seeder::VOXEL_ID_POSITION) / 32;
+
+				ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
+					
+				this->leaveSpace(1);
+				ImGui::SliderInt("Number of Seeds", &_fractureParameters->_numSeeds, 1, maxSeeds);
+				ImGui::SliderInt("Number of Extra Seeds", &_fractureParameters->_numExtraSeeds, 0, std::max(maxSeeds - _fractureParameters->_numSeeds - _fractureParameters->_biasSeeds, 0)); 
+				ImGui::Combo("Seed Random Distribution", &_fractureParameters->_seedingRandom, FractureParameters::Random_STR, IM_ARRAYSIZE(FractureParameters::Random_STR));
+				ImGui::Combo("Distance Function (Merge Seeds)", &_fractureParameters->_mergeSeedsDistanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR)); 
+
+				this->leaveSpace(1);
+				ImGui::SliderInt("Impacts", &_fractureParameters->_numImpacts, 0, 10);
+				ImGui::SliderInt("Biased Seeds", &_fractureParameters->_biasSeeds, 0, maxSeeds - _fractureParameters->_numSeeds); 
+				ImGui::SliderInt("Spreading of Biased Points", &_fractureParameters->_biasFocus, 1, 15);
+
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("Erosion"))
+			{
+				ImGui::Checkbox("Erode", &_fractureParameters->_erode);
+
+				this->leaveSpace(1);
+				ImGui::Combo("Erosion Convolution", &_fractureParameters->_erosionConvolution, FractureParameters::Erosion_STR, IM_ARRAYSIZE(FractureParameters::Erosion_STR));
+				ImGui::SliderInt("Size", &_fractureParameters->_erosionSize, 3, 13);
+				ImGui::SliderInt("Iterations", &_fractureParameters->_erosionIterations, 1, 10);
+
+				this->leaveSpace(1);
+				ImGui::SliderFloat("Erosion Probability", &_fractureParameters->_erosionProbability, 0.0f, 1.0f);
+				ImGui::SliderFloat("Erosion Threshold", &_fractureParameters->_erosionThreshold, 0.0f, 1.0f);
+
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("Erosion"))
+			{
+				if (ImGui::Button("Export Fragments (.vox)"))
+					_scene->exportGrid();
+
+				ImGui::Combo("Mesh extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportMesh_STR, IM_ARRAYSIZE(FractureParameters::ExportMesh_STR));
+				ImGui::SameLine(0, 20);
+				if (ImGui::Button("Export Fracture Meshes"))
+					_scene->exportFragments(*_fractureParameters, FractureParameters::ExportMesh_STR[_fractureParameters->_exportMeshExtension]);
+
+				if (ImGui::Button("Export Point Clouds (.ply)"))
+					_scene->exportPointClouds(*_fractureParameters);
+
+				ImGui::EndTabItem();
+			}
+
+			ImGui::EndTabBar();
 		}
 
-		this->leaveSpace(3); ImGui::Text("Save Result"); ImGui::Separator(); this->leaveSpace(2);
-		if (ImGui::Button("Export Fragments (.vox)"))
-			_scene->exportGrid();
-
-		ImGui::Combo("Mesh extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportMesh_STR, IM_ARRAYSIZE(FractureParameters::ExportMesh_STR));
-		ImGui::SameLine(0, 20);
-
-		if (ImGui::Button("Export Fracture Meshes"))
-			_scene->exportFragments(*_fractureParameters, FractureParameters::ExportMesh_STR[_fractureParameters->_exportMeshExtension]);
-
-		if (ImGui::Button("Export Point Clouds (.ply)"))
-			_scene->exportPointClouds(*_fractureParameters);
-
 		ImGui::PopItemWidth();
-	}
 
-	ImGui::End();
+
+		ImGui::End();
+	}
 }
 
 void GUI::showRenderingSettings()
@@ -352,9 +375,9 @@ void GUI::showSceneSettings()
 {
 	if (_modelComponents.empty()) _modelComponents = _renderer->getCurrentScene()->getModelComponents();
 
-	ImGui::SetNextWindowSize(ImVec2(480, 440), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(800, 440), ImGuiCond_FirstUseEver);
 
-	if (ImGui::Begin("Scene Models", &_showSceneSettings, ImGuiWindowFlags_None))
+	if (ImGui::Begin("Models", &_showSceneSettings, ImGuiWindowFlags_None))
 	{
 		this->leaveSpace(4);
 
@@ -386,9 +409,9 @@ void GUI::showSceneSettings()
 
 		ImGui::EndChild();
 		ImGui::EndGroup();
-	}
 
-	ImGui::End();
+		ImGui::End();
+	}
 }
 
 void GUI::showScreenshotSettings()
@@ -442,7 +465,7 @@ void GUI::initialize(GLFWwindow* window, const int openGLMinorVersion)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
-	this->loadImGUIStyle();
+	this->loadStyle();
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(openGLVersion.c_str());
@@ -467,11 +490,92 @@ void GUI::render()
 
 // ---------------- IMGUI ------------------
 
-void GUI::loadImGUIStyle()
+void GUI::loadStyle()
 {
 	ImGui::StyleColorsDark();
-
 	this->loadFonts();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	style.AntiAliasedFill = true;
+	style.AntiAliasedLines = true;
+	style.AntiAliasedLinesUseTex = true;
+
+	style.WindowPadding = ImVec2(13, 13);
+	style.WindowRounding = 8.0f;
+	style.FramePadding = ImVec2(5, 5);
+	style.FrameRounding = 5.0f;
+	style.ItemSpacing = ImVec2(12, 8);
+	style.ItemInnerSpacing = ImVec2(8, 6);
+	style.IndentSpacing = 25.0f;
+	style.ScrollbarSize = 15.0f;
+	style.ScrollbarRounding = 9.0f;
+	style.GrabMinSize = 5.0f;
+	style.GrabRounding = 3.0f;
+	style.WindowBorderSize = 0.0f;
+	style.ChildBorderSize = 0.0f;
+	style.PopupBorderSize = 0.0f;
+	style.FrameBorderSize = 1.0f;
+	style.TabBorderSize = 0.0f;
+	style.ChildRounding = 3.0f;
+	style.PopupRounding = 2.0f;
+	style.LogSliderDeadzone = 4.0f;
+	style.TabRounding = 3.0f;
+
+	ImVec4* colors = ImGui::GetStyle().Colors;
+	colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+	colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+	colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.14f, 0.15f, 0.85f);
+	colors[ImGuiCol_ChildBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
+	colors[ImGuiCol_PopupBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
+	colors[ImGuiCol_Border] = ImVec4(0.23f, 0.23f, 0.20f, 0.00f);
+	colors[ImGuiCol_BorderShadow] = ImVec4(0.90f, 0.70f, 0.00f, 0.10f);
+	colors[ImGuiCol_FrameBg] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
+	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.90f, 0.70f, 0.00f, 0.75f);
+	colors[ImGuiCol_FrameBgActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
+	colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.08f, 0.09f, 0.78f);
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f);
+	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+	colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
+	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+	colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
+	colors[ImGuiCol_CheckMark] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	colors[ImGuiCol_SliderGrab] = ImVec4(0.80f, 0.60f, 0.00f, 1.00f);
+	colors[ImGuiCol_SliderGrabActive] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	colors[ImGuiCol_Button] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	colors[ImGuiCol_ButtonHovered] = ImVec4(0.90f, 0.70f, 0.00f, 0.75f);
+	colors[ImGuiCol_ButtonActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
+	colors[ImGuiCol_Header] = ImVec4(0.22f, 0.22f, 0.22f, 1.00f);
+	colors[ImGuiCol_HeaderHovered] = ImVec4(0.90f, 0.70f, 0.00f, 0.75f);
+	colors[ImGuiCol_HeaderActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
+	colors[ImGuiCol_Separator] = ImVec4(0.41f, 0.42f, 0.44f, 1.00f);
+	colors[ImGuiCol_SeparatorHovered] = ImVec4(0.90f, 0.70f, 0.00f, 0.50f);
+	colors[ImGuiCol_SeparatorActive] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	colors[ImGuiCol_ResizeGrip] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.90f, 0.70f, 0.00f, 0.75f);
+	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	colors[ImGuiCol_Tab] = ImVec4(0.08f, 0.08f, 0.09f, 0.83f);
+	colors[ImGuiCol_TabHovered] = ImVec4(0.33f, 0.34f, 0.36f, 0.83f);
+	colors[ImGuiCol_TabActive] = ImVec4(0.23f, 0.23f, 0.24f, 1.00f);
+	colors[ImGuiCol_TabUnfocused] = ImVec4(0.15f, 0.15f, 0.19f, 0.00f);
+	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.16f, 0.17f, 0.18f, 1.00f);
+	colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+	colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+	colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+	colors[ImGuiCol_TableHeaderBg] = ImVec4(0.19f, 0.19f, 0.20f, 1.00f);
+	colors[ImGuiCol_TableBorderStrong] = ImVec4(0.31f, 0.31f, 0.35f, 1.00f);
+	colors[ImGuiCol_TableBorderLight] = ImVec4(0.23f, 0.23f, 0.25f, 1.00f);
+	colors[ImGuiCol_TableRowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
+	colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+	colors[ImGuiCol_DragDropTarget] = ImVec4(0.11f, 0.64f, 0.92f, 1.00f);
+	colors[ImGuiCol_NavHighlight] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
 void GUI::loadFonts()

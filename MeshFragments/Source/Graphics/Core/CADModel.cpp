@@ -17,20 +17,20 @@ std::unordered_map<std::string, std::unique_ptr<Material>> CADModel::_cadMateria
 std::unordered_map<std::string, std::unique_ptr<Texture>> CADModel::_cadTextures;
 
 const std::string CADModel::BINARY_EXTENSION = ".bin";
+const std::string CADModel::NUMPY_EXTENSION = ".npy";
 
 /// [Public methods]
 
-CADModel::CADModel(const std::string& filename, const bool useBinary, const bool fuseComponents, const bool mergeVertices) :
+CADModel::CADModel(const std::string& filename, const bool useBinary, const bool mergeVertices) :
 	Model3D(mat4(1.0f), 0), _scene(nullptr)
 {
 	_filename = filename;
-	_fuseComponents = fuseComponents;
 	_fuseVertices = mergeVertices;
 	_useBinary = useBinary;
 }
 
 CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory, const mat4& modelMatrix) :
-	Model3D(modelMatrix, 1), _useBinary(false), _fuseComponents(false), _fuseVertices(false), _scene(nullptr)
+	Model3D(modelMatrix, 1), _useBinary(false), _fuseVertices(false), _scene(nullptr)
 {
 	for (const Triangle3D& triangle : triangles)
 	{
@@ -55,7 +55,7 @@ CADModel::CADModel(const std::vector<Triangle3D>& triangles, bool releaseMemory,
 	}
 }
 
-CADModel::CADModel(const mat4& modelMatrix) : Model3D(modelMatrix, 1), _useBinary(false), _fuseComponents(false), _fuseVertices(false), _scene(nullptr)
+CADModel::CADModel(const mat4& modelMatrix) : Model3D(modelMatrix, 1), _useBinary(false), _fuseVertices(false), _scene(nullptr)
 {
 }
 
@@ -63,28 +63,23 @@ CADModel::~CADModel()
 {
 }
 
-void CADModel::endInsertionBatch(bool releaseMemory, bool buildVao)
+void CADModel::endInsertionBatch(bool releaseMemory)
 {
-	ModelComponent* modelComponent = _modelComp[0];
-
-	if (buildVao)
-	{
-		this->computeMeshData(modelComponent, true);
-
-		for (ModelComponent* modelComponent : _modelComp)
-		{
-			modelComponent->buildTriangleMeshTopology();
 #if !DATASET_GENERATION
-			modelComponent->buildWireframeTopology();
-			modelComponent->buildPointCloudTopology();
-#endif
-		}
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		this->computeMeshData(modelComponent);
 
-		this->setVAOData();
+		modelComponent->buildTriangleMeshTopology();
+		modelComponent->buildWireframeTopology();
+		modelComponent->buildPointCloudTopology();
 	}
 
+	this->setVAOData();
+#endif
+
 	for (ModelComponent* modelComponent : _modelComp)
-		modelComponent->releaseMemory(releaseMemory, releaseMemory, releaseMemory);
+		modelComponent->releaseMemory(releaseMemory, true, releaseMemory);
 }
 
 std::string CADModel::getShortName() const
@@ -118,7 +113,7 @@ bool CADModel::load()
 {
 	std::string binaryFile = _filename.substr(0, _filename.find_last_of('.')) + BINARY_EXTENSION;
 
-	if (_useBinary && std::filesystem::exists(binaryFile))
+	if ((_useBinary && false) && std::filesystem::exists(binaryFile))
 	{
 		this->loadModelFromBinaryFile(binaryFile);
 	}
@@ -136,9 +131,7 @@ bool CADModel::load()
 		std::string folder = _filename.substr(0, _filename.length() - shortName.length());
 
 		this->processNode(_scene->mRootNode, _scene, folder);
-
-		if (_fuseComponents and _modelComp.size() > 1)
-			this->fuseComponents();
+		this->fuseComponents();
 
 		if (_fuseVertices)
 		{
@@ -151,6 +144,18 @@ bool CADModel::load()
 				this->remapVertices(_modelComp[0], mapping);
 			}
 		}
+
+#if true
+		glm::vec3 scale = _aabb.extent();
+		float maxScale = 5.0f / glm::max(scale.x, glm::max(scale.y, scale.z)) * 2.0f;
+
+		const glm::mat4 transformation = glm::scale(glm::mat4(1.0f), glm::vec3(maxScale)) * glm::translate(glm::mat4(1.0f), -_aabb.center());
+		this->transformGeometry(transformation);
+
+		_aabb.dot(transformation);
+		for (Model3D::ModelComponent* modelComp : _modelComp)
+			modelComp->_aabb.dot(transformation);
+#endif
 
 		std::cout << "Number of vertices: " << this->getNumVertices() << std::endl;
 		std::cout << "Number of faces: " << this->getNumFaces() << std::endl;
@@ -178,19 +183,6 @@ bool CADModel::load()
 	}
 
 	return true;
-}
-
-void CADModel::modifyVertices(const mat4& mMatrix)
-{
-	for (ModelComponent* modelComponent : _modelComp)
-	{
-#pragma omp parallel for
-		for (int idx = 0; idx < modelComponent->_geometry.size(); ++idx)
-		{
-			modelComponent->_geometry[idx]._position = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._position, 1.0f));
-			modelComponent->_geometry[idx]._normal = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._normal, 0.0f));
-		}
-	}
 }
 
 PointCloud3D* CADModel::sample(unsigned maxSamples, int randomFunction)
@@ -287,23 +279,23 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 
 		// Noise to generate randomized points within each triangle
 		std::vector<float> noiseBuffer;
-		unsigned noiseBufferSize = glm::ceil(maxArea / sumArea * maxSamples);
+		unsigned noiseBufferSize = glm::max(1, static_cast<int>(glm::ceil(maxArea / sumArea * maxSamples)));
 		fracturer::Seeder::getFloatNoise(noiseBufferSize, noiseBufferSize * 2, randomFunction, noiseBuffer);
 
 		// Data in common for the two branchs
 		int pointIndex = 0;
-		std::vector<vec4> newPoint(maxSamples);
+		std::vector<vec4> newPoint(maxSamples * 2);
 
 		if (maxSamples > component->_topology.size())
 		{
 			#pragma omp parallel for
 			for (int index = 0; index < component->_topology.size(); ++index)
 			{
-				vec3 v1 = component->_geometry[component->_topology[index]._vertices.x]._position,
-					 v2 = component->_geometry[component->_topology[index]._vertices.y]._position,
-					 v3 = component->_geometry[component->_topology[index]._vertices.z]._position;
+				glm:: vec3 v1 = component->_geometry[component->_topology[index]._vertices.x]._position,
+						   v2 = component->_geometry[component->_topology[index]._vertices.y]._position,
+						   v3 = component->_geometry[component->_topology[index]._vertices.z]._position;
 				vec3 u = v2 - v1, v = v3 - v1;
-				float area = length(cross(u, v)) / 2.0f;
+				float area = glm::length(glm::cross(u, v)) / 2.0f;
 				glm::uint numTriangleSamples = std::max(int(glm::ceil(area / sumArea * maxSamples)), 1), newPointIndex, end;
 
 				#pragma omp critical
@@ -312,7 +304,7 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 					pointIndex += numTriangleSamples;
 				}
 
-				end = min(newPointIndex + numTriangleSamples, maxSamples);
+				end = newPointIndex + numTriangleSamples;
 
 				for (int i = newPointIndex; i < end; i++)
 				{
@@ -324,6 +316,10 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 					newPoint[i] = vec4(point, 1.0f);
 				}
 			}
+
+			newPoint.resize(pointIndex);
+			pointCloud->push_back(newPoint.data(), newPoint.size());
+			if (pointIndex > maxSamples) pointCloud->subselect(maxSamples);
 		}
 		else
 		{
@@ -362,81 +358,58 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 					newPoint[newPointIndex] = vec4(point, 1.0f);
 				}
 			}
-		}
 
-		newPoint.resize(pointIndex);
-		pointCloud->push_back(newPoint.data(), newPoint.size());
+			pointCloud->push_back(newPoint.data(), newPoint.size());
+		}
 	}
 
 	return pointCloud;
 }
 
-bool CADModel::save(const std::string& filename, const std::string& extension)
+void CADModel::save(const std::string& filename, const std::string& extension, bool compress)
 {
-	return this->saveAssimp(filename, extension);
+	if (compress)
+		this->saveBinary(filename + "." + NUMPY_EXTENSION);
+	else
+		this->saveAssimp(filename + "." + extension, extension);
 }
 
-void CADModel::simplify(unsigned numFaces, bool cgal, bool verbose)
+void CADModel::simplify(unsigned numFaces, bool verbose)
 {
 	for (Model3D::ModelComponent* modelComponent : _modelComp)
 	{
 		if (modelComponent->_topology.size() > numFaces)
 		{
-			if (cgal)
+			Simplify::vertices.resize(modelComponent->_geometry.size());
+			Simplify::triangles.resize(modelComponent->_topology.size());
+
+			#pragma omp parallel for
+			for (int i = 0; i < modelComponent->_geometry.size(); ++i)
+				Simplify::vertices[i] = Simplify::Vertex{
+					vec3f(modelComponent->_geometry[i]._position.x, modelComponent->_geometry[i]._position.y, modelComponent->_geometry[i]._position.z)
+			};
+
+			#pragma omp parallel for
+			for (int i = 0; i < modelComponent->_topology.size(); ++i)
 			{
-				//if (modelComponent->_topology.size() > 10000)
-				//	this->simplify(10000, false);
-
-				//this->save("Temp/temp.stl");
-
-				Mesh mesh;
-				CGAL::Polygon_mesh_processing::IO::read_polygon_mesh("Temp/temp.stl", mesh);
-
-				CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
-				CGAL::Surface_mesh_simplification::edge_collapse(mesh, stop);
-
-				CGALInterface::translateMesh(&mesh, modelComponent);
-
-				//Mesh* mesh = CGALInterface::translateMesh(modelComponent);
-
-				//CGAL::Surface_mesh_simplification::Face_count_stop_predicate<Mesh> stop(numFaces);
-				//CGAL::Surface_mesh_simplification::edge_collapse(*mesh, stop);
-
-				//delete mesh;
+				Simplify::triangles[i] = Simplify::Triangle();
+				for (int j = 0; j < 3; ++j)
+					Simplify::triangles[i].v[j] = modelComponent->_topology[i]._vertices[j];
 			}
-			else
+
+			Simplify::simplify_mesh(numFaces, 5.0);
+
+			modelComponent->_geometry.resize(Simplify::vertices.size());
+			modelComponent->_topology.resize(Simplify::triangles.size());
+
+			#pragma omp parallel for
+			for (int i = 0; i < Simplify::vertices.size(); ++i)
+				modelComponent->_geometry[i]._position = vec3(Simplify::vertices[i].p.x, Simplify::vertices[i].p.y, Simplify::vertices[i].p.z);
+
+			#pragma omp parallel for
+			for (int i = 0; i < Simplify::triangles.size(); ++i)
 			{
-				Simplify::vertices.resize(modelComponent->_geometry.size());
-				Simplify::triangles.resize(modelComponent->_topology.size());
-
-#pragma omp parallel for
-				for (int i = 0; i < modelComponent->_geometry.size(); ++i)
-					Simplify::vertices[i] = Simplify::Vertex{
-						vec3f(modelComponent->_geometry[i]._position.x, modelComponent->_geometry[i]._position.y, modelComponent->_geometry[i]._position.z)
-				};
-
-#pragma omp parallel for
-				for (int i = 0; i < modelComponent->_topology.size(); ++i)
-				{
-					Simplify::triangles[i] = Simplify::Triangle();
-					for (int j = 0; j < 3; ++j)
-						Simplify::triangles[i].v[j] = modelComponent->_topology[i]._vertices[j];
-				}
-
-				Simplify::simplify_mesh(numFaces, 5.0);
-
-				modelComponent->_geometry.resize(Simplify::vertices.size());
-				modelComponent->_topology.resize(Simplify::triangles.size());
-
-#pragma omp parallel for
-				for (int i = 0; i < Simplify::vertices.size(); ++i)
-					modelComponent->_geometry[i]._position = vec3(Simplify::vertices[i].p.x, Simplify::vertices[i].p.y, Simplify::vertices[i].p.z);
-
-#pragma omp parallel for
-				for (int i = 0; i < Simplify::triangles.size(); ++i)
-				{
-					modelComponent->_topology[i]._vertices = uvec3(Simplify::triangles[i].v[0], Simplify::triangles[i].v[1], Simplify::triangles[i].v[2]);
-				}
+				modelComponent->_topology[i]._vertices = uvec3(Simplify::triangles[i].v[0], Simplify::triangles[i].v[1], Simplify::triangles[i].v[2]);
 			}
 		}
 
@@ -450,61 +423,60 @@ bool CADModel::subdivide(float maxArea)
 	bool applyChanges = false;
 	std::vector<unsigned> faces;
 
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int modelCompIdx = 0; modelCompIdx < _modelComp.size(); ++modelCompIdx)
 	{
 		Model3D::ModelComponent* modelComp = _modelComp[modelCompIdx];
 
-#pragma omp critical
+		#pragma omp critical
 		applyChanges &= modelComp->subdivide(maxArea, faces);
 	}
 
 	return applyChanges;
 }
 
+void CADModel::transformGeometry(const mat4& mMatrix)
+{
+	for (ModelComponent* modelComponent : _modelComp)
+	{
+		#pragma omp parallel for
+		for (int idx = 0; idx < modelComponent->_geometry.size(); ++idx)
+		{
+			modelComponent->_geometry[idx]._position = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._position, 1.0f));
+			modelComponent->_geometry[idx]._normal = vec3(mMatrix * vec4(modelComponent->_geometry[idx]._normal, 0.0f));
+		}
+	}
+}
+
 /// [Protected methods]
 
-void CADModel::computeMeshData(ModelComponent* modelComp, bool computeNormals)
+void CADModel::computeMeshData(ModelComponent* component)
 {
-	ComputeShader* shader = ShaderList::getInstance()->getComputeShader(RendEnum::MODEL_MESH_GENERATION);
-	const int arraySize = modelComp->_topology.size();
-	const int numGroups = ComputeShader::getNumGroups(arraySize);
-
-	GLuint modelBufferID, meshBufferID;
-	modelBufferID = ComputeShader::setReadBuffer(modelComp->_geometry);
-	meshBufferID = ComputeShader::setReadBuffer(modelComp->_topology);
-
-	shader->bindBuffers(std::vector<GLuint> { modelBufferID, meshBufferID });
-	shader->use();
-	shader->setUniform("size", arraySize);
-	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	FaceGPUData* faceData = shader->readData(meshBufferID, FaceGPUData());
-	modelComp->_topology = std::move(std::vector<FaceGPUData>(faceData, faceData + arraySize));
-
-	if (computeNormals)
+	#pragma omp parallel for
+	for (int faceIdx = 0; faceIdx < component->_topology.size(); ++faceIdx)
 	{
-		//#pragma omp parallel for
-		std::vector<unsigned> faceCount(modelComp->_geometry.size(), 0);
-		for (int faceIdx = 0; faceIdx < modelComp->_topology.size(); ++faceIdx)
-		{
-			for (int i = 0; i < 3; ++i)
-			{
-				modelComp->_geometry[modelComp->_topology[faceIdx]._vertices[i]]._normal += modelComp->_topology[faceIdx]._normal;
-				++faceCount[modelComp->_topology[faceIdx]._vertices[i]];
-			}
-		}
+		glm::vec3 v1 = component->_geometry[component->_topology[faceIdx]._vertices.x]._position,
+			v2 = component->_geometry[component->_topology[faceIdx]._vertices.y]._position,
+			v3 = component->_geometry[component->_topology[faceIdx]._vertices.z]._position;
+		glm::vec3 u = v2 - v1, v = v3 - v1;
+		v1 = glm::normalize(glm::cross(u, v));
 
-#pragma omp parallel for
-		for (int vertexIdx = 0; vertexIdx < modelComp->_geometry.size(); ++vertexIdx)
+		for (int i = 0; i < 3; ++i)
 		{
-			modelComp->_geometry[vertexIdx]._normal /= faceCount[vertexIdx];
-			modelComp->_geometry[vertexIdx]._normal = glm::normalize(modelComp->_geometry[vertexIdx]._normal);
+			#pragma omp critical
+			{
+				component->_geometry[component->_topology[faceIdx]._vertices[i]]._normal += v1;
+				component->_geometry[component->_topology[faceIdx]._vertices[i]]._padding1 += 1.0f;
+			}
 		}
 	}
 
-	ComputeShader::deleteBuffer(modelBufferID);
-	ComputeShader::deleteBuffer(meshBufferID);
+	#pragma omp parallel for
+	for (int vertexIdx = 0; vertexIdx < component->_geometry.size(); ++vertexIdx)
+	{
+		component->_geometry[vertexIdx]._normal /= component->_geometry[vertexIdx]._padding1;
+		component->_geometry[vertexIdx]._normal = glm::normalize(component->_geometry[vertexIdx]._normal);
+	}
 }
 
 Material* CADModel::createMaterial(ModelComponent* modelComp)
@@ -563,6 +535,9 @@ Material* CADModel::createMaterial(ModelComponent* modelComp)
 
 void CADModel::fuseComponents()
 {
+	if (!_modelComp.size() <= 1)
+		return;
+
 	Model3D::ModelComponent* newModelComponent = new Model3D::ModelComponent();
 	unsigned numVertices = 0;
 
@@ -631,7 +606,7 @@ Model3D::ModelComponent* CADModel::processMesh(aiMesh* mesh, const aiScene* scen
 	// Vertices
 	int numVertices = static_cast<int>(mesh->mNumVertices);
 
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int i = 0; i < numVertices; i++)
 	{
 		Model3D::VertexGPUData vertex;
@@ -794,7 +769,7 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vecto
 	}
 }
 
-bool CADModel::saveAssimp(const std::string& filename, const std::string& extension)
+void CADModel::saveAssimp(const std::string& filename, const std::string& extension)
 {
 	aiScene* scene = new aiScene;
 	scene->mRootNode = new aiNode();
@@ -864,8 +839,12 @@ bool CADModel::saveAssimp(const std::string& filename, const std::string& extens
 	// Out of main thread
 	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename, extension);
 	writeModel.detach();
+}
 
-	return true;
+void CADModel::saveBinary(const std::string& filename)
+{
+	std::thread writeModel(&CADModel::threadedSaveBinary, this, filename);
+	writeModel.detach();
 }
 
 void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename, const std::string& extension)
@@ -874,6 +853,29 @@ void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename, c
 	Assimp::Exporter exporter;
 	exporter.Export(scene, extension, filename);
 	delete scene;
+}
+
+void CADModel::threadedSaveBinary(const std::string& filename)
+{
+	std::ofstream fout(filename, std::ios::out | std::ios::binary);
+	if (!fout.is_open())
+		return;
+
+	const size_t numModelComps = _modelComp.size();
+	fout.write((char*)&numModelComps, sizeof(size_t));
+
+	for (Model3D::ModelComponent* component : _modelComp)
+	{
+		const size_t numVertices = component->_geometry.size();
+		fout.write((char*)&numVertices, sizeof(size_t));
+		if (numVertices) fout.write((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
+
+		const size_t numTriangles = component->_topology.size();
+		fout.write((char*)&numTriangles, sizeof(size_t));
+		if (numTriangles) fout.write((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
+	}
+
+	fout.close();
 }
 
 bool CADModel::writeBinary(const std::string& path)

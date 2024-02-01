@@ -308,6 +308,7 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_numThreads = _steps.x * _steps.y * _steps.z;
 	_numGroups = ComputeShader::getNumGroups(_numThreads);
 	unsigned maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3;
+	unsigned globalMaxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(1) * _maxTriangles * 3;
 	_indices = new unsigned[maxNumPoints];
 	std::iota(_indices, _indices + maxNumPoints, 0);
 
@@ -345,8 +346,8 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_pBitsBufferID = ComputeShader::setWriteBuffer(GLuint(), maxNumPoints, GL_DYNAMIC_DRAW);
 	_nBitsBufferID = ComputeShader::setWriteBuffer(GLuint(), maxNumPoints, GL_DYNAMIC_DRAW);
 
-	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), maxNumPoints / 3, GL_DYNAMIC_DRAW);
+	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), globalMaxNumPoints, GL_DYNAMIC_DRAW);
+	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), globalMaxNumPoints / 3, GL_DYNAMIC_DRAW);
 
 	_laplacianSSBO = ComputeShader::setWriteBuffer(ivec4(), maxNumPoints, GL_DYNAMIC_DRAW);
 	_gridSSBO = ComputeShader::setWriteBuffer(uint16_t(), _numDivs.x * _numDivs.y * _numDivs.z, GL_STATIC_DRAW);
@@ -402,7 +403,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 					this->buildMarchingCubesFaces(numVertices);
 					this->markBoundaryTriangles(numVertices / 3);
 					this->smoothSurface(newNumVertices, numVertices / 3, maxVoxels * 0.04f, 0.3f, false);
-					this->smoothSurface(newNumVertices, numVertices / 3, maxVoxels * 0.04f, 0.5f, true);
+					this->smoothSurface(newNumVertices, numVertices / 3, maxVoxels * 0.04f, 0.1f, true);
 
 					vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
 					uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * numVertices / 3);
@@ -431,7 +432,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 	//    model->insert(vertices, newNumVertices, faces, numVertices / 3);
 	//}
 
-	model->endInsertionBatch(false, !DATASET_GENERATION);
+	model->endInsertionBatch(false);
 
 	return model;
 }

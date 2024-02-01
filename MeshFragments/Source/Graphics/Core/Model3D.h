@@ -56,15 +56,6 @@ public:
 	{
 		uvec3		_vertices;
 		unsigned	_modelCompID;							//!< ID of model component where the face belongs to
-
-		vec3		_minPoint;								//!< Bounding box corner
-		float		_padding1;
-
-		vec3		_maxPoint;
-		float		_padding2;
-
-		vec3		_normal;								//!< Accelerates LiDAR intersections 
-		float		_padding3;
 	};
 
 	struct MeshGPUData
@@ -114,12 +105,18 @@ public:
 		/**
 		*	@brief Default constructor.
 		*/
-		RayGPUData() : _origin(.0f), _destination(.0f), _direction(.0f) {}
+		RayGPUData() : _origin(.0f), _destination(.0f), _direction(.0f) 
+		{
+			_padding1 = _padding2 = _padding3 = 0;
+		}
 
 		/**
 		*	@brief Base constructor for any ray.
 		*/
-		RayGPUData(const vec3& orig, const vec3& dest) : _origin(orig), _destination(dest), _direction(glm::normalize(dest - orig)) {}
+		RayGPUData(const vec3& orig, const vec3& dest) : _origin(orig), _destination(dest), _direction(glm::normalize(dest - orig)) 
+		{
+			_padding1 = _padding2 = _padding3 = 0;
+		}
 
 		/**
 		*	@return Point for ray in a certain parametric value.

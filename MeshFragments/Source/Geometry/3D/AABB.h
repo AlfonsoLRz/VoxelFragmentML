@@ -41,6 +41,11 @@ public:
 	vec3 center() const { return (_max + _min) / 2.0f; }
 
 	/**
+	*	@brief Transforms maximum and minimum points.
+	*/
+	void dot(const glm::mat4& transform);
+
+	/**
 	*	@return Vector from center to maximum point. Maximum point - center.
 	*/
 	vec3 extent() const { return _max - center(); }

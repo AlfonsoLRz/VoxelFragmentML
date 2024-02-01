@@ -47,6 +47,9 @@
 *.out
 *.app
 
+# Temp
+MeshFragments/Output/log.txt
+
 # Visual Studio	
 .vs/*
 MeshFragments/Debug/*
@@ -203,4 +206,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 Python/*/.idea/
 *.pyc
-MeshFragments/Output/log.txt
+
+# Web
+web/

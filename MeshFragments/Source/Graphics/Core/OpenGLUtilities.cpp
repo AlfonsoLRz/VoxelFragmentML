@@ -267,8 +267,6 @@ Model3D::ModelComponent* Primitives::getQuadModelComp()
 	for (int i = 0; i < triangleMesh.size(); i += 4)
 	{
 		face._vertices = uvec3(triangleMesh[i], triangleMesh[i + 1], triangleMesh[i + 2]);
-		face._normal = modelComp->_geometry[triangleMesh[i]]._normal;
-
 		modelComp->_topology.push_back(face);
 	}
 

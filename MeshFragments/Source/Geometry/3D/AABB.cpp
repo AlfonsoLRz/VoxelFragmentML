@@ -25,6 +25,12 @@ AABB& AABB::operator=(const AABB& aabb)
 	return *this;
 }
 
+void AABB::dot(const glm::mat4& transform)
+{
+	_max = transform * vec4(_max, 1.0f);
+	_min = transform * vec4(_min, 1.0f);
+}
+
 std::vector<AABB> AABB::split(const unsigned edgeDivisions) const
 {
 	std::vector<AABB> aabb;

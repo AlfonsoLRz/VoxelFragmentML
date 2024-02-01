@@ -3,16 +3,12 @@ struct VertexGPUData
 	vec3	position;
 	vec3	normal;
 	vec2	textCoord;
-	vec3	tangent;
 };
 
 struct FaceGPUData
 {
 	uvec3	vertices;
 	uint	modelCompID;
-	vec3	minPoint;
-	vec3	maxPoint;
-	vec3    normal;
 };
 
 struct MeshGPUData
