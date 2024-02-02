@@ -30,8 +30,14 @@ public:
 	enum NeighbourhoodType { VON_NEUMANN, MOORE, NUM_NEIGHBOURHOODS };
 	inline static const char* Neighbourhood_STR[NUM_NEIGHBOURHOODS] = { "Von Neumann", "Moore" };
 
-	enum ExportMeshExtension { OBJ, PLY, STL, NUM_EXPORT_MESH_EXTENSIONS };
-	inline static const char* ExportMesh_STR[NUM_EXPORT_MESH_EXTENSIONS] = { "obj", "ply", "stl"};
+	enum ExportMeshExtension { OBJ, STL, BINARY_MESH, NUM_EXPORT_MESH_EXTENSIONS };
+	inline static const char* ExportMesh_STR[NUM_EXPORT_MESH_EXTENSIONS] = { "obj", "stl", "bin" };
+
+	enum ExportGrid { RLE, QUADSTACK, VOX, UNCOMPRESSED, NUM_GRID_EXTENSIONS };
+	inline static const char* ExportGrid_STR[NUM_GRID_EXTENSIONS] = { "rle", "qstack", "vox", "bin" };
+
+	enum ExportPointCloudExtension { PLY, XYZ, BINARY_POINT_CLOUD, NUM_POINT_CLOUD_EXTENSIONS };
+	inline static const char* ExportPointCloud_STR[NUM_POINT_CLOUD_EXTENSIONS] = { "ply", "xyz", "bin" };
 	 
 public:
 	int				_biasFocus;
@@ -68,18 +74,13 @@ public:
 	bool			_renderPointCloud;
 
 	// Export		
+	int				_exportGridExtension;
 	int				_exportMeshExtension;
-	bool			_exportStartingGrid;
-	bool			_exportStartingPointCloud;
+	int				_exportPointCloudExtension;
 
-	std::string 	_saveGridExtension = "quadstack";
-	std::string		_saveMeshExtension = "stl";
-	std::string		_savePointCloudExtension = "ply";
-
-	// Compression
-	bool			_compressPointCloud;
-	bool			_compressGrid;
-	bool			_compressMesh;
+	bool			_exportGrid;
+	bool			_exportMesh;
+	bool			_exportPointCloud;
 
 public:
 	/**
@@ -112,19 +113,19 @@ public:
 		_targetPoints({ 50000, 100000 }),
 		_targetTriangles({ 500, 1000 }),
 		_voxelPerMetricUnit(20),
-		_voxelizationSize(256),
+		_voxelizationSize(500),
 
 		_renderGrid(true),
 		_renderMesh(true),
 		_renderPointCloud(false),
 
-		_exportMeshExtension(OBJ),
-		_exportStartingGrid(true),
-		_exportStartingPointCloud(true),
+		_exportGridExtension(QUADSTACK),
+		_exportMeshExtension(STL),
+		_exportPointCloudExtension(BINARY_POINT_CLOUD),
 
-		_compressPointCloud(true),
-		_compressGrid(true),
-		_compressMesh(true)
+		_exportGrid(true),
+		_exportMesh(true),
+		_exportPointCloud(true)
 	{
 		std::qsort(_targetTriangles.data(), _targetTriangles.size(), sizeof(int), [](const void* a, const void* b) {
 			return *(int*)b - *(int*)a;

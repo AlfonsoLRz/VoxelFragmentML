@@ -202,24 +202,24 @@ public:
 	virtual ~CADScene();
 
 	/**
-	*	@brief
-	*/
-	void exportGrid();
-
-	/**
 	*	@brief Exports fragments into several models in a given extension.
 	*/
 	void exportFragments(const FractureParameters& fractureParameters, const std::string& extension = ".obj", bool compress = false);
 
 	/**
+	*	@brief
+	*/
+	void exportGrid(const FractureParameters& fractureParameters);
+
+	/**
 	*	@brief Exports the starting mesh as a grid.
 	*/
-	void exportGrid(const FractureParameters& fractureParameters, const std::string& folder, bool compress = false);
+	void exportGrid(const FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportGrid gridExport);
 
 	/**
 	*	@brief Exports the starting mesh into the specified folder and extension.
 	*/
-	void exportMesh(const FractureParameters& fractureParameters, const std::string& folder, bool compress = false);
+	void exportMesh(const FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportMeshExtension meshExtension);
 
 	/**
 	*	@brief 

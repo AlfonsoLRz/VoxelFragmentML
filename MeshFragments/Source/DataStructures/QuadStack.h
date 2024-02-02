@@ -30,6 +30,19 @@ private:
 	std::vector<std::vector<GStack<T>>> matchGS(GStack<T>* root, std::vector<std::vector<uint8_t>>& iteratorCount, std::vector<std::vector<uint8_t>>& numLayers, float& scBest);
 	void recursiveSplitQuadtree(uint16_t x_start, uint16_t x_end, uint16_t y_start, uint16_t y_end, GStack<T>* root);
 
+	void getLeaves(GStack<T>* root, std::vector<GStack<T>*>& leaves)
+	{
+		if (!root)
+			return;
+
+		if (root->getNumIntervals())
+			leaves.push_back(root);
+
+		for (int x = 0; x < 2; ++x)
+			for (int y = 0; y < 2; ++y)
+				this->getLeaves(root->_children[x][y], leaves);
+	}
+
 public:
 	QuadStack();
 	virtual ~QuadStack();
@@ -63,6 +76,7 @@ void QuadStack<T>::calculateCompression(StorageUnit unit)
 	size_t compressedOccupancy = 0;
 
 	for (int x = 0; x < _width; ++x)
+		#pragma omp parallel for reduction(+:compressedOccupancy)
 		for (int y = 0; y < _height; ++y)
 			compressedOccupancy += _gStacks[x][y].size();
 
@@ -118,7 +132,7 @@ bool QuadStack<T>::loadCube(RegularGrid* voxelization)
 			#pragma omp parallel for
 			for (int h = 0; h < _height; ++h)
 			{
-				_gStacks[w][h] = GStack<T>(materialMatrix[w][h]);
+				_gStacks[w][h].loadMaterials(materialMatrix[w][h]);
 			}
 		}
 
@@ -167,21 +181,45 @@ inline bool QuadStack<T>::openCheckpoint(const std::string& filename)
 template<typename T>
 inline void QuadStack<T>::saveCheckpoint(const std::string& filename)
 {
-	//std::ofstream fout(filename, std::ios::out | std::ios::binary);
-	//if (!fout.is_open())
-	//    return;
+	std::ofstream fout(filename, std::ios::out | std::ios::binary);
+	if (!fout.is_open())
+	    return;
 
-	//const size_t numCells = _width * _height * _depth;
-	//const size_t tSize = sizeof(T);
+	const size_t numCells = _width * _height * _depth;
+	const size_t tSize = sizeof(T);
+	std::vector<GStack<T>*> leaves;
+	this->getLeaves(_quadStack, leaves);
+	size_t numNodes = leaves.size();
 
-	//fout.write((char*)&tSize, sizeof(size_t));
-	//fout.write((char*)&_width, sizeof(uint16_t));
-	//fout.write((char*)&_height, sizeof(uint16_t));
-	//fout.write((char*)&_depth, sizeof(uint16_t));
-	//fout.write((char*)&_cube[0], numCells * tSize);
-	//fout.write((char*)&_indices[0], numCells * sizeof(size_t));
+	fout.write((char*)&tSize, sizeof(size_t));
+	fout.write((char*)&_width, sizeof(uint16_t));
+	fout.write((char*)&_height, sizeof(uint16_t));
+	fout.write((char*)&_depth, sizeof(uint16_t));
+	fout.write((char*)&numNodes, sizeof(size_t));
 
-	//fout.close();
+	for (GStack<T>* leaf : leaves)
+	{
+		size_t numIntervals = leaf->getNumIntervals();
+		fout.write((char*)&numIntervals, sizeof(size_t));
+		fout.write((char*)&leaf->_maxPoints, sizeof(glm::uvec2));
+		fout.write((char*)&leaf->_minPoints, sizeof(glm::uvec2));
+
+		for (size_t interval = 0; interval < numIntervals; ++interval)
+		{
+			uint8_t lengthWidth = leaf->_intervals[interval]._length.size();
+			uint8_t lengthHeight = leaf->_intervals[interval]._length[0].size();
+
+			fout.write((char*)&lengthWidth, sizeof(uint8_t));
+			fout.write((char*)&lengthHeight, sizeof(uint8_t));
+
+			fout.write((char*)&leaf->_intervals[interval]._value, sizeof(T));
+			for (int x = 0; x < leaf->_intervals[interval]._length.size(); ++x)
+				for (int y = 0; y < leaf->_intervals[interval]._length[x].size(); ++y)
+					fout.write((char*)&leaf->_intervals[interval]._length[x][y], sizeof(uint16_t));
+		}
+	}
+
+	fout.close();
 }
 
 template<typename T>

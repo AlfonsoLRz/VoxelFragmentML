@@ -27,7 +27,6 @@ protected:
 
 public:
 	const static std::string BINARY_EXTENSION;					//!< File extension for binary models
-	const static std::string NUMPY_EXTENSION;
 
 protected:
 	AABB				_aabb;									//!< Boundaries 
@@ -184,7 +183,7 @@ public:
 	/**
 	*	@brief Saves the model using assimp.
 	*/
-	void save(const std::string& filename, const std::string& extension, bool compress = false);
+	void save(const std::string& filename, FractureParameters::ExportMeshExtension meshExtension);
 
 	/**
 	*	@brief

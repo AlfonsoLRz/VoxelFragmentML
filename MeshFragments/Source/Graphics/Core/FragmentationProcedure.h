@@ -17,18 +17,24 @@ struct FragmentationProcedure
 	std::string			_startVessel = "";
 	std::string			_searchExtension = ".off";
 
+	enum FragmentType { VOXEL, POINT_CLOUD, MESH };
 	struct FragmentMetadata
 	{
-		uint8_t		_id;
-		std::string _vesselName;
+		FragmentType	_type;
+		std::string		_vesselName;
+		glm::ivec3		_voxelizationSize;
 
-		uint32_t	_numVertices, _numFaces, _numPoints;
-		glm::uint	_occupiedVoxels;
-		float		_percentage;
-		glm::uint	_voxels;
-		glm::ivec3	_voxelizationSize;
-
-		FragmentMetadata() : _id(0), _vesselName(""), _occupiedVoxels(0), _percentage(0.0f), _voxels(0), _voxelizationSize(0), _numFaces(0), _numVertices(0), _numPoints(0) {}
+		union {
+			struct {
+				uint8_t		_id;
+				uint32_t	_numVertices;
+				uint32_t	_numFaces;
+				glm::uint	_occupiedVoxels;
+				float		_percentage;
+				glm::uint	_voxels;
+			};
+			uint32_t	_numPoints;
+		};
 	};
 
 	FragmentationProcedure()

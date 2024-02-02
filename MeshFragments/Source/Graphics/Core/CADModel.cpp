@@ -17,7 +17,6 @@ std::unordered_map<std::string, std::unique_ptr<Material>> CADModel::_cadMateria
 std::unordered_map<std::string, std::unique_ptr<Texture>> CADModel::_cadTextures;
 
 const std::string CADModel::BINARY_EXTENSION = ".bin";
-const std::string CADModel::NUMPY_EXTENSION = ".npy";
 
 /// [Public methods]
 
@@ -366,12 +365,14 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 	return pointCloud;
 }
 
-void CADModel::save(const std::string& filename, const std::string& extension, bool compress)
+void CADModel::save(const std::string& filename, FractureParameters::ExportMeshExtension meshExtension)
 {
-	if (compress)
-		this->saveBinary(filename + "." + NUMPY_EXTENSION);
+	const std::string meshExtensionStr = FractureParameters::ExportMesh_STR[meshExtension];
+
+	if (meshExtension == FractureParameters::ExportMeshExtension::BINARY_MESH)
+		this->saveBinary(filename + "." + meshExtensionStr);
 	else
-		this->saveAssimp(filename + "." + extension, extension);
+		this->saveAssimp(filename + "." + meshExtensionStr, meshExtensionStr);
 }
 
 void CADModel::simplify(unsigned numFaces, bool verbose)
@@ -836,7 +837,7 @@ void CADModel::saveAssimp(const std::string& filename, const std::string& extens
 		face.mIndices[2] = faces[i].z;
 	}
 
-	// Out of main thread
+	// Out of the main thread
 	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename, extension);
 	writeModel.detach();
 }
@@ -849,7 +850,6 @@ void CADModel::saveBinary(const std::string& filename)
 
 void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename, const std::string& extension)
 {
-	const std::string file = filename.substr(filename.find_last_of('/') + 1);
 	Assimp::Exporter exporter;
 	exporter.Export(scene, extension, filename);
 	delete scene;

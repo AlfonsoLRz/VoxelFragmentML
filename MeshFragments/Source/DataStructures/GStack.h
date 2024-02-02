@@ -3,7 +3,7 @@
 template<typename T>
 class GStack
 {
-protected:
+public:
 	template<typename T>
 	struct Interval
 	{
@@ -33,6 +33,7 @@ public:
 	std::vector<std::vector<uint16_t>> createHeightfield(uint16_t length);
 	void createInterval(T value, const std::vector<std::vector<uint16_t>>& heightfield);
 	bool isWildcard(uint8_t interval);
+	void loadMaterials(const std::vector<uint16_t>& materials);
 	static void mergeInterval(Interval<T>& interval, GStack<T>* root, std::vector<GStack<T>*>& stacks, std::vector<uint8_t>& layers);
 	static void mergeStacks(GStack<T>* root, std::vector<GStack<T>*>& stacks);
 	bool operator==(const GStack<T>& stack);
@@ -42,6 +43,7 @@ public:
 	void updateBoundaries(GStack<T>* gStack);
 	void swapIntervalWildcard(uint8_t interval);
 
+	void getLeaves(std::vector<GStack<T>*>& leaves);
 	uint16_t getLength(uint16_t interval) { return _intervals[interval]._length[0][0]; }
 	uint8_t getNumChildren() { uint8_t count = 0; for (int x = 0; x < 2; ++x) for (int y = 0; y < 2; ++y) count += static_cast<uint8_t>(_children[x][y] != nullptr); return count; }
 	uint8_t getNumIntervals() { return _intervals.size(); }
@@ -49,6 +51,7 @@ public:
 	T getValue(uint16_t interval) { return _intervals[interval]._value; }
 	size_t getNumLayers() const { return _intervals.size(); }
 	size_t size() const;
+	static size_t sizeOfInterval() { return sizeof(T) + sizeof(uint16_t) * 4;}
 };
 
 template<typename T>
@@ -62,12 +65,12 @@ GStack<T>::GStack(): _maxPoints(0), _minPoints(UINT_MAX)
 template<typename T>
 GStack<T>::GStack(const std::vector<uint16_t>& materials): GStack<T>()
 {
-	for (uint16_t material : materials)
+	_intervals.resize(materials.size());
+
+	for (int idx = 0; idx < materials.size(); ++idx)
 	{
-		Interval<T> interval;
-		interval._value = static_cast<T>(material);
-		interval._length = createHeightfield(1);
-		_intervals.push_back(interval);
+		_intervals[idx]._value = static_cast<T>(materials[idx]);
+		_intervals[idx]._length = createHeightfield(1);
 	}
 }
 
@@ -162,6 +165,18 @@ inline bool GStack<T>::isWildcard(uint8_t interval)
 }
 
 template<typename T>
+inline void GStack<T>::loadMaterials(const std::vector<uint16_t>& materials)
+{
+	_intervals.resize(materials.size());
+
+	for (int idx = 0; idx < materials.size(); ++idx)
+	{
+		_intervals[idx]._value = static_cast<T>(materials[idx]);
+		_intervals[idx]._length = createHeightfield(1);
+	}
+}
+
+template<typename T>
 inline void GStack<T>::mergeInterval(Interval<T>& interval, GStack<T>* root, std::vector<GStack<T>*>& stacks, std::vector<uint8_t>& layers)
 {
 	interval._value = stacks[0]->_intervals[layers[0]]._value;
@@ -246,6 +261,22 @@ template<typename T>
 inline void GStack<T>::swapIntervalWildcard(uint8_t interval)
 {
 	assert(interval < this->getNumIntervals());
+}
+
+template<typename T>
+inline void GStack<T>::getLeaves(std::vector<GStack<T>*>& leaves)
+{
+	if (this->getNumChildren() == 0)
+	{
+		leaves.push_back(this);
+	}
+	else
+	{
+		for (int x = 0; x < 2; ++x)
+			for (int y = 0; y < 2; ++y)
+				if (_children[x][y])
+					_children[x][y]->getLeaves(leaves);
+	}
 }
 
 template<typename T>

@@ -4,11 +4,13 @@
 #include "Geometry/3D/AABB.h"
 #include "Geometry/3D/Triangle3D.h"
 #include "Graphics/Core/CADModel.h"
+#include "Graphics/Core/FragmentationProcedure.h"
 #include "Graphics/Core/MarchingCubes.h"
 #include "Graphics/Core/OpenGLUtilities.h"
 #include "Graphics/Core/ShaderList.h"
 #include "Graphics/Core/Tetravoxelizer.h"
 #include "Graphics/Core/Voronoi.h"
+#include "DataStructures/QuadStack.h"
 #include "tinyply.h"
 #include "Utilities/ChronoUtilities.h"
 #include "VoxWriter.h"
@@ -159,64 +161,16 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 	ComputeShader::deleteBuffers(std::vector<GLuint>{ maskSSBO, noiseSSBO });
 }
 
-void RegularGrid::exportGrid(bool squared, const std::string& filename)
+void RegularGrid::exportGrid(const std::string& filename, bool squared, FractureParameters::ExportGrid exportType)
 {
-	vox::VoxWriter vox;
-	vox.ClearVoxels();
-
-	// Check if squared is required
-
-	if (squared)
-	{
-		uvec3 end = _numDivs;
-		ivec3 currentPosition;
-		end.x = end.y = end.z = glm::max(end.x, glm::max(end.y, end.z));
-		uvec3 start = (end - _numDivs) / uvec3(2);
-
-		// Reset first
-		for (int x = 0; x < end.x; ++x)
-		{
-			for (int y = 0; y < end.y; ++y)
-			{
-				for (int z = 0; z < end.z; ++z)
-				{
-					currentPosition = ivec3(x, y, z) - ivec3(start);
-
-					if (glm::all(glm::greaterThanEqual(currentPosition, ivec3(0))) && glm::all(glm::lessThan(currentPosition, ivec3(_numDivs))))
-						vox.AddVoxel(x, z, y, this->at(currentPosition.x, currentPosition.y, currentPosition.z));
-					else
-						vox.AddVoxel(x, z, y, VOXEL_EMPTY);
-				}
-			}
-		}
-	}
+	if (exportType == FractureParameters::RLE)
+		this->exportRLE(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
+	else if (exportType == FractureParameters::QUADSTACK)
+		this->exportQuadStack(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
+	else if (exportType == FractureParameters::UNCOMPRESSED)
+		this->exportUncompressed(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
 	else
-	{
-		for (int x = 0; x < _numDivs.x; ++x)
-		{
-			unsigned positionIndex;
-
-			for (int y = 0; y < _numDivs.y; ++y)
-			{
-				for (int z = 0; z < _numDivs.z; ++z)
-				{
-					positionIndex = this->getPositionIndex(x, y, z);
-					if (_grid[positionIndex]._value > VOXEL_FREE)
-						vox.AddVoxel(x, z, y, _grid[positionIndex]._value - VOXEL_FREE);
-				}
-			}
-		}
-	}
-
-	// If path is empty then save in a file with random numbering
-	std::string filePath = filename;
-	if (filePath.empty())
-		filePath = "Output/grid";
-	if (filePath.find(".vox") == std::string::npos)
-		filePath += std::to_string(RandomUtilities::getUniformRandomInt(0, 10e6)) + ".vox";
-
-	vox.SaveToFile(filePath);
-	vox.PrintStats();
+		this->exportVox(filename + "." + FractureParameters::ExportGrid_STR[exportType], squared);
 }
 
 void RegularGrid::fill(Model3D::ModelComponent* modelComponent)
@@ -503,6 +457,7 @@ std::vector<Model3D*> RegularGrid::toTriangleMesh(FractureParameters& fractParam
 	#pragma omp parallel for
 	for (int idx = 0; idx < values.size(); ++idx)
 	{
+		fragmentMetadata[idx]._type = FragmentationProcedure::MESH;
 		fragmentMetadata[idx]._id = idx;
 		fragmentMetadata[idx]._percentage = fragmentMetadata[idx]._voxels / static_cast<float>(globalCount);
 		fragmentMetadata[idx]._occupiedVoxels = globalCount;
@@ -656,6 +611,129 @@ size_t RegularGrid::countValues(std::unordered_map<uint16_t, unsigned>& values)
 			}
 
 	return values.size();
+}
+
+void RegularGrid::exportRLE(const std::string& filename)
+{
+	struct RLEData
+	{
+		uint16_t value;
+		size_t repetitions;
+	};
+
+	// Save in a binary file how many repetitions exist 
+	size_t size = _numDivs.x * _numDivs.y * _numDivs.z;
+	std::ofstream file(filename, std::ios::out | std::ios::binary);
+	std::vector<RLEData> rleData;
+
+	if (file.is_open())
+	{
+		uint16_t value = std::numeric_limits<uint16_t>::max();
+		size_t repetitions = 0, idx = 0;
+
+		while (idx < size)
+		{
+			while (idx < size && _grid[idx]._value == value)
+			{
+				++repetitions;
+				++idx;
+			}
+
+			if (repetitions > 0)
+				rleData.push_back({ value, repetitions });
+
+			value = _grid[idx]._value;
+			repetitions = 0;
+		}
+
+		file.write(reinterpret_cast<char*>(&_numDivs), sizeof(glm::uvec3));
+		file.write(reinterpret_cast<char*>(rleData.data()), rleData.size() * sizeof(RLEData));
+
+		file.close();
+	}
+}
+
+void RegularGrid::exportQuadStack(const std::string& filename)
+{
+	QuadStack<uint16_t>* quadStack = new QuadStack<uint16_t>();
+	quadStack->loadCube(this);
+	quadStack->compress_y();
+	quadStack->compress_x();
+	quadStack->calculateCompression();
+	quadStack->saveCheckpoint(filename);
+}
+
+void RegularGrid::exportUncompressed(const std::string& filename)
+{
+	std::ofstream file(filename, std::ios::out);
+
+	if (file.is_open())
+	{
+		file.write(reinterpret_cast<char*>(&_numDivs), sizeof(glm::uvec3));
+		file.write(reinterpret_cast<char*>(&_grid), _numDivs.x * _numDivs.y * _numDivs.z * sizeof(uint16_t));
+
+		file.close();
+	}
+}
+
+void RegularGrid::exportVox(const std::string& filename, bool squared)
+{
+	vox::VoxWriter vox;
+	vox.ClearVoxels();
+
+	// Check if squared is required
+
+	if (squared)
+	{
+		uvec3 end = _numDivs;
+		ivec3 currentPosition;
+		end.x = end.y = end.z = glm::max(end.x, glm::max(end.y, end.z));
+		uvec3 start = (end - _numDivs) / uvec3(2);
+
+		// Reset first
+		for (int x = 0; x < end.x; ++x)
+		{
+			for (int y = 0; y < end.y; ++y)
+			{
+				for (int z = 0; z < end.z; ++z)
+				{
+					currentPosition = ivec3(x, y, z) - ivec3(start);
+
+					if (glm::all(glm::greaterThanEqual(currentPosition, ivec3(0))) && glm::all(glm::lessThan(currentPosition, ivec3(_numDivs))))
+						vox.AddVoxel(x, z, y, this->at(currentPosition.x, currentPosition.y, currentPosition.z));
+					else
+						vox.AddVoxel(x, z, y, VOXEL_EMPTY);
+				}
+			}
+		}
+	}
+	else
+	{
+		for (int x = 0; x < _numDivs.x; ++x)
+		{
+			unsigned positionIndex;
+
+			for (int y = 0; y < _numDivs.y; ++y)
+			{
+				for (int z = 0; z < _numDivs.z; ++z)
+				{
+					positionIndex = this->getPositionIndex(x, y, z);
+					if (_grid[positionIndex]._value > VOXEL_FREE)
+						vox.AddVoxel(x, z, y, _grid[positionIndex]._value - VOXEL_FREE);
+				}
+			}
+		}
+	}
+
+	// If path is empty then save in a file with random numbering
+	std::string filePath = filename;
+	if (filePath.empty())
+		filePath = "Output/grid";
+	if (filePath.find(".vox") == std::string::npos)
+		filePath += std::to_string(RandomUtilities::getUniformRandomInt(0, 10e6)) + ".vox";
+
+	vox.SaveToFile(filePath);
+	//vox.PrintStats();
 }
 
 void RegularGrid::getComputeShaders()

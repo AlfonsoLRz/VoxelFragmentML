@@ -6,7 +6,8 @@
 #include "Interface/Window.h"
 
 // Laptop support. Use NVIDIA graphic card instead of Intel
-extern "C" {
+extern "C" 
+{
 	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
 }
 

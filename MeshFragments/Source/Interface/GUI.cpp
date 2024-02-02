@@ -269,15 +269,19 @@ void GUI::showFractureSettings()
 
 			if (ImGui::BeginTabItem("Erosion"))
 			{
-				if (ImGui::Button("Export Fragments (.vox)"))
-					_scene->exportGrid();
+				ImGui::Combo("Grid Extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportGrid_STR, IM_ARRAYSIZE(FractureParameters::ExportGrid_STR));
+				ImGui::SameLine(0, 20);
+				if (ImGui::Button("Export Grid"))
+					_scene->exportGrid(*_fractureParameters);
 
-				ImGui::Combo("Mesh extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportMesh_STR, IM_ARRAYSIZE(FractureParameters::ExportMesh_STR));
+				ImGui::Combo("Mesh Extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportMesh_STR, IM_ARRAYSIZE(FractureParameters::ExportMesh_STR));
 				ImGui::SameLine(0, 20);
 				if (ImGui::Button("Export Fracture Meshes"))
 					_scene->exportFragments(*_fractureParameters, FractureParameters::ExportMesh_STR[_fractureParameters->_exportMeshExtension]);
 
-				if (ImGui::Button("Export Point Clouds (.ply)"))
+				ImGui::Combo("Point Cloud Extension", &_fractureParameters->_exportPointCloudExtension, FractureParameters::ExportPointCloud_STR, IM_ARRAYSIZE(FractureParameters::ExportPointCloud_STR));
+				ImGui::SameLine(0, 20);
+				if (ImGui::Button("Export Point Cloud"))
 					_scene->exportPointClouds(*_fractureParameters);
 
 				ImGui::EndTabItem();
@@ -287,7 +291,6 @@ void GUI::showFractureSettings()
 		}
 
 		ImGui::PopItemWidth();
-
 
 		ImGui::End();
 	}

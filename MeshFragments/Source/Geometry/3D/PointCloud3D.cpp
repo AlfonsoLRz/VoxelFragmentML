@@ -96,26 +96,76 @@ void PointCloud3D::push_back(const vec4* points, unsigned numPoints)
 	}
 }
 
-bool PointCloud3D::save(const std::string& filename)
+void PointCloud3D::save(const std::string& filename, FractureParameters::ExportPointCloudExtension pointCloudExtension)
 {
-	// Export using PLY format
-	std::vector<std::array<double, 3>> vertices (_points.size());
-#pragma omp parallel for
-	for (int idx = 0; idx < _points.size(); ++idx)
-		vertices[idx] = { _points[idx].x, _points[idx].z, _points[idx].y };
+	const std::string extensionStr = FractureParameters::ExportPointCloud_STR[pointCloudExtension];
 
-	// Create an empty object
-	happly::PLYData plyOut;
-	plyOut.addVertexPositions(vertices);
-	plyOut.write(filename, happly::DataFormat::Binary);
+	if (pointCloudExtension == FractureParameters::ExportPointCloudExtension::PLY)
+	{
+		std::thread saveThread(&PointCloud3D::savePLY, this, filename + "." + extensionStr, std::move(_points));
+		saveThread.detach();
+	}
+	else if (pointCloudExtension == FractureParameters::ExportPointCloudExtension::XYZ)
+	{
+		std::thread saveThread(&PointCloud3D::saveXYZ, this, filename + "." + extensionStr, std::move(_points));
+		saveThread.detach();
+	}
+	else
+	{
+		std::thread saveThread(&PointCloud3D::saveCompressed, this, filename + "." + extensionStr, std::move(_points));
+		saveThread.detach();
+	}
 }
 
 void PointCloud3D::subselect(unsigned numPoints)
 {
 	if (numPoints >= _points.size()) return;
 
-	// Randomly select points
 	std::shuffle(_points.begin(), _points.end(), std::mt19937(std::random_device()()));
-	// Cut
 	_points.resize(numPoints);
 }
+
+// Protected methods
+
+void PointCloud3D::saveCompressed(const std::string& filename, const std::vector<glm::vec4>&& points)
+{
+	pcl::io::compression_Profiles_e compressionProfile = pcl::io::MED_RES_OFFLINE_COMPRESSION_WITH_COLOR;
+	auto encoder = new pcl::io::OctreePointCloudCompression<pcl::PointXYZ>(compressionProfile, false);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+
+	for (const vec4& point : points)
+		cloud->push_back(pcl::PointXYZ(point.x, point.y, point.z));
+
+	std::stringstream compressedData;
+	encoder->encodePointCloud(cloud, compressedData);
+
+	std::ofstream file(filename, std::ios::out | std::ios::binary);
+	if (!file.is_open()) return;
+
+	file.write(compressedData.str().c_str(), compressedData.str().length());
+	file.close();
+}
+
+void PointCloud3D::savePLY(const std::string& filename, const std::vector<glm::vec4>&& points)
+{
+	std::vector<std::array<double, 3>> vertices(points.size());
+	#pragma omp parallel for
+	for (int idx = 0; idx < points.size(); ++idx)
+		vertices[idx] = { points[idx].x, points[idx].z, points[idx].y };
+
+	happly::PLYData plyOut;
+	plyOut.addVertexPositions(vertices);
+	plyOut.write(filename, happly::DataFormat::Binary);
+}
+
+void PointCloud3D::saveXYZ(const std::string& filename, const std::vector<glm::vec4>&& points)
+{
+	std::ofstream file(filename);
+	if (!file.is_open()) return;
+
+	for (const vec4& point : points)
+		file << point.x << " " << point.y << " " << point.z << std::endl;
+
+	file.close();
+}
+

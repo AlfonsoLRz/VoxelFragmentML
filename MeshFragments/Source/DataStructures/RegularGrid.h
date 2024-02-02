@@ -33,7 +33,9 @@ public:
 	};
 
 protected:
-	const unsigned MASK_POSITION = 15;
+	const std::string BINARY_EXTENSION	= ".bin";		//!< Binary extension
+	const unsigned MASK_POSITION		= 15;
+	const std::string VOX_EXTENSION		= ".vox";
 
 protected:
 	std::vector<CellGrid>		_grid;					//!< Color index of regular grid
@@ -72,6 +74,26 @@ protected:
 	*	@return Number of different values in grid.
 	*/
 	size_t countValues(std::unordered_map<uint16_t, unsigned>& values);
+
+	/**
+	*	@brief Exports the grid into a .rle file.
+	*/
+	void exportRLE(const std::string& filename);
+
+	/**
+	*	@brief Exports the grid into a .vox file.
+	*/
+	void exportQuadStack(const std::string& filename);
+
+	/**
+	*	@brief Exports the grid as a raw file.
+	*/
+	void exportUncompressed(const std::string& filename);
+
+	/**
+	*	@brief Exports the grid into a .vox file.
+	*/
+	void exportVox(const std::string& filename, bool squared);
 
 	/**
 	*	@brief Retrieves compute shaders from the shader list.
@@ -158,7 +180,7 @@ public:
 	/**
 	*	@brief Exports fragments into several models in a PLY file.
 	*/
-	void exportGrid(bool squared = false, const std::string& filename = "");
+	void exportGrid(const std::string& filename, bool squared = false, FractureParameters::ExportGrid exportType = FractureParameters::QUADSTACK);
 
 	/**
 	*	@brief

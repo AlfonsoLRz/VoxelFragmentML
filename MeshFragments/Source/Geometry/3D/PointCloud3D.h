@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Geometry/3D/AABB.h"
+#include "Graphics/Core/FractureParameters.h"
+#include "pcl/point_cloud.h"
+#include "pcl/point_types.h"
+#include "pcl/compression/octree_pointcloud_compression.h"
 
 /**
 *	@file PointCloud3D.h
@@ -16,6 +20,12 @@ class PointCloud3D
 	std::vector<vec4>		_points;					//!< Point cloud
 	std::vector<float>		_color;						//!< Vertex-wise colouring of point cloud
 	AABB					_aabb;						//!< Boundaries
+
+protected:
+	// Parallel saving
+	void saveCompressed(const std::string& filename, const std::vector<glm::vec4>&& points);
+	void savePLY(const std::string& filename, const std::vector<glm::vec4>&& points);
+	void saveXYZ(const std::string& filename, const std::vector<glm::vec4>&& points);
 
 public:
 	/**
@@ -95,9 +105,9 @@ public:
 	void push_back(const vec4* points, unsigned numPoints);
 
 	/**
-	*	@return True if the point cloud was successfully saved.
+	*	@brief Saves the point cloud according to the required extension. Performed in a different thread.
 	*/
-	bool save(const std::string& filename);
+	void save(const std::string& filename, FractureParameters::ExportPointCloudExtension pointCloudExtension);
 
 	/**
 	*	@brief Number of points that this cloud contains.
