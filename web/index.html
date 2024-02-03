@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Breaking Bad Dataset" />
+        <meta name="author" content="anonymous" />
+
+        <title>Breaking Bad Dataset</title>
+        <!-- Bootstrap core CSS -->
+        <!--link href="bootstrap.min.css" rel="stylesheet"-->
+        <link
+            rel="stylesheet"
+            href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+            integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+            crossorigin="anonymous"
+        />
+
+        <!-- Custom styles for this template -->
+        <link href="offcanvas.css" rel="stylesheet" />
+        <!--    <link rel="icon" href="img/favicon.gif" type="image/gif">-->
+        <style type="text/css">
+            .container {
+                zoom: 1;
+                margin-left: auto;
+                margin-right: auto;
+                vertical-align: middle;
+                width: 100%;
+                max-width: 1000px;
+            }
+            .container_img {
+                zoom: 1;
+                margin-left: auto;
+                margin-right: auto;
+                vertical-align: middle;
+                width: 100%;
+                max-width: 1200px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container" align="center">
+                <h2>
+                    Breaking Bad: A Dataset for Geometric Fracture and Reassembly
+                </h2>
+                <h4><i>NeurIPS 2022 Datasets and Benchmarks Track (Featured Paper Presentation)</i></h4>
+                <p>
+                    <a href="https://www.silviasellan.com/">Silvia Sellán</a><sup>1,*</sup>,&nbsp;
+                    <a href="https://yunchunchen.github.io/">Yun-Chun Chen</a><sup>1,2,*</sup>,&nbsp;
+                    <a href="https://wuziyi616.github.io/">Ziyi Wu</a><sup>1,2,*</sup>,&nbsp;
+                    <a href="https://animesh.garg.tech/">Animesh Garg</a><sup>1,2,3</sup>,&nbsp;
+                    <a href="https://www.cs.toronto.edu/~jacobson/">Alec Jacobson</a><sup>1,2,4</sup>
+                    <br/>
+                    <sup>1</sup>University of Toronto&nbsp;&nbsp;
+                    <sup>2</sup>Vector Institute&nbsp;&nbsp;
+                    <sup>3</sup>NVIDIA&nbsp;&nbsp;
+                    <sup>4</sup>Adobe Research, Toronto&nbsp;&nbsp;
+                    <br/>
+                    <sup>*</sup> Equal contribution
+                </p>
+                <h5>
+                    <a href="https://arxiv.org/abs/2210.11463">[Paper]</a>&nbsp;
+                    <a href="https://openreview.net/forum?id=mJWt6pOcHNy">[Review]</a>&nbsp;
+                    <a href="https://doi.org/10.5683/SP3/LZNPKB">[Data]</a>&nbsp;
+                    <a href="https://github.com/Wuziyi616/multi_part_assembly">[Benchmark Code]</a>&nbsp;
+                    <a href="https://github.com/sgsellan/fracture-modes#dataset">[Data Generation Code]</a>
+                </h5>
+                <h5>
+                    <a href="https://twitter.com/ycchen918/status/1586169332685471745">[Twitter Thread]</a>&nbsp;
+                    <a href="https://www.kaggle.com/datasets/dazitu616/breaking-bad-dataset">[Alternative Data Host (Kaggle)]</a>&nbsp;
+                </h5>
+            </div>
+        </div>
+
+        <div class="section">
+
+            <div class="container_img">
+                <p align="center">
+                    <img
+                        border="0"
+                        src="data/imgs/teaser.png"
+                        style="width: 90%"
+                    />
+                </p>
+            </div>
+            <div class="container">
+                <div align="center"><h2>Dataset</h2></div>
+                <hr />
+                <p>
+                    Our Breaking Bad Dataset contains around 10k meshes from
+                    PartNet and Thingi10k. For each mesh, we pre-compute 20
+                    fracture modes and then simulate 80 fractures from them,
+                    resulting in a total of 1,047,400 breakdown patterns. We
+                    divide our dataset into three subsets, namely,
+                    <b>everyday</b>, <b>artifact</b> and <b>other</b> to
+                    faciliate different applications.
+                </p>
+            </div>
+            <div class="container_img">
+                <div class="row align-items-center">
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4></h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/imgs/headline/ball/ball_ori.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4> </h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/imgs/headline/ball/ball_frac.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4></h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/imgs/headline/man/man_ori.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="-90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4> </h4>
+                        <model-viewer
+                            alt="Fracture"
+                            src="data/imgs/headline/man/man_frac.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="-90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4></h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/imgs/headline/cup/cup_ori.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4> </h4>
+                        <model-viewer
+                            alt="Fracture"
+                            src="data/imgs/headline/cup/cup_frac.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                </div>
+            </div>
+            <br/>
+
+            <!-- Loads <model-viewer> for modern browsers: -->
+                <script
+                type="module"
+                src="https://unpkg.com/@google/model-viewer/dist/model-viewer.js"
+            ></script>
+
+            <div class="container">
+
+                <div align="center"><h3>Accessing the dataset</h3></div>
+                <p>
+                    See <a href="https://github.com/Breaking-Bad-Dataset/Breaking-Bad-Dataset.github.io/blob/main/README.md">README</a> for detailed instructions.
+                </p>
+                <br/>
+
+                <div align="center"><h3>Benchmark</h3></div>
+                <p>
+                    Please see our benchmark results on geometric assembly in the paper.
+                    We release our benchmark code at <a href="https://github.com/Wuziyi616/multi_part_assembly">Github</a>.
+                </p>
+                <br/>
+
+                <div align="center"><h3>Gallery</h3></div>
+                <p>Our dataset is divided into three categories:</p>
+                <ul>
+                    <li><p>
+                        The <code>artifact</code> category consists of fractures of meshes from <a href="https://ten-thousand-models.appspot.com/results.html?q=genus%3D0">Thingi10k</a> which are tagged as "sculpture" or "scan", for use in archelogical reconstruction. <a href="artifact.html">Click here</a> for a gallery view of some results.
+                    </p></li>
+                    <li><p>
+                    The <code>everyday</code> category consists of fractures of all the meshes from the following 20 categories of the <a href="https://partnet.cs.stanford.edu">PartNet</a> dataset (click on the names for a result gallery view):
+                    <a href="BeerBottle.html">BeerBottle</a>,
+                    <a href="Bottle.html">Bottle</a>,
+                    <a href="Bowl.html">Bowl</a>,
+                    <a href="Cookie.html">Cookie</a>,
+                    <a href="Cup.html">Cup</a>,
+                    <a href="DrinkBottle.html">DrinkBottle</a>,
+                    <a href="DrinkingUtensil.html">DrinkingUtensil</a>,
+                    <a href="Mirror.html">Mirror</a>,
+                    <a href="Mug.html">Mug</a>,
+                    <a href="PillBottle.html">PillBottle</a>,
+                    <a href="Plate.html">Plate</a>,
+                    <a href="Ring.html">Ring</a>,
+                    <a href="Spoon.html">Spoon</a>,
+                    <a href="Statue.html">Statue</a>,
+                    <a href="Teacup.html">Teacup</a>,
+                    <a href="Teapot.html">Teapot</a>,
+                    <a href="ToyFigure.html">ToyFigure</a>,
+                    <a href="Vase.html">Vase</a>,
+                    <a href="WineBottle.html">WineBottle</a>,
+                    <a href="WineGlass.html">WineGlass</a>.
+                </p></li>
+
+                <li><p>
+                    The <code>other</code> category contains fractures of all other meshes in <a href="https://ten-thousand-models.appspot.com/results.html?q=genus%3D0">Thingi10k</a>. <a href="other.html">Click here</a> for a gallery view of some results.
+                </p></li>
+            </ul>
+            </div>
+            <br/>
+            <div class="container_img">
+                <p align="center">
+                    <img
+                        border="0"
+                        src="data/imgs/categories.png"
+                        style="width: 100%"
+                    />
+                </p>
+            </div>
+        </div>
+        <br/><br/>
+
+        <script
+            src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+            integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+            crossorigin="anonymous"
+        ></script>
+		<!-- Import the component -->
+		<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    </body>
+</html>
