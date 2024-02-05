@@ -94,7 +94,7 @@ protected:
 	/**
 	*	@brief Saves the whole folder into another one.
 	*/
-	void launchZipingProcess(const std::string& folder);
+	void launchZipingProcess(const std::string& folder, const std::string& extension);
 
 	/**
 	*	@brief Loads a camera with code-defined values.

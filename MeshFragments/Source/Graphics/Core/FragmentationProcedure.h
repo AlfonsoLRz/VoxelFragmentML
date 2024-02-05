@@ -5,17 +5,17 @@
 
 struct FragmentationProcedure
 {
-	bool				_compressResultingFiles = false;
+	bool				_compressResultingFiles = true;
 	std::string			_currentDestinationFolder = "";
 
 	FractureParameters	_fractureParameters;
-	ivec2				_fragmentInterval = ivec2(2, 12);
+	ivec2				_fragmentInterval = ivec2(2, 10);
 	ivec2				_iterationInterval = ivec2(15, 5);
-	std::string			_folder = "D:/allopezr/Datasets/ModelNet40/ModelNet40/";
-	std::string			_destinationFolder = "D:/allopezr/Fragments/";
+	std::string			_folder = "D:/allopezr/Datasets/Vessels_renamed/";
+	std::string			_destinationFolder = "D:/allopezr/Fragments/Vessels_renamed/";
 	std::string			_onlineFolder = "E:/Online_Testing/";
-	std::string			_startVessel = "";
-	std::string			_searchExtension = ".off";
+	std::string			_startVessel = "100";
+	std::string			_searchExtension = ".obj";
 
 	enum FragmentType { VOXEL, POINT_CLOUD, MESH };
 	struct FragmentMetadata
@@ -26,12 +26,12 @@ struct FragmentationProcedure
 
 		union {
 			struct {
-				uint8_t		_id;
+				uint32_t	_id;
 				uint32_t	_numVertices;
 				uint32_t	_numFaces;
-				glm::uint	_occupiedVoxels;
+				uint32_t	_occupiedVoxels;
 				float		_percentage;
-				glm::uint	_voxels;
+				uint32_t	_voxels;
 			};
 			uint32_t	_numPoints;
 		};
@@ -42,6 +42,14 @@ struct FragmentationProcedure
 		_fractureParameters._biasSeeds = 0;
 		_fractureParameters._erode = false;
 		_fractureParameters._metricVoxelization = true;
+
+		_fractureParameters._renderGrid = false;
+		_fractureParameters._renderMesh = true;
+		_fractureParameters._renderPointCloud = false;
+
+		_fractureParameters._exportGridExtension = FractureParameters::VOX;
+		_fractureParameters._exportMeshExtension = FractureParameters::STL;
+		_fractureParameters._exportPointCloudExtension = FractureParameters::ExportPointCloudExtension::BINARY_POINT_CLOUD;
 	}
 };
 

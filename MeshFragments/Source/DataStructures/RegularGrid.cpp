@@ -76,8 +76,7 @@ void RegularGrid::detectBoundaries(int boundarySize)
 	shader->setUniform("numCells", numCells);
 	shader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
-	std::copy(gridData, gridData + numCells, _grid.begin());
+	this->updateGrid();
 }
 
 void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t convolutionSize, uint16_t numIterations, float erosionProbability, float erosionThreshold)
@@ -154,9 +153,7 @@ void RegularGrid::erode(FractureParameters::ErosionType fractureParams, uint32_t
 	}
 
 	this->removeIsolatedRegions();
-
-	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
-	std::copy(gridData, gridData + numCells, _grid.begin());
+	this->updateGrid();
 
 	ComputeShader::deleteBuffers(std::vector<GLuint>{ maskSSBO, noiseSSBO });
 }
@@ -169,6 +166,8 @@ void RegularGrid::exportGrid(const std::string& filename, bool squared, Fracture
 		this->exportQuadStack(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
 	else if (exportType == FractureParameters::UNCOMPRESSED)
 		this->exportUncompressed(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
+	else if (exportType == FractureParameters::UNCOMPRESSED_BINARY)
+		this->exportRawCompressed(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
 	else
 		this->exportVox(filename + "." + FractureParameters::ExportGrid_STR[exportType], squared);
 }
@@ -493,8 +492,13 @@ void RegularGrid::undoMask()
 	_undoMaskShader->applyActiveSubroutines();
 	_undoMaskShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
+	this->updateGrid();
+}
+
+void RegularGrid::updateGrid()
+{
 	CellGrid* gridData = ComputeShader::readData(_ssbo, CellGrid());
-	std::copy(gridData, gridData + numCells, _grid.begin());
+	std::copy(gridData, gridData + _numDivs.x * _numDivs.y * _numDivs.z, _grid.begin());
 }
 
 void RegularGrid::updateSSBO()
@@ -613,6 +617,19 @@ size_t RegularGrid::countValues(std::unordered_map<uint16_t, unsigned>& values)
 	return values.size();
 }
 
+void RegularGrid::exportRawCompressed(const std::string& filename)
+{
+	std::ofstream file(filename, std::ios::out | std::ios::binary);
+
+	if (file.is_open())
+	{
+		file.write(reinterpret_cast<char*>(&_numDivs), sizeof(glm::uvec3));
+		file.write(reinterpret_cast<char*>(&_grid), _numDivs.x * _numDivs.y * _numDivs.z * sizeof(uint16_t));
+
+		file.close();
+	}
+}
+
 void RegularGrid::exportRLE(const std::string& filename)
 {
 	struct RLEData
@@ -659,7 +676,7 @@ void RegularGrid::exportQuadStack(const std::string& filename)
 	quadStack->loadCube(this);
 	quadStack->compress_y();
 	quadStack->compress_x();
-	quadStack->calculateCompression();
+	//quadStack->calculateCompression();
 	quadStack->saveCheckpoint(filename);
 }
 

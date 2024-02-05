@@ -1,4 +1,4 @@
-#define DATASET_GENERATION false
+#define GENERATE_DATASET true
 
 #include <windows.h>								// DWORD is undefined otherwise
 #include <Psapi.h>

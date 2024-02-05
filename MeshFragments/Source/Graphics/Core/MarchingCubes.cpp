@@ -307,8 +307,7 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_steps = glm::ceil(vec3(_numDivs) / vec3(_gridSubdivisions));
 	_numThreads = _steps.x * _steps.y * _steps.z;
 	_numGroups = ComputeShader::getNumGroups(_numThreads);
-	unsigned maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3;
-	unsigned globalMaxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(1) * _maxTriangles * 3;
+	unsigned maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3 * 3 / 4;
 	_indices = new unsigned[maxNumPoints];
 	std::iota(_indices, _indices + maxNumPoints, 0);
 
@@ -346,8 +345,8 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_pBitsBufferID = ComputeShader::setWriteBuffer(GLuint(), maxNumPoints, GL_DYNAMIC_DRAW);
 	_nBitsBufferID = ComputeShader::setWriteBuffer(GLuint(), maxNumPoints, GL_DYNAMIC_DRAW);
 
-	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), globalMaxNumPoints, GL_DYNAMIC_DRAW);
-	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), globalMaxNumPoints / 3, GL_DYNAMIC_DRAW);
+	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints / 4, GL_DYNAMIC_DRAW);
+	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), maxNumPoints / 4 / 3, GL_DYNAMIC_DRAW);
 
 	_laplacianSSBO = ComputeShader::setWriteBuffer(ivec4(), maxNumPoints, GL_DYNAMIC_DRAW);
 	_gridSSBO = ComputeShader::setWriteBuffer(uint16_t(), _numDivs.x * _numDivs.y * _numDivs.z, GL_STATIC_DRAW);
@@ -403,7 +402,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 					this->buildMarchingCubesFaces(numVertices);
 					this->markBoundaryTriangles(numVertices / 3);
 					this->smoothSurface(newNumVertices, numVertices / 3, maxVoxels * 0.04f, 0.3f, false);
-					this->smoothSurface(newNumVertices, numVertices / 3, maxVoxels * 0.04f, 0.1f, true);
+					this->smoothSurface(newNumVertices, numVertices / 3, maxVoxels * 0.04f, 0.2f, true);
 
 					vec4* vertices = ComputeShader::readData(_vertexSSBO, vec4(), 0, sizeof(vec4) * newNumVertices);
 					uvec4* faces = ComputeShader::readData(_faceSSBO, uvec4(), 0, sizeof(uvec4) * numVertices / 3);
@@ -441,9 +440,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 
 void MarchingCubes::buildMarchingCubesFaces(unsigned numVertices)
 {
-	this->resetCounter(_numVerticesSSBO);
-
-	_buildMarchingCubesShader->bindBuffers(std::vector<GLuint> { _indicesBufferID_2, _indicesBufferID_1, _faceSSBO, _numVerticesSSBO });
+	_buildMarchingCubesShader->bindBuffers(std::vector<GLuint> { _indicesBufferID_2, _indicesBufferID_1, _faceSSBO });
 	_buildMarchingCubesShader->use();
 	_buildMarchingCubesShader->setUniform("numPoints", numVertices);
 	_buildMarchingCubesShader->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
@@ -472,20 +469,11 @@ unsigned MarchingCubes::fuseSimilarVertices(unsigned numVertices, const mat4& mo
 	_fuseSimilarVerticesShader_01->setUniform("numPoints", numVertices);
 	_fuseSimilarVerticesShader_01->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-	unsigned nonUpdatedVertices = 1;
-
-	while (nonUpdatedVertices > 0)
-	{
-		this->resetCounter(_nonUpdatedVerticesSSBO);
-
-		_fuseSimilarVerticesShader_02->bindBuffers(std::vector<GLuint> { _indicesBufferID_2, _indicesBufferID_1, _verticesSSBO, _nonUpdatedVerticesSSBO });
-		_fuseSimilarVerticesShader_02->use();
-		_fuseSimilarVerticesShader_02->setUniform("defaultValue", defaultValue);
-		_fuseSimilarVerticesShader_02->setUniform("numPoints", numVertices);
-		_fuseSimilarVerticesShader_02->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-		nonUpdatedVertices = *ComputeShader::readData(_nonUpdatedVerticesSSBO, unsigned());
-	}
+	_fuseSimilarVerticesShader_02->bindBuffers(std::vector<GLuint> { _indicesBufferID_2, _indicesBufferID_1 });
+	_fuseSimilarVerticesShader_02->use();
+	_fuseSimilarVerticesShader_02->setUniform("defaultValue", defaultValue);
+	_fuseSimilarVerticesShader_02->setUniform("numPoints", numVertices);
+	_fuseSimilarVerticesShader_02->execute(ComputeShader::getNumGroups(numVertices), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 	return *ComputeShader::readData(_numVerticesSSBO, unsigned());
 }

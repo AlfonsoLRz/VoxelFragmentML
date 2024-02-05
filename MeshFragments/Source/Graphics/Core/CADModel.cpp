@@ -17,6 +17,7 @@ std::unordered_map<std::string, std::unique_ptr<Material>> CADModel::_cadMateria
 std::unordered_map<std::string, std::unique_ptr<Texture>> CADModel::_cadTextures;
 
 const std::string CADModel::BINARY_EXTENSION = ".bin";
+const float CADModel::MODEL_NORMALIZATION_SCALE = 5.0f;
 
 /// [Public methods]
 
@@ -64,7 +65,7 @@ CADModel::~CADModel()
 
 void CADModel::endInsertionBatch(bool releaseMemory)
 {
-#if !DATASET_GENERATION
+#if !GENERATE_DATASET
 	for (ModelComponent* modelComponent : _modelComp)
 	{
 		this->computeMeshData(modelComponent);
@@ -112,7 +113,7 @@ bool CADModel::load()
 {
 	std::string binaryFile = _filename.substr(0, _filename.find_last_of('.')) + BINARY_EXTENSION;
 
-	if ((_useBinary && false) && std::filesystem::exists(binaryFile))
+	if ((_useBinary && !GENERATE_DATASET) && std::filesystem::exists(binaryFile))
 	{
 		this->loadModelFromBinaryFile(binaryFile);
 	}
@@ -144,9 +145,9 @@ bool CADModel::load()
 			}
 		}
 
-#if true
+#if GENERATE_DATASET
 		glm::vec3 scale = _aabb.extent();
-		float maxScale = 5.0f / glm::max(scale.x, glm::max(scale.y, scale.z)) * 2.0f;
+		float maxScale = MODEL_NORMALIZATION_SCALE / glm::max(scale.x, glm::max(scale.y, scale.z)) * 2.0f;
 
 		const glm::mat4 transformation = glm::scale(glm::mat4(1.0f), glm::vec3(maxScale)) * glm::translate(glm::mat4(1.0f), -_aabb.center());
 		this->transformGeometry(transformation);
@@ -164,14 +165,14 @@ bool CADModel::load()
 
 	for (ModelComponent* modelComponent : _modelComp)
 	{
-#if !DATASET_GENERATION
+#if !GENERATE_DATASET
 		modelComponent->buildTriangleMeshTopology();
 		modelComponent->buildPointCloudTopology();
 		modelComponent->buildWireframeTopology();
 #endif
 	}
 
-#if !DATASET_GENERATION
+#if !GENERATE_DATASET
 	this->setVAOData();
 #endif
 

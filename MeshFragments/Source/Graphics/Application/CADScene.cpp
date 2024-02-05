@@ -87,7 +87,7 @@ void CADScene::exportMesh(const FractureParameters& fractureParameters, const st
 	for (int numTriangles : fractureParameters._targetTriangles)
 	{
 		_mesh->simplify(numTriangles);
-		_mesh->save(folder + meshName + "_" + std::to_string(numTriangles), static_cast<FractureParameters::ExportMeshExtension>(fractureParameters._exportMeshExtension));
+		_mesh->save(folder + meshName + "_" + std::to_string(numTriangles) + "t", static_cast<FractureParameters::ExportMeshExtension>(fractureParameters._exportMeshExtension));
 	}
 }
 
@@ -114,7 +114,7 @@ void CADScene::exportPointCloud(const FractureParameters& fractureParameters, co
 		for (int targetPoints : fractureParameters._targetPoints)
 		{
 			PointCloud3D* pointCloud = _mesh->sampleCPU(targetPoints, fractureParameters._pointCloudSeedingRandom);
-			pointCloud->save(folder + std::to_string(targetPoints), static_cast<FractureParameters::ExportPointCloudExtension>(fractureParameters._exportPointCloudExtension));
+			pointCloud->save(folder + std::to_string(targetPoints) + "p", static_cast<FractureParameters::ExportPointCloudExtension>(fractureParameters._exportPointCloudExtension));
 			delete pointCloud;
 		}
 	}
@@ -219,15 +219,16 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		_meshGrid->setAABB(_mesh->getAABB(), fractureProcedure._fractureParameters._voxelizationSize);
 		_meshGrid->fill(_mesh->getModelComponent(0));
 		_meshGrid->resetMarchingCubes();
-		_mesh->getModelComponent(0)->releaseMemory();
 
 		// Save representations from the starting mesh
+		if (fractureProcedure._fractureParameters._exportPointCloud)
+			this->exportPointCloud(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportPointCloudExtension>(fractureProcedure._fractureParameters._exportPointCloudExtension));
 		if (fractureProcedure._fractureParameters._exportMesh) 
 			this->exportMesh(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportMeshExtension>(fractureProcedure._fractureParameters._exportMeshExtension));
 		if (fractureProcedure._fractureParameters._exportGrid) 
 			this->exportGrid(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportGrid>(fractureProcedure._fractureParameters._exportGridExtension));
-		if (fractureProcedure._fractureParameters._exportPointCloud) 
-			this->exportPointCloud(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportPointCloudExtension>(fractureProcedure._fractureParameters._exportPointCloudExtension));
+
+		_mesh->getModelComponent(0)->releaseMemory();
 
 		for (int numFragments = fractureProcedure._fragmentInterval.x; numFragments <= fractureProcedure._fragmentInterval.y; ++numFragments)
 		{
@@ -277,7 +278,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 					{
 						for (int targetCount : fractureProcedure._fractureParameters._targetTriangles)
 						{
-							simplificationFilename = filename + "_" + std::to_string(targetCount);
+							simplificationFilename = filename + "_" + std::to_string(targetCount) + "t";
 							cadModel->simplify(targetCount);
 							cadModel->save(simplificationFilename, static_cast<FractureParameters::ExportMeshExtension>(fractureProcedure._fractureParameters._exportMeshExtension));
 
@@ -302,7 +303,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 					{
 						for (int targetCount : fractureProcedure._fractureParameters._targetPoints)
 						{
-							simplificationFilename = filename + "_" + std::to_string(targetCount);
+							simplificationFilename = filename + "_" + std::to_string(targetCount) + "p";
 							PointCloud3D* pointCloud = dynamic_cast<CADModel*>(fracture)->sampleCPU(targetCount, fractureProcedure._fractureParameters._pointCloudSeedingRandom);
 							pointCloud->save(simplificationFilename, static_cast<FractureParameters::ExportPointCloudExtension>(fractureProcedure._fractureParameters._exportPointCloudExtension));
 
@@ -330,8 +331,23 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 		if (fractureProcedure._compressResultingFiles)
 		{
-			std::thread compressFolder(&CADScene::launchZipingProcess, this, meshFolder);
-			compressFolder.detach();
+			if (fractureProcedure._fractureParameters._exportGrid)
+			{
+				std::thread zipGrid(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportGrid_STR[fractureProcedure._fractureParameters._exportGridExtension]);
+				zipGrid.detach();
+			}
+
+			if (fractureProcedure._fractureParameters._exportMesh)
+			{
+				std::thread zipMesh(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportMesh_STR[fractureProcedure._fractureParameters._exportMeshExtension]);
+				zipMesh.detach();
+			}
+
+			if (fractureProcedure._fractureParameters._exportPointCloud)
+			{
+				std::thread zipPointCloud(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportPointCloud_STR[fractureProcedure._fractureParameters._exportPointCloudExtension]);
+				zipPointCloud.detach();
+			}
 		}
 
 		//if (!fractureProcedure._onlineFolder.empty())
@@ -464,10 +480,6 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 	fracturer::DistanceFunction dfunc = static_cast<fracturer::DistanceFunction>(fractParameters._distanceFunction);
 
 	std::vector<uvec4> seeds;
-	std::vector<float> faceClusterIdx, vertexClusterIdx;
-	std::vector<unsigned> boundaryFaces;
-	std::vector<std::unordered_map<unsigned, float>> faceClusterOccupancy;
-
 	if (_impactSeeds.empty())
 	{
 		if (fractParameters._numImpacts == 0)
@@ -532,15 +544,15 @@ std::string CADScene::fractureModel(FractureParameters& fractParameters)
 	return "";
 }
 
-void CADScene::launchZipingProcess(const std::string& folder)
+void CADScene::launchZipingProcess(const std::string& folder, const std::string& extension)
 {
-	//std::filesystem::copy(folder, destinationFolder, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+	const std::string timeWait = "timeout /t 5 >nul";
 	const std::string currentPath = std::filesystem::current_path().string();
 	const std::string systemUnit = currentPath.substr(0, currentPath.find_first_of("/\\"));
 	const std::string cd = "cd " + currentPath;
-	const std::string command = cd + " && " + systemUnit + " && " + "Bash\\zip.bat " + folder + " " + folder.substr(0, folder.find_first_of("/\\")) + " >nul";
+	const std::string command = timeWait + " && " + cd + " && " + systemUnit + " && " + "Bash\\zip.bat " + folder + " " + folder.substr(0, folder.find_first_of("/\\")) + " " + extension + " >nul";
 
-	std::system(command.c_str());
+	std::system(command.c_str());	
 }
 
 void CADScene::loadDefaultCamera(Camera* camera)
@@ -651,7 +663,7 @@ void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<Fra
 
 	_meshGrid->undoMask();
 
-	if (fractParameters._renderGrid)
+	if (fractParameters._renderGrid and !GENERATE_DATASET)
 	{
 		std::vector<AABB> aabbs;
 
@@ -660,7 +672,7 @@ void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<Fra
 		_aabbRenderer->setColorIndex(_meshGrid->data(), _meshGrid->getNumSubdivisions().x * _meshGrid->getNumSubdivisions().y * _meshGrid->getNumSubdivisions().z);
 	}
 
-	if (fractParameters._renderPointCloud)
+	if (fractParameters._renderPointCloud and !GENERATE_DATASET)
 	{
 		_pointCloud = _mesh->sample(100, fractParameters._pointCloudSeedingRandom);
 		_pointCloudRenderer = new DrawPointCloud(_pointCloud);

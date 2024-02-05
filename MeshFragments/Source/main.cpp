@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 	{
 		if (const bool success = window->load(title, width, height))
 		{
-#if !DATASET_GENERATION
+#if !GENERATE_DATASET
 			Renderer::getInstance()->getCurrentScene()->load();
 			window->startRenderingCycle();
 #else

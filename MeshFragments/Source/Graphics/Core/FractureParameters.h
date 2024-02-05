@@ -33,8 +33,8 @@ public:
 	enum ExportMeshExtension { OBJ, STL, BINARY_MESH, NUM_EXPORT_MESH_EXTENSIONS };
 	inline static const char* ExportMesh_STR[NUM_EXPORT_MESH_EXTENSIONS] = { "obj", "stl", "bin" };
 
-	enum ExportGrid { RLE, QUADSTACK, VOX, UNCOMPRESSED, NUM_GRID_EXTENSIONS };
-	inline static const char* ExportGrid_STR[NUM_GRID_EXTENSIONS] = { "rle", "qstack", "vox", "bin" };
+	enum ExportGrid { RLE, QUADSTACK, VOX, UNCOMPRESSED, UNCOMPRESSED_BINARY, NUM_GRID_EXTENSIONS };
+	inline static const char* ExportGrid_STR[NUM_GRID_EXTENSIONS] = { "rle", "qstack", "vox", "grid", "bin"};
 
 	enum ExportPointCloudExtension { PLY, XYZ, BINARY_POINT_CLOUD, NUM_POINT_CLOUD_EXTENSIONS };
 	inline static const char* ExportPointCloud_STR[NUM_POINT_CLOUD_EXTENSIONS] = { "ply", "xyz", "bin" };
@@ -108,24 +108,24 @@ public:
 		_pointCloudSeedingRandom(HALTON),
 		_removeIsolatedRegions(true),
 		_seed(80),
-		_seedingRandom(HALTON),
+		_seedingRandom(STD_UNIFORM),
 		_biasFocus(5),
-		_targetPoints({ 50000, 100000 }),
-		_targetTriangles({ 500, 1000 }),
+		_targetPoints({ 4096 }),
+		_targetTriangles({ 5000 }),
 		_voxelPerMetricUnit(20),
-		_voxelizationSize(500),
+		_voxelizationSize(256),
 
 		_renderGrid(true),
 		_renderMesh(true),
 		_renderPointCloud(false),
 
-		_exportGridExtension(QUADSTACK),
+		_exportGridExtension(VOX),
 		_exportMeshExtension(STL),
 		_exportPointCloudExtension(BINARY_POINT_CLOUD),
 
-		_exportGrid(true),
-		_exportMesh(true),
-		_exportPointCloud(true)
+		_exportGrid(false),
+		_exportMesh(false),
+		_exportPointCloud(false)
 	{
 		std::qsort(_targetTriangles.data(), _targetTriangles.size(), sizeof(int), [](const void* a, const void* b) {
 			return *(int*)b - *(int*)a;

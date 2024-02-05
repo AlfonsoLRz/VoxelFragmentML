@@ -9,20 +9,14 @@ class MarchingCubes;
 class Texture;
 class Voronoi;
 
-/**
-*	@file RegularGrid.h
-*	@authors Alfonso López Ruiz (alr00048@red.ujaen.es)
-*	@date 09/02/2020
-*/
-
 #define VOXEL_EMPTY 0
 #define VOXEL_FREE 1
 
-/**
-*	@brief Data structure which helps us to locate models on a terrain.
-*/
 class RegularGrid
 {
+protected:
+	const unsigned MASK_POSITION = 15;
+
 public:
 	struct CellGrid
 	{
@@ -31,11 +25,6 @@ public:
 		CellGrid() : _value(VOXEL_EMPTY)/*, _boundary(0), _padding(.0f) */ {}
 		CellGrid(uint16_t value) : _value(value)/*, _boundary(0), _padding(.0f)*/ {}
 	};
-
-protected:
-	const std::string BINARY_EXTENSION	= ".bin";		//!< Binary extension
-	const unsigned MASK_POSITION		= 15;
-	const std::string VOX_EXTENSION		= ".vox";
 
 protected:
 	std::vector<CellGrid>		_grid;					//!< Color index of regular grid
@@ -74,6 +63,11 @@ protected:
 	*	@return Number of different values in grid.
 	*/
 	size_t countValues(std::unordered_map<uint16_t, unsigned>& values);
+
+	/**
+	*	@brief Exports the grid as a raw file.
+	*/
+	void exportRawCompressed(const std::string& filename);
 
 	/**
 	*	@brief Exports the grid into a .rle file.
@@ -272,6 +266,11 @@ public:
 	*	@brief Undo the detection of boundaries, thus removing the included mask.
 	*/
 	void undoMask();
+
+	/**
+	*	@brief Updates the grid with the GPU's content.
+	*/
+	void updateGrid();
 
 	/**
 	*	@brief Updates SSBO content with the CPU's one.

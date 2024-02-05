@@ -120,7 +120,7 @@ bool QuadStack<T>::loadCube(RegularGrid* voxelization)
 		_depth = voxelizationSize.z;
 		if (!_width or !_height or !_depth) return false;
 
-		printf("Size is %dx%dx%d\n", _width, _height, _depth);
+		//printf("Size is %dx%dx%d\n", _width, _height, _depth);
 
 		static std::vector<std::vector<std::vector<T>>> materialMatrix;
 		voxelization->getData<T>(materialMatrix);

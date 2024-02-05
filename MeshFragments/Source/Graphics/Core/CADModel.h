@@ -27,6 +27,7 @@ protected:
 
 public:
 	const static std::string BINARY_EXTENSION;					//!< File extension for binary models
+	const static float MODEL_NORMALIZATION_SCALE;				//!< Scale to normalize the model
 
 protected:
 	AABB				_aabb;									//!< Boundaries 

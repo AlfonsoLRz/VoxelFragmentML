@@ -22,13 +22,15 @@ void main()
 	const int index = int(gl_GlobalInvocationID.x);
 	if (index >= numPoints) return;
 
-	indices2[index] = defaultValue;
-
 	int previousIndex = clamp(index - 1, 0, int(numPoints) - 1);
 	if (index == 0 || distance(points[indices[index]].xyz, points[indices[previousIndex]].xyz) > EPSILON)
 	{
 		uint vertexIndex = atomicAdd(vertexCount, 1);
 		vertexData[vertexIndex] = vec4((modelMatrix * vec4(points[indices[index]].xyz, 1.0f)).xyz, points[indices[index]].w);
 		indices2[index] = vertexIndex;
+	}
+	else
+	{
+		indices2[index] = defaultValue;
 	}
 }

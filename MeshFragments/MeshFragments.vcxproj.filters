@@ -612,6 +612,15 @@
     <ClInclude Include="Source\DataStructures\Bvh.h">
       <Filter>Archivos de encabezado\DataStructures</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Utilities\ResourceTracker.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DataStructures\GStack.h">
+      <Filter>Archivos de encabezado\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DataStructures\QuadStack.h">
+      <Filter>Archivos de encabezado\DataStructures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Geometry\2D\Vector2.cpp">
@@ -888,6 +897,15 @@
       <Filter>Archivos de origen\Graphics\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\DataStructures\Bvh.cpp">
+      <Filter>Archivos de origen\DataStructures</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Utilities\ResourceTracker.cpp">
+      <Filter>Archivos de origen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DataStructures\GStack.cpp">
+      <Filter>Archivos de origen\DataStructures</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DataStructures\QuadStack.cpp">
       <Filter>Archivos de origen\DataStructures</Filter>
     </ClCompile>
   </ItemGroup>
