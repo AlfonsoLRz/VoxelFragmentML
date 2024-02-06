@@ -90,6 +90,11 @@ protected:
 	void exportVox(const std::string& filename, bool squared);
 
 	/**
+	*	@brief Fills the grid with the content of the model.
+	*/
+	void fillNaive(Model3D* model);
+
+	/**
 	*	@brief Retrieves compute shaders from the shader list.
 	*/
 	void getComputeShaders();
@@ -122,7 +127,7 @@ protected:
 	/**
 	*	@brief Resets buffer to a given value.
 	*/
-	void resetBuffer(GLuint ssbo, unsigned value, unsigned count);
+	void resetBuffer(GLuint ssbo, unsigned value, unsigned count) const;
 
 	/**
 	*	@return
@@ -159,7 +164,7 @@ public:
 	/**
 	*	@brief Calculates the maximum number of voxels occupied per quadrant.
 	*/
-	unsigned calculateMaxQuadrantOccupancy(unsigned subdivisions);
+	unsigned calculateMaxQuadrantOccupancy(const unsigned subdivisions = 1) const;
 
 	/**
 	*	@brief Detects which voxels are in the boundary of fragments.
@@ -179,7 +184,7 @@ public:
 	/**
 	*	@brief
 	*/
-	void fill(Model3D::ModelComponent* modelComponent);
+	void fill(Model3D* model);
 
 	/**
 	*	@brief

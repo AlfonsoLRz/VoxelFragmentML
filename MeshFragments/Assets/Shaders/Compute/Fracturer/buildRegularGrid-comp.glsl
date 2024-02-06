@@ -8,16 +8,15 @@ layout (local_size_variable) in;
 #include <Assets/Shaders/Compute/Templates/modelStructs.glsl>
 #include <Assets/Shaders/Compute/Fracturer/voxelStructs.glsl>
 
-layout (std430, binding = 0) buffer VertexBuffer	{ VertexGPUData		vertex[]; };
-layout (std430, binding = 1) buffer FaceBuffer		{ FaceGPUData		face[]; };
-layout (std430, binding = 2) buffer NoiseBuffer		{ float				noise[]; };
-layout (std430, binding = 3) buffer GridBuffer		{ CellGrid			grid[]; };
+layout (std430, binding = 0) buffer GridBuffer		{ CellGrid			grid[]; };
+layout (std430, binding = 1) buffer VertexBuffer	{ VertexGPUData		vertex[]; };
+layout (std430, binding = 2) buffer FaceBuffer		{ FaceGPUData		face[]; };
+layout (std430, binding = 3) buffer NoiseBuffer		{ float				noise[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
 uniform vec3 aabbMin;
 uniform vec3 cellSize;
-uniform float maxArea;
 uniform uint numFaces;
 uniform uint numSamples;
 
@@ -34,22 +33,13 @@ void main()
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= numFaces * numSamples) return;
 
-	uint sampleIdx		= index % numSamples;
 	uint faceIdx		= uint(floor(index / numSamples));
 	vec3 v1				= vertex[face[faceIdx].vertices.x].position, v2 = vertex[face[faceIdx].vertices.y].position, v3 = vertex[face[faceIdx].vertices.z].position;
 	vec3 u				= v2 - v1, v = v3 - v1;
-	float area			= length(cross(u, v)) / 2.0f;
-	uint numTriangleSamples = uint(floor((area / maxArea) * numSamples));
-
-	if (sampleIdx >= numTriangleSamples)
-		return;
-
-	vec2 randomFactors	= vec2(noise[sampleIdx * 2 + 0], noise[sampleIdx * 2 + 1]);
+	vec2 randomFactors	= vec2(noise[index % numSamples], noise[(index + 1) % numSamples]);
 
 	if (randomFactors.x + randomFactors.y >= 1.0f)
-	{
 		randomFactors = 1.0f - randomFactors;
-	}
 
 	vec3 point		= v1 + u * randomFactors.x + v * randomFactors.y;
 	uvec3 gridIndex = getPositionIndex(point);

@@ -11,11 +11,11 @@ struct FragmentationProcedure
 	FractureParameters	_fractureParameters;
 	ivec2				_fragmentInterval = ivec2(2, 10);
 	ivec2				_iterationInterval = ivec2(15, 5);
-	std::string			_folder = "D:/allopezr/Datasets/Vessels_renamed/";
-	std::string			_destinationFolder = "D:/allopezr/Fragments/Vessels_renamed/";
+	std::string			_folder = "D:/allopezr/Datasets/Thingi10k/";
+	std::string			_destinationFolder = "D:/allopezr/Fragments/Thingi10k/";
 	std::string			_onlineFolder = "E:/Online_Testing/";
-	std::string			_startVessel = "100";
-	std::string			_searchExtension = ".obj";
+	std::string			_startVessel = "100033";
+	std::string			_searchExtension = ".stl";
 
 	enum FragmentType { VOXEL, POINT_CLOUD, MESH };
 	struct FragmentMetadata
@@ -47,9 +47,13 @@ struct FragmentationProcedure
 		_fractureParameters._renderMesh = true;
 		_fractureParameters._renderPointCloud = false;
 
+		_fractureParameters._exportGrid = true;
+		_fractureParameters._exportMesh = true;
+		_fractureParameters._exportPointCloud = true;
+
 		_fractureParameters._exportGridExtension = FractureParameters::VOX;
 		_fractureParameters._exportMeshExtension = FractureParameters::STL;
-		_fractureParameters._exportPointCloudExtension = FractureParameters::ExportPointCloudExtension::BINARY_POINT_CLOUD;
+		_fractureParameters._exportPointCloudExtension = FractureParameters::ExportPointCloudExtension::PLY;
 	}
 };
 

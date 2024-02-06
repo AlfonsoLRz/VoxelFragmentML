@@ -2,6 +2,7 @@
 #include "RegularGrid.h"
 
 #include "Geometry/3D/AABB.h"
+#include "Geometry/3D/PointCloud3D.h"
 #include "Geometry/3D/Triangle3D.h"
 #include "Graphics/Core/CADModel.h"
 #include "Graphics/Core/FragmentationProcedure.h"
@@ -38,7 +39,7 @@ RegularGrid::~RegularGrid()
 	ComputeShader::deleteBuffer(_ssbo);
 }
 
-unsigned RegularGrid::calculateMaxQuadrantOccupancy(unsigned subdivisions)
+unsigned RegularGrid::calculateMaxQuadrantOccupancy(unsigned subdivisions) const
 {
 	uvec3 numDivs = this->getNumSubdivisions();
 	unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
@@ -172,38 +173,46 @@ void RegularGrid::exportGrid(const std::string& filename, bool squared, Fracture
 		this->exportVox(filename + "." + FractureParameters::ExportGrid_STR[exportType], squared);
 }
 
-void RegularGrid::fill(Model3D::ModelComponent* modelComponent)
+void RegularGrid::fill(Model3D* model)
 {
 	Tetravoxelizer tetravoxelizer;
 	tetravoxelizer.initialize(_numDivs);
-	tetravoxelizer.initializeModel(modelComponent->_geometry, modelComponent->_topology, _aabb);
-	tetravoxelizer.compute(_voxelOpenGL);
-	tetravoxelizer.deleteModelResources();
-	tetravoxelizer.deleteResources();
 
-	#pragma omp parallel for
-	for (int y = 0; y < _numDivs.y; ++y)
+	for (Model3D::ModelComponent* modelComponent: model->getModelComponents())
 	{
-		glm::uint positionIndex;
-		for (int x = 0; x < _numDivs.x; ++x)
+		tetravoxelizer.initializeModel(modelComponent->_geometry, modelComponent->_topology, _aabb);
+		tetravoxelizer.compute(_voxelOpenGL);
+		tetravoxelizer.deleteModelResources();
+
+		#pragma omp parallel for
+		for (int y = 0; y < _numDivs.y; ++y)
 		{
-			for (int z = 0; z < _numDivs.z; ++z)
+			glm::uint positionIndex;
+			for (int x = 0; x < _numDivs.x; ++x)
 			{
-				positionIndex = y * _numDivs.x * _numDivs.z + z * _numDivs.x + x;
-				if (_voxelOpenGL[positionIndex] == 1)
+				for (int z = 0; z < _numDivs.z; ++z)
 				{
-					this->set(x, y, z, VOXEL_FREE);
+					positionIndex = y * _numDivs.x * _numDivs.z + z * _numDivs.x + x;
+					if (_voxelOpenGL[positionIndex] == 1)
+						this->set(x, y, z, VOXEL_FREE);
 				}
 			}
 		}
 	}
 
+	tetravoxelizer.deleteResources();
 	this->updateSSBO();
+
+	if (!this->calculateMaxQuadrantOccupancy())
+	{
+		this->fillNaive(model);
+		this->updateSSBO();
+	}
 }
 
 void RegularGrid::fill(const Voronoi& voronoi)
 {
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int x = 0; x < _numDivs.x; ++x)
 	{
 		int cluster;
@@ -228,12 +237,9 @@ void RegularGrid::fill(const Voronoi& voronoi)
 void RegularGrid::fillNoiseBuffer(std::vector<float>& noiseBuffer, unsigned numSamples)
 {
 	noiseBuffer.resize(numSamples);
-
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int sampleIdx = 0; sampleIdx < numSamples; ++sampleIdx)
-	{
 		noiseBuffer[sampleIdx] = RandomUtilities::getUniformRandom(.0f, 1.0f);
-	}
 }
 
 void RegularGrid::getAABBs(std::vector<AABB>& aabb)
@@ -753,6 +759,48 @@ void RegularGrid::exportVox(const std::string& filename, bool squared)
 	//vox.PrintStats();
 }
 
+void RegularGrid::fillNaive(Model3D* model)
+{
+	CADModel* cadModel = dynamic_cast<CADModel*>(model);
+	if (cadModel)
+	{
+		static const unsigned numVoxelizationSamples = cadModel->getAABB().volume() * 1000;
+		PointCloud3D* sampledPointCloud = cadModel->sampleCPU(numVoxelizationSamples, 0);
+		auto points = sampledPointCloud->getPoints();
+
+		#pragma omp parallel for
+		for (int idx = 0; idx < points->size(); ++idx)
+		{
+			glm::uvec3 gridIndex = this->getPositionIndex(points->at(idx));
+			this->set(gridIndex.x, gridIndex.y, gridIndex.z, VOXEL_FREE);
+		}
+	}
+	//ComputeShader* boundaryShader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_REGULAR_GRID);
+
+	//uvec3 numDivs = this->getNumSubdivisions();
+	//unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
+	//unsigned numThreads = modelComponent->_topology.size() * numVoxelizationSamples;
+	//unsigned numGroups = ComputeShader::getNumGroups(numThreads);
+
+	//std::vector<float> noiseBuffer;
+	//this->fillNoiseBuffer(noiseBuffer, numVoxelizationSamples * 2);
+	//const GLuint noiseSSBO = ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
+
+	//boundaryShader->bindBuffers(std::vector<GLuint>{_ssbo, modelComponent->_geometrySSBO, modelComponent->_topologySSBO, noiseSSBO });
+	//boundaryShader->use();
+	//boundaryShader->setUniform("aabbMin", _aabb.min());
+	//boundaryShader->setUniform("cellSize", _cellSize);
+	//boundaryShader->setUniform("gridDims", numDivs);
+	//boundaryShader->setUniform("numFaces", GLuint(modelComponent->_topology.size()));
+	//boundaryShader->setUniform("numSamples", GLuint(numVoxelizationSamples));
+	//boundaryShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
+
+	//GLuint buffers[] = { noiseSSBO };
+	//glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+
+	//this->updateGrid();
+}
+
 void RegularGrid::getComputeShaders()
 {
 	_assignVertexClusterShader = ShaderList::getInstance()->getComputeShader(RendEnum::ASSIGN_VERTEX_CLUSTER);
@@ -943,7 +991,7 @@ void RegularGrid::removeIsolatedRegions()
 	_removeIsolatedRegionsShader->execute(ComputeShader::getNumGroups(numCells), 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 }
 
-void RegularGrid::resetBuffer(GLuint ssbo, unsigned value, unsigned count)
+void RegularGrid::resetBuffer(GLuint ssbo, unsigned value, unsigned count) const
 {
 	_resetCounterShader->bindBuffers(std::vector<GLuint>{ ssbo });
 	_resetCounterShader->use();

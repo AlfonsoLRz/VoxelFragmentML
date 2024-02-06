@@ -79,5 +79,10 @@ public:
 	*	@brief Updates the maximum and minimum corners if point is outside the bounding box.
 	*/
 	void update(const vec3& point);
+
+	/**
+	*	@return Volume of the bounding box.
+	*/
+	float volume() const { const glm::vec3 size = _max - _min; return size.x * size.y * size.z; }
 };
 

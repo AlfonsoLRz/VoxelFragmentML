@@ -88,7 +88,7 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(32),
-		_clampVoxelMetricUnit(256),
+		_clampVoxelMetricUnit(128),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
 		_erosionProbability(.5f),

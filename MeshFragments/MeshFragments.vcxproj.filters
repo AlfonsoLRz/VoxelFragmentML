@@ -899,14 +899,14 @@
     <ClCompile Include="Source\DataStructures\Bvh.cpp">
       <Filter>Archivos de origen\DataStructures</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Utilities\ResourceTracker.cpp">
-      <Filter>Archivos de origen</Filter>
-    </ClCompile>
     <ClCompile Include="Source\DataStructures\GStack.cpp">
       <Filter>Archivos de origen\DataStructures</Filter>
     </ClCompile>
     <ClCompile Include="Source\DataStructures\QuadStack.cpp">
       <Filter>Archivos de origen\DataStructures</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Utilities\ResourceTracker.cpp">
+      <Filter>Archivos de origen\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

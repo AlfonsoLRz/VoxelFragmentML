@@ -1,10 +1,12 @@
 import os
 import shutil
+import trimesh
 from tqdm import tqdm
 
 dataset_folder = '../../../Datasets/Vessel_02/'
-target_mesh_extension = '.obj'
+target_mesh_extension = 'obj'
 save_folder = '../../../Datasets/Vessels_renamed/'
+flip_y = True
 
 # Retrieve meshes that meet the requirements [recursive]
 meshes = []
@@ -20,5 +22,10 @@ if not os.path.exists(save_folder):
     os.makedirs(save_folder)
 
 for idx, mesh in tqdm(enumerate(meshes)):
-    new_name = os.path.join(save_folder, str(idx + 1) + target_mesh_extension)
-    shutil.copy(mesh, new_name)
+    if flip_y:
+        mesh = trimesh.load(mesh)
+        mesh.apply_scale([1, -1, 1])
+        mesh.export(save_folder + str(idx + 1) + '.' + target_mesh_extension, file_type=target_mesh_extension)
+    else:
+        new_name = os.path.join(save_folder, str(idx + 1) + '.' + target_mesh_extension)
+        shutil.copy(mesh, new_name)
