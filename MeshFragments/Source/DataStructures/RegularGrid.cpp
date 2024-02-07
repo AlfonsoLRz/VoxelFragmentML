@@ -702,10 +702,8 @@ void RegularGrid::exportUncompressed(const std::string& filename)
 void RegularGrid::exportVox(const std::string& filename, bool squared)
 {
 	vox::VoxWriter vox;
-	vox.ClearVoxels();
 
 	// Check if squared is required
-
 	if (squared)
 	{
 		uvec3 end = _numDivs;
@@ -755,8 +753,8 @@ void RegularGrid::exportVox(const std::string& filename, bool squared)
 	if (filePath.find(".vox") == std::string::npos)
 		filePath += std::to_string(RandomUtilities::getUniformRandomInt(0, 10e6)) + ".vox";
 
-	vox.SaveToFile(filePath);
 	//vox.PrintStats();
+	vox.SaveToFile(filePath);
 }
 
 void RegularGrid::fillNaive(Model3D* model)
@@ -775,30 +773,6 @@ void RegularGrid::fillNaive(Model3D* model)
 			this->set(gridIndex.x, gridIndex.y, gridIndex.z, VOXEL_FREE);
 		}
 	}
-	//ComputeShader* boundaryShader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_REGULAR_GRID);
-
-	//uvec3 numDivs = this->getNumSubdivisions();
-	//unsigned numCells = numDivs.x * numDivs.y * numDivs.z;
-	//unsigned numThreads = modelComponent->_topology.size() * numVoxelizationSamples;
-	//unsigned numGroups = ComputeShader::getNumGroups(numThreads);
-
-	//std::vector<float> noiseBuffer;
-	//this->fillNoiseBuffer(noiseBuffer, numVoxelizationSamples * 2);
-	//const GLuint noiseSSBO = ComputeShader::setReadBuffer(noiseBuffer, GL_STATIC_DRAW);
-
-	//boundaryShader->bindBuffers(std::vector<GLuint>{_ssbo, modelComponent->_geometrySSBO, modelComponent->_topologySSBO, noiseSSBO });
-	//boundaryShader->use();
-	//boundaryShader->setUniform("aabbMin", _aabb.min());
-	//boundaryShader->setUniform("cellSize", _cellSize);
-	//boundaryShader->setUniform("gridDims", numDivs);
-	//boundaryShader->setUniform("numFaces", GLuint(modelComponent->_topology.size()));
-	//boundaryShader->setUniform("numSamples", GLuint(numVoxelizationSamples));
-	//boundaryShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
-
-	//GLuint buffers[] = { noiseSSBO };
-	//glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
-
-	//this->updateGrid();
 }
 
 void RegularGrid::getComputeShaders()

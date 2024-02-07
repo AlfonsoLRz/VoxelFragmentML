@@ -1231,5 +1231,8 @@
     <None Include="Assets\Shaders\Compute\Fracturer\disjointSetStack-comp.glsl">
       <Filter>Archivos de recursos\Shaders\Compute\Fracturer</Filter>
     </None>
+    <None Include="Assets\Shaders\Compute\Templates\laplacian.glsl">
+      <Filter>Archivos de recursos\Shaders\Compute\Templates</Filter>
+    </None>
   </ItemGroup>
 </Project>

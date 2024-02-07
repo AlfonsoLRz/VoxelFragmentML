@@ -422,6 +422,11 @@ public:
 	virtual void buildTriangleMeshTopology();
 
 	/**
+	*	@brief Copies the main content of a component into a new one.
+	*/
+	ModelComponent* copyComponent();
+
+	/**
 	*	@brief Assignment operator overriding.
 	*/
 	ModelComponent& operator=(const ModelComponent& orig) = delete;

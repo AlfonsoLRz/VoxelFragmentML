@@ -5,8 +5,8 @@
 
 layout(local_size_variable) in;
 
-layout (std430, binding = 0) buffer VertexBuffer	{ vec4	vertices[]; };
-layout (std430, binding = 1) buffer LaplacianBuffer { ivec4 laplacian[]; };
+#include <Assets/Shaders/Compute/Templates/laplacian.glsl>
+layout (std430, binding = 4) buffer VertexBuffer	{ vec4	vertices[]; };
 
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
 
@@ -20,8 +20,11 @@ void main()
 	if (index >= numVertices)
 		return;
 
-	if (epsilonEqual(vertices[index].w, targetVertexType) && laplacian[index].w > 0)
+	if (epsilonEqual(vertices[index].w, targetVertexType) && laplacian04[index] > 0)
 	{
-		vertices[index].xyz = mix(vertices[index].xyz, laplacian[index].xyz / float(laplacian[index].w) / UINT_MULT, weight);
+		float x = laplacian01[index] / float(laplacian04[index]) / UINT_MULT;
+		float y = laplacian02[index] / float(laplacian04[index]) / UINT_MULT;
+		float z = laplacian03[index] / float(laplacian04[index]) / UINT_MULT;
+		vertices[index].xyz = mix(vertices[index].xyz, vec3(x, y, z), weight);
 	}
 }

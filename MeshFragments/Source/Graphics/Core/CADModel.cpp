@@ -281,6 +281,7 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 		std::vector<float> noiseBuffer;
 		unsigned noiseBufferSize = glm::max(1, static_cast<int>(glm::ceil(maxArea / sumArea * maxSamples)));
 		fracturer::Seeder::getFloatNoise(noiseBufferSize, noiseBufferSize * 2, randomFunction, noiseBuffer);
+		noiseBufferSize *= 2;
 
 		// Data in common for the two branchs
 		int pointIndex = 0;
@@ -366,14 +367,18 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 	return pointCloud;
 }
 
-void CADModel::save(const std::string& filename, FractureParameters::ExportMeshExtension meshExtension)
+std::thread* CADModel::save(const std::string& filename, FractureParameters::ExportMeshExtension meshExtension)
 {
 	const std::string meshExtensionStr = FractureParameters::ExportMesh_STR[meshExtension];
+	std::thread* thread = nullptr;
+	Model3D::ModelComponent* component = _modelComp[0]->copyComponent();
 
 	if (meshExtension == FractureParameters::ExportMeshExtension::BINARY_MESH)
-		this->saveBinary(filename + "." + meshExtensionStr);
+		thread = new std::thread(&CADModel::saveBinary, this, filename + "." + meshExtensionStr, component);
 	else
-		this->saveAssimp(filename + "." + meshExtensionStr, meshExtensionStr);
+		thread = new std::thread(&CADModel::saveAssimp, this, filename + "." + meshExtensionStr, meshExtensionStr, component);
+
+	return thread;
 }
 
 void CADModel::simplify(unsigned numFaces, bool verbose)
@@ -771,7 +776,7 @@ void CADModel::remapVertices(Model3D::ModelComponent* modelComponent, std::vecto
 	}
 }
 
-void CADModel::saveAssimp(const std::string& filename, const std::string& extension)
+void CADModel::saveAssimp(const std::string& filename, const std::string& extension, Model3D::ModelComponent* component)
 {
 	aiScene* scene = new aiScene;
 	scene->mRootNode = new aiNode();
@@ -796,20 +801,14 @@ void CADModel::saveAssimp(const std::string& filename, const std::string& extens
 	auto pMesh = scene->mMeshes[0];
 
 	// Retrieving info from the model
-	glm::uint geometrySize = 0;
 	std::vector<glm::vec3> vertices;
 	std::vector<ivec3> faces;
 
-	for (ModelComponent* modelComponent : _modelComp)
-	{
-		for (VertexGPUData& vertex : modelComponent->_geometry)
-			vertices.push_back(vertex._position);
+	for (VertexGPUData& vertex : component->_geometry)
+		vertices.push_back(vertex._position);
 
-		for (FaceGPUData& face : modelComponent->_topology)
-			faces.push_back(ivec3(face._vertices.x + geometrySize, face._vertices.y + geometrySize, face._vertices.z + geometrySize));
-
-		geometrySize += modelComponent->_geometry.size();
-	}
+	for (FaceGPUData& face : component->_topology)
+		faces.push_back(ivec3(face._vertices.x, face._vertices.y, face._vertices.z));
 
 	// Vertex generation
 	const auto& assimpVertices = vertices;
@@ -838,25 +837,14 @@ void CADModel::saveAssimp(const std::string& filename, const std::string& extens
 		face.mIndices[2] = faces[i].z;
 	}
 
-	// Out of the main thread
-	std::thread writeModel(&CADModel::threadedSaveAssimp, this, scene, filename, extension);
-	writeModel.detach();
-}
-
-void CADModel::saveBinary(const std::string& filename)
-{
-	std::thread writeModel(&CADModel::threadedSaveBinary, this, filename);
-	writeModel.detach();
-}
-
-void CADModel::threadedSaveAssimp(aiScene* scene, const std::string& filename, const std::string& extension)
-{
 	Assimp::Exporter exporter;
 	exporter.Export(scene, extension, filename);
+
+	delete component;
 	delete scene;
 }
 
-void CADModel::threadedSaveBinary(const std::string& filename)
+void CADModel::saveBinary(const std::string& filename, Model3D::ModelComponent* component)
 {
 	std::ofstream fout(filename, std::ios::out | std::ios::binary);
 	if (!fout.is_open())
@@ -865,17 +853,15 @@ void CADModel::threadedSaveBinary(const std::string& filename)
 	const size_t numModelComps = _modelComp.size();
 	fout.write((char*)&numModelComps, sizeof(size_t));
 
-	for (Model3D::ModelComponent* component : _modelComp)
-	{
-		const size_t numVertices = component->_geometry.size();
-		fout.write((char*)&numVertices, sizeof(size_t));
-		if (numVertices) fout.write((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
+	const size_t numVertices = component->_geometry.size();
+	fout.write((char*)&numVertices, sizeof(size_t));
+	if (numVertices) fout.write((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
 
-		const size_t numTriangles = component->_topology.size();
-		fout.write((char*)&numTriangles, sizeof(size_t));
-		if (numTriangles) fout.write((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
-	}
+	const size_t numTriangles = component->_topology.size();
+	fout.write((char*)&numTriangles, sizeof(size_t));
+	if (numTriangles) fout.write((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
 
+	delete component;
 	fout.close();
 }
 

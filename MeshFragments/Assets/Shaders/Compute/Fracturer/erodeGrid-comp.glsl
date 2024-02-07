@@ -14,6 +14,7 @@ layout (std430, binding = 2) buffer Convolution		{ float			convolution[]; };
 layout (std430, binding = 3) buffer NoiseBuffer		{ float			noise[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
+#include <Assets/Shaders/Compute/Fracturer/voxelMask.glsl>
 
 uniform float erosionThreshold, erosionProbability;
 uniform float numActivationsFloat;
@@ -27,7 +28,7 @@ void main()
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= numCells) return;
 
-	bool isBoundary = bool((grid[index].value >> 7) & uint16_t(1));
+	bool isBoundary = bool(unmaskedBit(grid[index].value, MASK_BOUNDARY_POSITION));
 	destGrid[index] = grid[index];
 
 	if (grid[index].value > VOXEL_FREE && isBoundary && noise[index % noiseBufferSize] < erosionProbability)

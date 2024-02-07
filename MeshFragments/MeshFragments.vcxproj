@@ -373,6 +373,7 @@
     <None Include="Assets\Shaders\Compute\Templates\computeAxes.glsl" />
     <None Include="Assets\Shaders\Compute\Templates\constraints.glsl" />
     <None Include="Assets\Shaders\Compute\Templates\intersections.glsl" />
+    <None Include="Assets\Shaders\Compute\Templates\laplacian.glsl" />
     <None Include="Assets\Shaders\Compute\Templates\modelStructs.glsl" />
     <None Include="Assets\Shaders\Compute\Templates\random.glsl" />
     <None Include="Assets\Shaders\Compute\Templates\rotation.glsl" />

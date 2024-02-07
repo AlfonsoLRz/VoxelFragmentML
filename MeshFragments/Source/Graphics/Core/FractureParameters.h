@@ -33,15 +33,16 @@ public:
 	enum ExportMeshExtension { OBJ, STL, BINARY_MESH, NUM_EXPORT_MESH_EXTENSIONS };
 	inline static const char* ExportMesh_STR[NUM_EXPORT_MESH_EXTENSIONS] = { "obj", "stl", "bin" };
 
-	enum ExportGrid { RLE, QUADSTACK, VOX, UNCOMPRESSED, UNCOMPRESSED_BINARY, NUM_GRID_EXTENSIONS };
-	inline static const char* ExportGrid_STR[NUM_GRID_EXTENSIONS] = { "rle", "qstack", "vox", "grid", "bin"};
+	enum ExportGrid { RLE, QUADSTACK, VOX, UNCOMPRESSED_BINARY, NUM_GRID_EXTENSIONS };
+	inline static const char* ExportGrid_STR[NUM_GRID_EXTENSIONS] = { "rle", "qstack", "vox", "bin"};
 
-	enum ExportPointCloudExtension { PLY, XYZ, BINARY_POINT_CLOUD, NUM_POINT_CLOUD_EXTENSIONS };
+	enum ExportPointCloudExtension { PLY, XYZ, COMPRESSED_POINT_CLOUD, NUM_POINT_CLOUD_EXTENSIONS };
 	inline static const char* ExportPointCloud_STR[NUM_POINT_CLOUD_EXTENSIONS] = { "ply", "xyz", "bin" };
 	 
 public:
 	int				_biasFocus;
 	int				_biasSeeds;
+	float			_boundaryMCWeight, _boundaryMCIterations;
 	int				_clampVoxelMetricUnit;
 	bool			_erode;
 	int				_erosionConvolution;
@@ -56,6 +57,7 @@ public:
 	int				_mergeSeedsDistanceFunction;
 	bool			_metricVoxelization;
 	int             _neighbourhoodType;
+	float 			_nonBoundaryMCWeight, _nonBoundaryMCIterations;
 	int				_numExtraSeeds;
 	int				_numImpacts;
 	int				_numSeeds;
@@ -88,6 +90,8 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(32),
+		_boundaryMCIterations(0.02f),
+		_boundaryMCWeight(0.2f),
 		_clampVoxelMetricUnit(128),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
@@ -102,15 +106,17 @@ public:
 		_mergeSeedsDistanceFunction(EUCLIDEAN),
 		_metricVoxelization(false),
 		_neighbourhoodType(VON_NEUMANN),
+		_nonBoundaryMCIterations(0.04),
+		_nonBoundaryMCWeight(0.3f),
 		_numExtraSeeds(64),
 		_numImpacts(0),
 		_numSeeds(8),
-		_pointCloudSeedingRandom(HALTON),
+		_pointCloudSeedingRandom(STD_UNIFORM),
 		_removeIsolatedRegions(true),
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),
 		_biasFocus(5),
-		_targetPoints({ 4096 }),
+		_targetPoints({ 16384 * 4 }),
 		_targetTriangles({ 5000 }),
 		_voxelPerMetricUnit(20),
 		_voxelizationSize(256),
@@ -121,7 +127,7 @@ public:
 
 		_exportGridExtension(VOX),
 		_exportMeshExtension(STL),
-		_exportPointCloudExtension(BINARY_POINT_CLOUD),
+		_exportPointCloudExtension(COMPRESSED_POINT_CLOUD),
 
 		_exportGrid(false),
 		_exportMesh(false),

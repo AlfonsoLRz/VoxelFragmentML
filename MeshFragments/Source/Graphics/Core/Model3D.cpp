@@ -503,6 +503,15 @@ void Model3D::ModelComponent::buildTriangleMeshTopology()
 	_topologyIndicesLength[RendEnum::IBO_TRIANGLE_MESH] = _triangleMesh.size();
 }
 
+Model3D::ModelComponent* Model3D::ModelComponent::copyComponent()
+{
+	ModelComponent* newComponent = new ModelComponent();
+	newComponent->_geometry = std::move(_geometry);
+	newComponent->_topology = std::move(_topology);
+
+	return newComponent;
+}
+
 void Model3D::ModelComponent::releaseMemory(bool geometry, bool topologyIndices, bool topologyFaces)
 {
 	if (geometry) std::vector<VertexGPUData>().swap(_geometry);

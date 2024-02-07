@@ -11,11 +11,11 @@ struct FragmentationProcedure
 	FractureParameters	_fractureParameters;
 	ivec2				_fragmentInterval = ivec2(2, 10);
 	ivec2				_iterationInterval = ivec2(15, 5);
-	std::string			_folder = "D:/allopezr/Datasets/Thingi10k/";
-	std::string			_destinationFolder = "D:/allopezr/Fragments/Thingi10k/";
+	std::string			_folder = "D:/allopezr/Datasets/Vessels_renamed/";
+	std::string			_destinationFolder = "D:/allopezr/Fragments/Vessels_renamed/";
 	std::string			_onlineFolder = "E:/Online_Testing/";
-	std::string			_startVessel = "100033";
-	std::string			_searchExtension = ".stl";
+	std::string			_startVessel = "";
+	std::string			_searchExtension = ".obj";
 
 	enum FragmentType { VOXEL, POINT_CLOUD, MESH };
 	struct FragmentMetadata

@@ -267,6 +267,19 @@ void GUI::showFractureSettings()
 				ImGui::EndTabItem();
 			}
 
+			if (ImGui::BeginTabItem("Marching Cubes"))
+			{
+				ImGui::SliderFloat("Boundary Iterations", &_fractureParameters->_boundaryMCIterations, 0.0f, 0.1f);
+				ImGui::SliderFloat("Boundary Weight", &_fractureParameters->_boundaryMCWeight, 0.0f, 1.0f);
+
+				this->leaveSpace(1);
+
+				ImGui::SliderFloat("Non Boundary Iterations", &_fractureParameters->_nonBoundaryMCIterations, 0.0f, 0.1f);
+				ImGui::SliderFloat("Non Boundary Weight", &_fractureParameters->_nonBoundaryMCWeight, 0.0f, 1.0f);
+
+				ImGui::EndTabItem();
+			}
+
 			if (ImGui::BeginTabItem("Erosion"))
 			{
 				ImGui::Combo("Grid Extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportGrid_STR, IM_ARRAYSIZE(FractureParameters::ExportGrid_STR));

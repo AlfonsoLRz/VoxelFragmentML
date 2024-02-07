@@ -5,7 +5,7 @@
 
 layout(local_size_variable) in;
 
-layout(std430, binding = 0) buffer LaplacianBuffer { ivec4 laplacian[]; };
+#include <Assets/Shaders/Compute/Templates/laplacian.glsl>
 
 uniform uint numVertices;
 
@@ -15,5 +15,5 @@ void main()
 	if (index >= numVertices)
 		return;
 
-	laplacian[index] = ivec4(0);
+	laplacian01[index] = laplacian02[index] = laplacian03[index] = laplacian04[index] = 0;
 }

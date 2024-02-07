@@ -96,25 +96,25 @@ void PointCloud3D::push_back(const vec4* points, unsigned numPoints)
 	}
 }
 
-void PointCloud3D::save(const std::string& filename, FractureParameters::ExportPointCloudExtension pointCloudExtension)
+std::thread* PointCloud3D::save(const std::string& filename, FractureParameters::ExportPointCloudExtension pointCloudExtension)
 {
 	const std::string extensionStr = FractureParameters::ExportPointCloud_STR[pointCloudExtension];
+	std::thread* thread;
 
 	if (pointCloudExtension == FractureParameters::ExportPointCloudExtension::PLY)
 	{
-		std::thread saveThread(&PointCloud3D::savePLY, this, filename + "." + extensionStr, std::move(_points));
-		saveThread.detach();
+		thread = new std::thread(&PointCloud3D::savePLY, this, filename + "." + extensionStr, std::move(_points));
 	}
 	else if (pointCloudExtension == FractureParameters::ExportPointCloudExtension::XYZ)
 	{
-		std::thread saveThread(&PointCloud3D::saveXYZ, this, filename + "." + extensionStr, std::move(_points));
-		saveThread.detach();
+		thread = new std::thread(&PointCloud3D::saveXYZ, this, filename + "." + extensionStr, std::move(_points));
 	}
 	else
 	{
-		std::thread saveThread(&PointCloud3D::saveCompressed, this, filename + "." + extensionStr, std::move(_points));
-		saveThread.detach();
+		thread = new std::thread(&PointCloud3D::saveCompressed, this, filename + "." + extensionStr, std::move(_points));
 	}
+
+	return thread;
 }
 
 void PointCloud3D::subselect(unsigned numPoints)

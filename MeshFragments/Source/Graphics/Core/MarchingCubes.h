@@ -53,8 +53,6 @@ protected:
 	GLuint          _vertexSSBO;
 	GLuint          _faceSSBO;
 
-	GLuint  	    _laplacianSSBO;
-
 protected:
 	/**
 	*   @brief Builds faces with fused vertices.

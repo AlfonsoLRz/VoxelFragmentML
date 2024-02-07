@@ -5,9 +5,9 @@
 
 layout (local_size_variable) in;
 
-layout (std430, binding = 0) buffer VertexBuffer	{ vec4	vertices[]; };
-layout (std430, binding = 1) buffer FaceBuffer		{ uvec4 face[]; };
-layout (std430, binding = 2) buffer LaplacianBuffer { ivec4 laplacian[]; };
+#include <Assets/Shaders/Compute/Templates/laplacian.glsl>
+layout (std430, binding = 4) buffer VertexBuffer	{ vec4	vertices[]; };
+layout (std430, binding = 5) buffer FaceBuffer		{ uvec4 face[]; };
 
 #include <Assets/Shaders/Compute/Templates/constraints.glsl>
 
@@ -31,11 +31,18 @@ void main()
 	for (int i = 0; i < 3 && isFaceValid; ++i)
 	{
 		ivec4 vertex = ivec4(ivec3(vertices[face[index][i]].xyz * UINT_MULT), 1);
+		uint index1 = face[index][(i + 1) % 3], index2 = face[index][(i + 2) % 3];
 
-		for (int j = 0; j < 4; ++j)
-		{
-			atomicAdd(laplacian[face[index][(i + 1) % 3]][j], vertex[j]);
-			atomicAdd(laplacian[face[index][(i + 2) % 3]][j], vertex[j]);
-		}
+		atomicAdd(laplacian01[index1], vertex[0]);
+		atomicAdd(laplacian01[index2], vertex[0]);
+
+		atomicAdd(laplacian02[index1], vertex[1]);
+		atomicAdd(laplacian02[index2], vertex[1]);
+
+		atomicAdd(laplacian03[index1], vertex[2]);
+		atomicAdd(laplacian03[index2], vertex[2]);
+
+		atomicAdd(laplacian04[index1], vertex[3]);
+		atomicAdd(laplacian04[index2], vertex[3]);
 	}
 }

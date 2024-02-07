@@ -87,22 +87,12 @@ protected:
 	/**
 	*	@brief Saves current model using assimp.
 	*/
-	void saveAssimp(const std::string& filename, const std::string& extension);
+	void saveAssimp(const std::string& filename, const std::string& extension, Model3D::ModelComponent* component);
 
 	/**
 	*	@brief Saves current model using the binary writer of C++.
 	*/
-	void saveBinary(const std::string& filename);
-
-	/**
-	*	@brief Saves current model using assimp.
-	*/
-	void threadedSaveAssimp(aiScene* scene, const std::string& filename, const std::string& extension = "stl");
-
-	/**
-	*	@brief Saves current model using the binary writer of C++.
-	*/
-	void threadedSaveBinary(const std::string& filename);
+	void saveBinary(const std::string& filename, Model3D::ModelComponent* component);
 
 	/**
 	*	@brief Writes the model to a binary file in order to fasten the following executions.
@@ -184,7 +174,7 @@ public:
 	/**
 	*	@brief Saves the model using assimp.
 	*/
-	void save(const std::string& filename, FractureParameters::ExportMeshExtension meshExtension);
+	std::thread* save(const std::string& filename, FractureParameters::ExportMeshExtension meshExtension);
 
 	/**
 	*	@brief

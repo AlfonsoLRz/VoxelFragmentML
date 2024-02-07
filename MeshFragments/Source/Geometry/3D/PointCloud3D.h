@@ -107,7 +107,7 @@ public:
 	/**
 	*	@brief Saves the point cloud according to the required extension. Performed in a different thread.
 	*/
-	void save(const std::string& filename, FractureParameters::ExportPointCloudExtension pointCloudExtension);
+	std::thread* save(const std::string& filename, FractureParameters::ExportPointCloudExtension pointCloudExtension);
 
 	/**
 	*	@brief Number of points that this cloud contains.
