@@ -47,7 +47,7 @@ CADScene::~CADScene()
 	delete _pointCloudRenderer;
 }
 
-void CADScene::exportFragments(const FractureParameters& fractureParameters, const std::string& extension, bool compress)
+void CADScene::exportFragments(const FractureParameters& fractureParameters, const std::string& extension)
 {
 	// Is folder created
 	const std::string folder = INTERACTIVE_APP_FOLDER + _mesh->getShortName() + "/";
@@ -74,7 +74,7 @@ void CADScene::exportGrid(const FractureParameters& fractureParameters)
 	_meshGrid->exportGrid(filename + "grid", false, static_cast<FractureParameters::ExportGrid>(_fractParameters._exportGridExtension));
 }
 
-void CADScene::exportGrid(FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportGrid gridExport)
+void CADScene::exportGrid(FractureParameters& fractureParameters, const std::string& folder)
 {
 	if (_meshGrid)
 	{
@@ -93,9 +93,9 @@ void CADScene::exportGrid(FractureParameters& fractureParameters, const std::str
 	}
 }
 
-void CADScene::exportMesh(FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportMeshExtension meshExtension)
+void CADScene::exportMesh(FractureParameters& fractureParameters, const std::string& folder)
 {
-	const std::string meshName = _mesh->getShortName(), meshExtensionStr = FractureParameters::ExportMesh_STR[meshExtension];
+	const std::string meshName = _mesh->getShortName();
 
 	for (int numTriangles : fractureParameters._targetTriangles)
 	{
@@ -112,7 +112,7 @@ void CADScene::exportMesh(FractureParameters& fractureParameters, const std::str
 	}
 }
 
-void CADScene::exportPointClouds(const FractureParameters& fractureParameters, bool compress)
+void CADScene::exportPointClouds(const FractureParameters& fractureParameters)
 {
 	const std::string folder = INTERACTIVE_APP_FOLDER + _mesh->getShortName() + "/";
 	if (!std::filesystem::exists(folder)) std::filesystem::create_directory(folder);
@@ -128,7 +128,7 @@ void CADScene::exportPointClouds(const FractureParameters& fractureParameters, b
 	}
 }
 
-void CADScene::exportPointCloud(FractureParameters& fractureParameters, const std::string& folder, bool compress)
+void CADScene::exportPointCloud(FractureParameters& fractureParameters, const std::string& folder)
 {
 	if (!fractureParameters._targetPoints.empty())
 	{
@@ -181,11 +181,11 @@ std::string CADScene::fractureGrid(const std::string& path, std::vector<Fragment
 
 	this->allocateMeshGrid(_fractParameters);
 	if (fractureParameters._exportMesh) 
-		this->exportMesh(fractureParameters, INTERACTIVE_APP_FOLDER + _mesh->getShortName() + "/", static_cast<FractureParameters::ExportMeshExtension>(fractureParameters._exportMeshExtension));
+		this->exportMesh(fractureParameters, INTERACTIVE_APP_FOLDER + _mesh->getShortName() + "/");
 	if (fractureParameters._exportGrid) 
-		this->exportGrid(fractureParameters, INTERACTIVE_APP_FOLDER + _mesh->getShortName() + "/", static_cast<FractureParameters::ExportGrid>(fractureParameters._exportGridExtension));
+		this->exportGrid(fractureParameters, INTERACTIVE_APP_FOLDER + _mesh->getShortName() + "/");
 	if (fractureParameters._exportPointCloud) 
-		this->exportPointCloud(fractureParameters, INTERACTIVE_APP_FOLDER + _mesh->getShortName() + "/", static_cast<FractureParameters::ExportPointCloudExtension>(fractureParameters._exportPointCloudExtension));
+		this->exportPointCloud(fractureParameters, INTERACTIVE_APP_FOLDER + _mesh->getShortName() + "/");
 
 	this->rebuildGrid(fractureParameters);
 	std::string result = this->fractureModel(fractureParameters);
@@ -256,13 +256,13 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 		// Save representations from the starting mesh
 		if (fractureProcedure._fractureParameters._exportPointCloud)
-			this->exportPointCloud(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportPointCloudExtension>(fractureProcedure._fractureParameters._exportPointCloudExtension));
+			this->exportPointCloud(fractureProcedure._fractureParameters, meshFolder);
 
 		if (fractureProcedure._fractureParameters._exportMesh)
-			this->exportMesh(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportMeshExtension>(fractureProcedure._fractureParameters._exportMeshExtension));
+			this->exportMesh(fractureProcedure._fractureParameters, meshFolder);
 
 		if (fractureProcedure._fractureParameters._exportGrid)
-			this->exportGrid(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportGrid>(fractureProcedure._fractureParameters._exportGridExtension));
+			this->exportGrid(fractureProcedure._fractureParameters, meshFolder);
 
 		_mesh->getModelComponent(0)->releaseMemory();
 

@@ -1,5 +1,5 @@
 #define MASK_BOUNDARY_POSITION uint(15)
-#define MASK_ID_POSITION uint(12)
+#define MASK_ID_POSITION uint(8)
 
 uint16_t maskedBit(uint16_t value, uint position)
 {

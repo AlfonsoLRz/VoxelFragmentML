@@ -204,7 +204,7 @@ public:
 	/**
 	*	@brief Exports fragments into several models in a given extension.
 	*/
-	void exportFragments(const FractureParameters& fractureParameters, const std::string& extension = ".obj", bool compress = false);
+	void exportFragments(const FractureParameters& fractureParameters, const std::string& extension = ".obj");
 
 	/**
 	*	@brief
@@ -214,22 +214,22 @@ public:
 	/**
 	*	@brief Exports the starting mesh as a grid.
 	*/
-	void exportGrid(FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportGrid gridExport);
+	void exportGrid(FractureParameters& fractureParameters, const std::string& folder);
 
 	/**
 	*	@brief Exports the starting mesh into the specified folder and extension.
 	*/
-	void exportMesh(FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportMeshExtension meshExtension);
+	void exportMesh(FractureParameters& fractureParameters, const std::string& folder);
 
 	/**
 	*	@brief 
 	*/
-	void exportPointClouds(const FractureParameters& fractureParameters, bool compress = false);
+	void exportPointClouds(const FractureParameters& fractureParameters);
 
 	/**
 	*	@brief Exports current mesh as a point cloud of variable number of points.
 	*/
-	void exportPointCloud(FractureParameters& fractureParameters, const std::string& folder, bool compress = false);
+	void exportPointCloud(FractureParameters& fractureParameters, const std::string& folder);
 
 	/**
 	*	@brief Fractures voxelized model.

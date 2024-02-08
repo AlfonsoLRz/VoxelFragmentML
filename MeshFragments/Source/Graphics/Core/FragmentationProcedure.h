@@ -14,7 +14,7 @@ struct FragmentationProcedure
 	std::string			_folder = "D:/allopezr/Datasets/Vessels_200/";
 	std::string			_destinationFolder = "D:/allopezr/Fragments/Vessels_200/";
 	std::string			_onlineFolder = "E:/Online_Testing/";
-	std::string			_startVessel = "BA_36a_2";
+	std::string			_startVessel = "CC_13_3";
 	std::string			_searchExtension = ".obj";
 
 	enum FragmentType { VOXEL, POINT_CLOUD, MESH };

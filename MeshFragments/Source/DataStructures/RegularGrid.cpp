@@ -714,6 +714,7 @@ void RegularGrid::exportQuadStack(const std::string& filename)
 	quadStack->compress_x();
 	//quadStack->calculateCompression();
 	quadStack->saveCheckpoint(filename);
+	delete quadStack;
 }
 
 void RegularGrid::exportUncompressed(const std::string& filename)

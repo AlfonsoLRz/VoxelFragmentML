@@ -9,7 +9,7 @@ namespace fracturer
 {
     class Seeder {
     public:
-        const static glm::uint VOXEL_ID_POSITION = 12;       //!< Position of the voxel id in the voxel mask
+        const static glm::uint VOXEL_ID_POSITION = 8;       //!< Position of the voxel id in the voxel mask
 
     public:
         /**
