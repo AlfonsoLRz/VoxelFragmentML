@@ -8,7 +8,6 @@
 #include "Geometry/3D/PointCloud3D.h"
 #include "Geometry/3D/Triangle3D.h"
 #include "Graphics/Core/Model3D.h"
-#include "objloader/OBJ_Loader.h"
 
 /**
 *	@file CADModel.h

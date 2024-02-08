@@ -285,10 +285,11 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 
 		// Data in common for the two branchs
 		int pointIndex = 0;
-		std::vector<vec4> newPoint(maxSamples * 2);
 
 		if (maxSamples > component->_topology.size())
 		{
+			std::vector<vec4> newPoint(maxSamples * 2);
+
 			#pragma omp parallel for
 			for (int index = 0; index < component->_topology.size(); ++index)
 			{
@@ -324,6 +325,8 @@ PointCloud3D* CADModel::sampleCPU(unsigned maxSamples, int randomFunction)
 		}
 		else
 		{
+			std::vector<vec4> newPoint(maxSamples);
+
 			// Randomly select which faces are active
 			int activeFaces = 0, randomFace;
 			std::vector<uint8_t> activeBuffer(component->_topology.size(), uint8_t(0));
@@ -371,7 +374,7 @@ std::thread* CADModel::save(const std::string& filename, FractureParameters::Exp
 {
 	const std::string meshExtensionStr = FractureParameters::ExportMesh_STR[meshExtension];
 	std::thread* thread = nullptr;
-	Model3D::ModelComponent* component = _modelComp[0]->copyComponent();
+	Model3D::ModelComponent* component = _modelComp[0]->copyComponent(!TESTING_FORMAT_MODE);
 
 	if (meshExtension == FractureParameters::ExportMeshExtension::BINARY_MESH)
 		thread = new std::thread(&CADModel::saveBinary, this, filename + "." + meshExtensionStr, component);

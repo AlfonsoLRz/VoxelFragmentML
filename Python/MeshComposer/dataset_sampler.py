@@ -5,8 +5,8 @@ from tqdm import tqdm
 
 dataset_folder = '../../../Datasets/Vessel_02/'
 target_mesh_extension = '.obj'
-save_folder = '../../../Datasets/Vessels_1000/'
-num_aimed_meshes = 1000
+save_folder = '../../../Datasets/Vessels_200/'
+num_aimed_meshes = 200
 clean_save_folder = True
 
 # Retrieve meshes that meet the requirements [recursive]

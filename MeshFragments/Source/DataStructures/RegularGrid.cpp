@@ -165,10 +165,8 @@ void RegularGrid::exportGrid(const std::string& filename, bool squared, Fracture
 		this->exportRLE(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
 	else if (exportType == FractureParameters::QUADSTACK)
 		this->exportQuadStack(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
-	else if (exportType == FractureParameters::UNCOMPRESSED)
-		this->exportUncompressed(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
 	else if (exportType == FractureParameters::UNCOMPRESSED_BINARY)
-		this->exportRawCompressed(filename + "." + FractureParameters::ExportGrid_STR[exportType]);
+		this->exportRawCompressed(filename + "." + FractureParameters::ExportGrid_STR[exportType], squared);
 	else
 		this->exportVox(filename + "." + FractureParameters::ExportGrid_STR[exportType], squared);
 }
@@ -623,14 +621,46 @@ size_t RegularGrid::countValues(std::unordered_map<uint16_t, unsigned>& values)
 	return values.size();
 }
 
-void RegularGrid::exportRawCompressed(const std::string& filename)
+void RegularGrid::exportRawCompressed(const std::string& filename, bool squared)
 {
 	std::ofstream file(filename, std::ios::out | std::ios::binary);
 
 	if (file.is_open())
 	{
-		file.write(reinterpret_cast<char*>(&_numDivs), sizeof(glm::uvec3));
-		file.write(reinterpret_cast<char*>(&_grid), _numDivs.x * _numDivs.y * _numDivs.z * sizeof(uint16_t));
+		if (!squared)
+		{
+			file.write(reinterpret_cast<char*>(&_numDivs), sizeof(glm::uvec3));
+			file.write(reinterpret_cast<char*>(&_grid), _numDivs.x * _numDivs.y * _numDivs.z * sizeof(uint16_t));
+		}
+		else
+		{
+			uvec3 end = _numDivs;
+			ivec3 currentPosition;
+			end.x = end.y = end.z = glm::max(end.x, glm::max(end.y, end.z));
+			uvec3 start = (end - _numDivs) / uvec3(2);
+
+			file.write(reinterpret_cast<char*>(&end), sizeof(glm::uvec3));
+
+			// Reset first
+			for (int x = 0; x < end.x; ++x)
+			{
+				for (int y = 0; y < end.y; ++y)
+				{
+					for (int z = 0; z < end.z; ++z)
+					{
+						currentPosition = ivec3(x, y, z) - ivec3(start);
+
+						if (glm::all(glm::greaterThanEqual(currentPosition, ivec3(0))) && glm::all(glm::lessThan(currentPosition, ivec3(_numDivs))))
+							file.write(reinterpret_cast<char*>(&_grid[this->getPositionIndex(currentPosition.x, currentPosition.y, currentPosition.z)]), sizeof(uint16_t));
+						else
+						{
+							uint16_t empty = VOXEL_EMPTY;
+							file.write(reinterpret_cast<char*>(&empty), sizeof(uint16_t));
+						}
+					}
+				}
+			}
+		}
 
 		file.close();
 	}
@@ -702,6 +732,8 @@ void RegularGrid::exportUncompressed(const std::string& filename)
 void RegularGrid::exportVox(const std::string& filename, bool squared)
 {
 	vox::VoxWriter vox;
+	vox.ClearVoxels();
+	vox.ClearColors();
 
 	// Check if squared is required
 	if (squared)

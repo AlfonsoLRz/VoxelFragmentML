@@ -1,4 +1,5 @@
 #define GENERATE_DATASET true
+#define TESTING_FORMAT_MODE true
 
 #include <windows.h>								// DWORD is undefined otherwise
 #include <Psapi.h>

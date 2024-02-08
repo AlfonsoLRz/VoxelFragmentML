@@ -503,11 +503,19 @@ void Model3D::ModelComponent::buildTriangleMeshTopology()
 	_topologyIndicesLength[RendEnum::IBO_TRIANGLE_MESH] = _triangleMesh.size();
 }
 
-Model3D::ModelComponent* Model3D::ModelComponent::copyComponent()
+Model3D::ModelComponent* Model3D::ModelComponent::copyComponent(bool moveData)
 {
 	ModelComponent* newComponent = new ModelComponent();
-	newComponent->_geometry = std::move(_geometry);
-	newComponent->_topology = std::move(_topology);
+	if (moveData)
+	{
+		newComponent->_geometry = std::move(_geometry);
+		newComponent->_topology = std::move(_topology);
+	}
+	else
+	{
+		newComponent->_geometry = _geometry;
+		newComponent->_topology = _topology;
+	}
 
 	return newComponent;
 }

@@ -74,23 +74,41 @@ void CADScene::exportGrid(const FractureParameters& fractureParameters)
 	_meshGrid->exportGrid(filename + "grid", false, static_cast<FractureParameters::ExportGrid>(_fractParameters._exportGridExtension));
 }
 
-void CADScene::exportGrid(const FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportGrid gridExport)
+void CADScene::exportGrid(FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportGrid gridExport)
 {
 	if (_meshGrid)
 	{
 		unsigned maxDimension = glm::max(fractureParameters._voxelizationSize.x, glm::max(fractureParameters._voxelizationSize.y, fractureParameters._voxelizationSize.z));
-		_meshGrid->exportGrid(folder + "grid_" + std::to_string(maxDimension), true, static_cast<FractureParameters::ExportGrid>(fractureParameters._exportGridExtension));
+		const std::string meshName = _mesh->getShortName();
+
+		#if TESTING_FORMAT_MODE
+		for (int gridFormat = 0; gridFormat < FractureParameters::NUM_GRID_EXTENSIONS; ++gridFormat)
+		{
+			fractureParameters._exportGridExtension = static_cast<FractureParameters::ExportGrid>(gridFormat);
+		#endif
+			_meshGrid->exportGrid(folder + meshName + "_grid_" + std::to_string(maxDimension) + "r", true, static_cast<FractureParameters::ExportGrid>(fractureParameters._exportGridExtension));
+		#if TESTING_FORMAT_MODE
+		}
+		#endif
 	}
 }
 
-void CADScene::exportMesh(const FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportMeshExtension meshExtension)
+void CADScene::exportMesh(FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportMeshExtension meshExtension)
 {
 	const std::string meshName = _mesh->getShortName(), meshExtensionStr = FractureParameters::ExportMesh_STR[meshExtension];
 
 	for (int numTriangles : fractureParameters._targetTriangles)
 	{
 		_mesh->simplify(numTriangles);
-		_mesh->save(folder + meshName + "_" + std::to_string(numTriangles) + "t", static_cast<FractureParameters::ExportMeshExtension>(fractureParameters._exportMeshExtension));
+		#if TESTING_FORMAT_MODE
+		for (int meshFormat = 0; meshFormat < FractureParameters::NUM_EXPORT_MESH_EXTENSIONS; ++meshFormat)
+		{
+			fractureParameters._exportMeshExtension = static_cast<FractureParameters::ExportMeshExtension>(meshFormat);
+		#endif
+			_mesh->save(folder + meshName + "_" + std::to_string(numTriangles) + "t", static_cast<FractureParameters::ExportMeshExtension>(fractureParameters._exportMeshExtension));
+		#if TESTING_FORMAT_MODE
+		}
+		#endif
 	}
 }
 
@@ -110,14 +128,25 @@ void CADScene::exportPointClouds(const FractureParameters& fractureParameters, b
 	}
 }
 
-void CADScene::exportPointCloud(const FractureParameters& fractureParameters, const std::string& folder, bool compress)
+void CADScene::exportPointCloud(FractureParameters& fractureParameters, const std::string& folder, bool compress)
 {
 	if (!fractureParameters._targetPoints.empty())
 	{
+		const std::string meshName = _mesh->getShortName();
+
 		for (int targetPoints : fractureParameters._targetPoints)
 		{
 			PointCloud3D* pointCloud = _mesh->sampleCPU(targetPoints, fractureParameters._pointCloudSeedingRandom);
-			pointCloud->save(folder + std::to_string(targetPoints) + "p", static_cast<FractureParameters::ExportPointCloudExtension>(fractureParameters._exportPointCloudExtension));
+			#if TESTING_FORMAT_MODE
+			for (int pointCloudFormat = 0; pointCloudFormat < FractureParameters::NUM_POINT_CLOUD_EXTENSIONS; ++pointCloudFormat)
+			{
+				fractureParameters._exportPointCloudExtension = static_cast<FractureParameters::ExportPointCloudExtension>(pointCloudFormat);
+			#endif
+				pointCloud->save(folder + meshName + "_" + std::to_string(targetPoints) + "p", static_cast<FractureParameters::ExportPointCloudExtension>(fractureParameters._exportPointCloudExtension));
+			#if TESTING_FORMAT_MODE
+			}
+			#endif
+
 			delete pointCloud;
 		}
 	}
@@ -228,9 +257,11 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		// Save representations from the starting mesh
 		if (fractureProcedure._fractureParameters._exportPointCloud)
 			this->exportPointCloud(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportPointCloudExtension>(fractureProcedure._fractureParameters._exportPointCloudExtension));
-		if (fractureProcedure._fractureParameters._exportMesh) 
+
+		if (fractureProcedure._fractureParameters._exportMesh)
 			this->exportMesh(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportMeshExtension>(fractureProcedure._fractureParameters._exportMeshExtension));
-		if (fractureProcedure._fractureParameters._exportGrid) 
+
+		if (fractureProcedure._fractureParameters._exportGrid)
 			this->exportGrid(fractureProcedure._fractureParameters, meshFolder, static_cast<FractureParameters::ExportGrid>(fractureProcedure._fractureParameters._exportGridExtension));
 
 		_mesh->getModelComponent(0)->releaseMemory();
@@ -253,7 +284,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 				bar.update();
 
 				unsigned idx = 0;
-				const std::string itFile = fragmentFile + maxDimension + "v_" + std::to_string(iteration) + "it";
+				const std::string itFile = fragmentFile + std::to_string(maxDimension) + "r_" + std::to_string(iteration) + "it";
 				std::vector<FragmentationProcedure::FragmentMetadata> localMetadata;
 
 				this->fractureGrid(fragmentMetadata, fractureProcedure._fractureParameters);
@@ -261,13 +292,21 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 				// Grid
 				if (fractureProcedure._fractureParameters._exportGrid)
 				{
-					_meshGrid->exportGrid(itFile, true, static_cast<FractureParameters::ExportGrid>(fractureProcedure._fractureParameters._exportGridExtension));
+					#if TESTING_FORMAT_MODE
+					for (int gridFormat = 0; gridFormat < FractureParameters::NUM_GRID_EXTENSIONS; ++gridFormat)
+					{
+						fractureProcedure._fractureParameters._exportGridExtension = static_cast<FractureParameters::ExportGrid>(gridFormat);
+						#endif
+						_meshGrid->exportGrid(itFile, true, static_cast<FractureParameters::ExportGrid>(fractureProcedure._fractureParameters._exportGridExtension));
 
-					FragmentationProcedure::FragmentMetadata metadata;
-					metadata._type = FragmentationProcedure::VOXEL;
-					metadata._vesselName = itFile + "." + FractureParameters::ExportGrid_STR[fractureProcedure._fractureParameters._exportGridExtension];
-					metadata._voxelizationSize = fractureProcedure._fractureParameters._voxelizationSize;
-					localMetadata.push_back(metadata);
+						FragmentationProcedure::FragmentMetadata metadata;
+						metadata._type = FragmentationProcedure::VOXEL;
+						metadata._vesselName = itFile + "." + FractureParameters::ExportGrid_STR[fractureProcedure._fractureParameters._exportGridExtension];
+						metadata._voxelizationSize = fractureProcedure._fractureParameters._voxelizationSize;
+						localMetadata.push_back(metadata);
+					#if TESTING_FORMAT_MODE
+					}
+					#endif
 				}
 
 				for (Model3D* fracture : _fractureMeshes)
@@ -275,28 +314,32 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 					CADModel* cadModel = dynamic_cast<CADModel*>(fracture);
 					const std::string filename = itFile + "_" + std::to_string(idx);
 					std::string simplificationFilename;
-					std::string meshExtension = FractureParameters::ExportMesh_STR[fractureProcedure._fractureParameters._exportMeshExtension],
-								pointCloudExtension = FractureParameters::ExportPointCloud_STR[fractureProcedure._fractureParameters._exportPointCloudExtension];
 
 					// Point clouds
 					if (fractureProcedure._fractureParameters._exportPointCloud)
 					{
-						if (!fractureProcedure._fractureParameters._targetPoints.empty())
+						for (int targetCount : fractureProcedure._fractureParameters._targetPoints)
 						{
-							for (int targetCount : fractureProcedure._fractureParameters._targetPoints)
+							PointCloud3D* pointCloud = dynamic_cast<CADModel*>(fracture)->sampleCPU(targetCount, fractureProcedure._fractureParameters._pointCloudSeedingRandom);
+							simplificationFilename = filename + "_" + std::to_string(targetCount) + "p";
+
+							#if TESTING_FORMAT_MODE
+							for (int pointCloudFormat = 0; pointCloudFormat < FractureParameters::NUM_POINT_CLOUD_EXTENSIONS; ++pointCloudFormat)
 							{
-								simplificationFilename = filename + "_" + std::to_string(targetCount) + "p";
-								PointCloud3D* pointCloud = dynamic_cast<CADModel*>(fracture)->sampleCPU(targetCount, fractureProcedure._fractureParameters._pointCloudSeedingRandom);
+								fractureProcedure._fractureParameters._exportPointCloudExtension = static_cast<FractureParameters::ExportPointCloudExtension>(pointCloudFormat);
+							#endif
 								threads.push_back(pointCloud->save(simplificationFilename, static_cast<FractureParameters::ExportPointCloudExtension>(fractureProcedure._fractureParameters._exportPointCloudExtension)));
 
 								FragmentationProcedure::FragmentMetadata metadata;
 								metadata._type = FragmentationProcedure::POINT_CLOUD;
-								metadata._vesselName = simplificationFilename + "." + pointCloudExtension;
+								metadata._vesselName = simplificationFilename + "." + FractureParameters::ExportPointCloud_STR[fractureProcedure._fractureParameters._exportPointCloudExtension];
 								metadata._numPoints = pointCloud->getNumPoints();
 								localMetadata.push_back(metadata);
-
-								delete pointCloud;
+							#if TESTING_FORMAT_MODE
 							}
+							#endif
+
+							delete pointCloud;
 						}
 					}
 
@@ -307,24 +350,41 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 						{
 							for (int targetCount : fractureProcedure._fractureParameters._targetTriangles)
 							{
-								simplificationFilename = filename + "_" + std::to_string(targetCount) + "t";
 								cadModel->simplify(targetCount);
-								threads.push_back(cadModel->save(simplificationFilename, static_cast<FractureParameters::ExportMeshExtension>(fractureProcedure._fractureParameters._exportMeshExtension)));
 
-								fragmentMetadata[idx]._vesselName = simplificationFilename + "." + meshExtension;
-								fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
-								fragmentMetadata[idx]._numFaces = fracture->getNumFaces();
-								localMetadata.push_back(fragmentMetadata[idx]);
+								#if TESTING_FORMAT_MODE
+								for (int meshFormat = 0; meshFormat < FractureParameters::NUM_EXPORT_MESH_EXTENSIONS; ++meshFormat)
+								{
+									fractureProcedure._fractureParameters._exportMeshExtension = static_cast<FractureParameters::ExportMeshExtension>(meshFormat);
+								#endif
+									simplificationFilename = filename + "_" + std::to_string(targetCount) + "t";
+									threads.push_back(cadModel->save(simplificationFilename, static_cast<FractureParameters::ExportMeshExtension>(fractureProcedure._fractureParameters._exportMeshExtension)));
+
+									fragmentMetadata[idx]._vesselName = simplificationFilename + "." + FractureParameters::ExportMesh_STR[fractureProcedure._fractureParameters._exportMeshExtension];
+									fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
+									fragmentMetadata[idx]._numFaces = fracture->getNumFaces();
+									localMetadata.push_back(fragmentMetadata[idx]);
+								#if TESTING_FORMAT_MODE
+								}
+								#endif
 							}
 						}
 						else
 						{
-							threads.push_back(cadModel->save(filename, static_cast<FractureParameters::ExportMeshExtension>(fractureProcedure._fractureParameters._exportMeshExtension)));
+							#if TESTING_FORMAT_MODE
+							for (int meshFormat = 0; meshFormat < FractureParameters::NUM_EXPORT_MESH_EXTENSIONS; ++meshFormat)
+							{
+								fractureProcedure._fractureParameters._exportMeshExtension = static_cast<FractureParameters::ExportMeshExtension>(meshFormat);
+							#endif
+								threads.push_back(cadModel->save(filename, static_cast<FractureParameters::ExportMeshExtension>(fractureProcedure._fractureParameters._exportMeshExtension)));
 
-							fragmentMetadata[idx]._vesselName = filename + "." + meshExtension;
-							fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
-							fragmentMetadata[idx]._numFaces = fracture->getNumFaces();
-							localMetadata.push_back(fragmentMetadata[idx]);
+								fragmentMetadata[idx]._vesselName = filename + "." + FractureParameters::ExportMesh_STR[fractureProcedure._fractureParameters._exportMeshExtension];
+								fragmentMetadata[idx]._numVertices = fracture->getNumVertices();
+								fragmentMetadata[idx]._numFaces = fracture->getNumFaces();
+								localMetadata.push_back(fragmentMetadata[idx]);
+							#if TESTING_FORMAT_MODE
+							}
+							#endif
 						}
 					}
 
@@ -352,23 +412,47 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 			}
 
 			std::cout << std::endl;
-
+			
 			if (fractureProcedure._fractureParameters._exportGrid)
 			{
-				std::thread zipGrid(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportGrid_STR[fractureProcedure._fractureParameters._exportGridExtension]);
-				zipGrid.detach();
+				#if TESTING_FORMAT_MODE
+				for (int gridFormat = 0; gridFormat < FractureParameters::NUM_GRID_EXTENSIONS; ++gridFormat)
+				{
+					fractureProcedure._fractureParameters._exportGridExtension = static_cast<FractureParameters::ExportGrid>(gridFormat);
+				#endif
+					std::thread zipGrid(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportGrid_STR[fractureProcedure._fractureParameters._exportGridExtension]);
+					zipGrid.detach();
+				#if TESTING_FORMAT_MODE
+				}
+				#endif
 			}
 
 			if (fractureProcedure._fractureParameters._exportMesh)
 			{
-				std::thread zipMesh(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportMesh_STR[fractureProcedure._fractureParameters._exportMeshExtension]);
-				zipMesh.detach();
+				#if TESTING_FORMAT_MODE
+				for (int meshFormat = 0; meshFormat < FractureParameters::NUM_EXPORT_MESH_EXTENSIONS; ++meshFormat)
+				{
+					fractureProcedure._fractureParameters._exportMeshExtension = static_cast<FractureParameters::ExportMeshExtension>(meshFormat);
+				#endif
+					std::thread zipMesh(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportMesh_STR[fractureProcedure._fractureParameters._exportMeshExtension]);
+					zipMesh.detach();
+				#if TESTING_FORMAT_MODE
+				}
+				#endif
 			}
 
 			if (fractureProcedure._fractureParameters._exportPointCloud)
 			{
-				std::thread zipPointCloud(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportPointCloud_STR[fractureProcedure._fractureParameters._exportPointCloudExtension]);
-				zipPointCloud.detach();
+				#if TESTING_FORMAT_MODE
+				for (int pointCloudFormat = 0; pointCloudFormat < FractureParameters::NUM_POINT_CLOUD_EXTENSIONS; ++pointCloudFormat)
+				{
+					fractureProcedure._fractureParameters._exportPointCloudExtension = static_cast<FractureParameters::ExportPointCloudExtension>(pointCloudFormat);
+				#endif
+					std::thread zipPointCloud(&CADScene::launchZipingProcess, this, meshFolder, FractureParameters::ExportPointCloud_STR[fractureProcedure._fractureParameters._exportPointCloudExtension]);
+					zipPointCloud.detach();
+				#if TESTING_FORMAT_MODE
+				}
+				#endif
 			}
 		}
 

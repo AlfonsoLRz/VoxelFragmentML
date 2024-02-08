@@ -424,7 +424,7 @@ public:
 	/**
 	*	@brief Copies the main content of a component into a new one.
 	*/
-	ModelComponent* copyComponent();
+	ModelComponent* copyComponent(bool moveData);
 
 	/**
 	*	@brief Assignment operator overriding.

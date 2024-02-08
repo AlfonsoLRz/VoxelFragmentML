@@ -31,13 +31,13 @@ public:
 	inline static const char* Neighbourhood_STR[NUM_NEIGHBOURHOODS] = { "Von Neumann", "Moore" };
 
 	enum ExportMeshExtension { OBJ, STL, BINARY_MESH, NUM_EXPORT_MESH_EXTENSIONS };
-	inline static const char* ExportMesh_STR[NUM_EXPORT_MESH_EXTENSIONS] = { "obj", "stl", "bin" };
+	inline static const char* ExportMesh_STR[NUM_EXPORT_MESH_EXTENSIONS] = { "obj", "stl", "binm" };
 
 	enum ExportGrid { RLE, QUADSTACK, VOX, UNCOMPRESSED_BINARY, NUM_GRID_EXTENSIONS };
-	inline static const char* ExportGrid_STR[NUM_GRID_EXTENSIONS] = { "rle", "qstack", "vox", "bin"};
+	inline static const char* ExportGrid_STR[NUM_GRID_EXTENSIONS] = { "rle", "qstack", "vox", "bing"};
 
 	enum ExportPointCloudExtension { PLY, XYZ, COMPRESSED_POINT_CLOUD, NUM_POINT_CLOUD_EXTENSIONS };
-	inline static const char* ExportPointCloud_STR[NUM_POINT_CLOUD_EXTENSIONS] = { "ply", "xyz", "bin" };
+	inline static const char* ExportPointCloud_STR[NUM_POINT_CLOUD_EXTENSIONS] = { "ply", "xyz", "binp" };
 	 
 public:
 	int				_biasFocus;
@@ -116,7 +116,7 @@ public:
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),
 		_biasFocus(5),
-		_targetPoints({ 16384 * 4 }),
+		_targetPoints({ 4096 }),
 		_targetTriangles({ 5000 }),
 		_voxelPerMetricUnit(20),
 		_voxelizationSize(256),

@@ -214,12 +214,12 @@ public:
 	/**
 	*	@brief Exports the starting mesh as a grid.
 	*/
-	void exportGrid(const FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportGrid gridExport);
+	void exportGrid(FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportGrid gridExport);
 
 	/**
 	*	@brief Exports the starting mesh into the specified folder and extension.
 	*/
-	void exportMesh(const FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportMeshExtension meshExtension);
+	void exportMesh(FractureParameters& fractureParameters, const std::string& folder, FractureParameters::ExportMeshExtension meshExtension);
 
 	/**
 	*	@brief 
@@ -229,7 +229,7 @@ public:
 	/**
 	*	@brief Exports current mesh as a point cloud of variable number of points.
 	*/
-	void exportPointCloud(const FractureParameters& fractureParameters, const std::string& folder, bool compress = false);
+	void exportPointCloud(FractureParameters& fractureParameters, const std::string& folder, bool compress = false);
 
 	/**
 	*	@brief Fractures voxelized model.

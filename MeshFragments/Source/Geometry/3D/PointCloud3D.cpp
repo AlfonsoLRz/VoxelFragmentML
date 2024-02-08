@@ -101,18 +101,22 @@ std::thread* PointCloud3D::save(const std::string& filename, FractureParameters:
 	const std::string extensionStr = FractureParameters::ExportPointCloud_STR[pointCloudExtension];
 	std::thread* thread;
 
+#if TESTING_FORMAT_MODE
+	std::vector<vec4> points = _points;
 	if (pointCloudExtension == FractureParameters::ExportPointCloudExtension::PLY)
-	{
-		thread = new std::thread(&PointCloud3D::savePLY, this, filename + "." + extensionStr, std::move(_points));
-	}
+		thread = new std::thread(&PointCloud3D::savePLY, this, filename + "." + extensionStr, std::move(points));
 	else if (pointCloudExtension == FractureParameters::ExportPointCloudExtension::XYZ)
-	{
-		thread = new std::thread(&PointCloud3D::saveXYZ, this, filename + "." + extensionStr, std::move(_points));
-	}
+		thread = new std::thread(&PointCloud3D::saveXYZ, this, filename + "." + extensionStr, std::move(points));
 	else
-	{
+		thread = new std::thread(&PointCloud3D::saveCompressed, this, filename + "." + extensionStr, std::move(points));
+#else
+	if (pointCloudExtension == FractureParameters::ExportPointCloudExtension::PLY)
+		thread = new std::thread(&PointCloud3D::savePLY, this, filename + "." + extensionStr, std::move(_points));
+	else if (pointCloudExtension == FractureParameters::ExportPointCloudExtension::XYZ)
+		thread = new std::thread(&PointCloud3D::saveXYZ, this, filename + "." + extensionStr, std::move(_points));
+	else
 		thread = new std::thread(&PointCloud3D::saveCompressed, this, filename + "." + extensionStr, std::move(_points));
-	}
+#endif 
 
 	return thread;
 }

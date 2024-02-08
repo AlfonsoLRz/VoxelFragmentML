@@ -67,7 +67,7 @@ protected:
 	/**
 	*	@brief Exports the grid as a raw file.
 	*/
-	void exportRawCompressed(const std::string& filename);
+	void exportRawCompressed(const std::string& filename, bool squared);
 
 	/**
 	*	@brief Exports the grid into a .rle file.
