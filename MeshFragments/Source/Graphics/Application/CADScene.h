@@ -84,7 +84,7 @@ protected:
 	/**
 	*	@brief
 	*/
-	void exportMetadata(const std::string& filename, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize);
+	void exportMetadata(const std::string& filename, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize, const std::string& voxelizationSize);
 
 	/**
 	*	@brief Splits the loaded mesh into fragments through a fracturer algorithm.

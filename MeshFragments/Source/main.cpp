@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 			scene->generateDataset(procedure, procedure._folder, procedure._searchExtension, procedure._destinationFolder);
 #endif
 
-			std::cout << "__ Finishing LiDAR Simulator __" << std::endl;
+			std::cout << "__ Finishing fragmentation __" << std::endl;
 		}
 		else
 		{

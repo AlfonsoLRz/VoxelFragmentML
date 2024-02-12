@@ -398,7 +398,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 			std::cout << std::endl;
 		}
 
-		this->exportMetadata(meshFile, modelMetadata);
+		this->exportMetadata(meshFile, modelMetadata, std::to_string(maxDimension));
 
 		if (fractureProcedure._compressResultingFiles)
 		{
@@ -542,15 +542,15 @@ void CADScene::eraseFragmentContent()
 	_fragmentTextures.clear();
 }
 
-void CADScene::exportMetadata(const std::string& filename, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize)
+void CADScene::exportMetadata(const std::string& filename, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentSize, const std::string& voxelizationSize)
 {
-	std::ofstream gridOutputStream(filename + "metadata_grid.txt");
+	std::ofstream gridOutputStream(filename + voxelizationSize + "_metadata_grid.txt");
 	if (gridOutputStream.fail()) return;
 
-	std::ofstream meshOutputStream(filename + "metadata_mesh.txt");
+	std::ofstream meshOutputStream(filename + voxelizationSize + "_metadata_mesh.txt");
 	if (meshOutputStream.fail()) return;
 
-	std::ofstream pointCloudOutputStream(filename + "metadata_pointcloud.txt");
+	std::ofstream pointCloudOutputStream(filename + voxelizationSize + "_metadata_pointcloud.txt");
 	if (pointCloudOutputStream.fail()) return;
 
 	gridOutputStream << "Filename\tVoxelization size" << std::endl;

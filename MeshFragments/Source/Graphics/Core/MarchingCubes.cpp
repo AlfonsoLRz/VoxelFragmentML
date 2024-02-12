@@ -307,9 +307,9 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_steps = glm::ceil(vec3(_numDivs) / vec3(_gridSubdivisions));
 	_numThreads = _steps.x * _steps.y * _steps.z;
 	_numGroups = ComputeShader::getNumGroups(_numThreads);
-	unsigned maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3;
-	_indices = new unsigned[maxNumPoints];
-	std::iota(_indices, _indices + maxNumPoints, 0);
+	_maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3;
+	_indices = new unsigned[_maxNumPoints];
+	std::iota(_indices, _indices + _maxNumPoints, 0);
 
 	// Shaders
 	_buildMarchingCubesShader = ShaderList::getInstance()->getComputeShader(RendEnum::BUILD_MARCHING_CUBES_FACES);
@@ -331,22 +331,22 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_resetLaplacianShader = ShaderList::getInstance()->getComputeShader(RendEnum::RESET_LAPLACIAN_SMOOTHING);
 
 	// Buffers 
-	_verticesSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_supportVerticesSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints * 12, GL_DYNAMIC_DRAW);
+	_verticesSSBO = ComputeShader::setWriteBuffer(vec4(), _maxNumPoints, GL_DYNAMIC_DRAW);
+	_supportVerticesSSBO = ComputeShader::setWriteBuffer(vec4(), _maxNumPoints * 12, GL_DYNAMIC_DRAW);
 	_nonUpdatedVerticesSSBO = ComputeShader::setWriteBuffer(unsigned(), 1, GL_DYNAMIC_DRAW);
 	_numVerticesSSBO = ComputeShader::setWriteBuffer(unsigned(), 1, GL_DYNAMIC_DRAW);
 
 	_edgeTableSSBO = ComputeShader::setReadBuffer(_edgeTable, 256, GL_STATIC_DRAW);
 	_triangleTableSSBO = ComputeShader::setReadBuffer(_triangleTable, 256 * 16, GL_STATIC_DRAW);
 
-	_mortonCodeSSBO = ComputeShader::setWriteBuffer(unsigned(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_indicesBufferID_1 = ComputeShader::setWriteBuffer(int(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_indicesBufferID_2 = ComputeShader::setWriteBuffer(int(), maxNumPoints, GL_DYNAMIC_DRAW);					// Substitutes indicesBufferID_1 for the next iteration
-	_pBitsBufferID = ComputeShader::setWriteBuffer(int(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_nBitsBufferID = ComputeShader::setWriteBuffer(int(), maxNumPoints, GL_DYNAMIC_DRAW);
+	_mortonCodeSSBO = ComputeShader::setWriteBuffer(unsigned(), _maxNumPoints, GL_DYNAMIC_DRAW);
+	_indicesBufferID_1 = ComputeShader::setWriteBuffer(int(), _maxNumPoints, GL_DYNAMIC_DRAW);
+	_indicesBufferID_2 = ComputeShader::setWriteBuffer(int(), _maxNumPoints, GL_DYNAMIC_DRAW);					// Substitutes indicesBufferID_1 for the next iteration
+	_pBitsBufferID = ComputeShader::setWriteBuffer(int(), _maxNumPoints, GL_DYNAMIC_DRAW);
+	_nBitsBufferID = ComputeShader::setWriteBuffer(int(), _maxNumPoints, GL_DYNAMIC_DRAW);
 
-	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), maxNumPoints, GL_DYNAMIC_DRAW);
-	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), maxNumPoints / 3, GL_DYNAMIC_DRAW);
+	_vertexSSBO = ComputeShader::setWriteBuffer(vec4(), _maxNumPoints, GL_DYNAMIC_DRAW);
+	_faceSSBO = ComputeShader::setWriteBuffer(uvec4(), _maxNumPoints / 3, GL_DYNAMIC_DRAW);
 
 	_gridSSBO = ComputeShader::setWriteBuffer(uint16_t(), _numDivs.x * _numDivs.y * _numDivs.z, GL_STATIC_DRAW);
 }
@@ -390,7 +390,7 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 				_marchingCubesShader->setUniform("targetValue", targetValue);
 				_marchingCubesShader->execute(_numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
-				unsigned numVertices = *ComputeShader::readData(_numVerticesSSBO, unsigned());
+				unsigned numVertices = glm::min(*ComputeShader::readData(_numVerticesSSBO, unsigned()), _maxNumPoints);
 				//vec4* vertexData = ComputeShader::readData(_verticesSSBO, vec4());
 
 				if (numVertices)
