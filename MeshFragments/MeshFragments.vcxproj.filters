@@ -612,14 +612,14 @@
     <ClInclude Include="Source\DataStructures\Bvh.h">
       <Filter>Archivos de encabezado\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Utilities\ResourceTracker.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
     <ClInclude Include="Source\DataStructures\GStack.h">
       <Filter>Archivos de encabezado\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="Source\DataStructures\QuadStack.h">
       <Filter>Archivos de encabezado\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Utilities\ResourceTracker.h">
+      <Filter>Archivos de encabezado\Utilities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

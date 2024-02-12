@@ -1,13 +1,20 @@
 #pragma once
 
-class ResourceTracker
+#include "Utilities/Singleton.h"
+
+class ResourceTracker: public Singleton<ResourceTracker>
 {
+	friend class Singleton<ResourceTracker>;
+
 protected:
 	std::ofstream _stream;
 
 public:
 	enum MeasurementType { CPU, RAM, VIRTUAL_MEMORY, GPU, NUM_MEASUREMENT_TYPES };
 	const static char* Measurements_STR[NUM_MEASUREMENT_TYPES];
+
+	enum EventType { MEMORY_ALLOCATION, MODEL_LOAD, VOXELIZATION, FRACTURE, DATA_TYPE_CONVERSION, STORAGE, NULL_EVENT, NUM_EVENTS };
+	const static char* Event_STR[NUM_EVENTS];
 
 	struct Measurement
 	{
@@ -28,8 +35,10 @@ public:
 	};
 
 protected:
-	bool			_interrupt;
-	std::thread		_thread;
+	EventType 				_currentEvent;
+	bool					_interrupt;
+	std::thread				_thread;
+	std::binary_semaphore	_writingSemaphore;
 
 	// CPU
 	ULARGE_INTEGER	_lastCPU, _lastSysCPU, _lastUserCPU;
@@ -37,6 +46,8 @@ protected:
 	HANDLE			_self;
 
 protected:
+	ResourceTracker();
+
 	void initCPUResources();
 	void measureCPUUsage(Measurement& measurement);
 	void measureGPUMemory(Measurement& measurement);
@@ -44,7 +55,6 @@ protected:
 	void threadedWatch(long waitMilliseconds);
 
 public:
-	ResourceTracker();
 	~ResourceTracker();
 
 	bool openStream(const std::string& filename);
@@ -52,6 +62,7 @@ public:
 
 	Measurement measure();
 	static void print(const Measurement& measurement);
+	void recordEvent(const EventType eventType);
 	void track(long waitMilliseconds = 1000);
 };
 

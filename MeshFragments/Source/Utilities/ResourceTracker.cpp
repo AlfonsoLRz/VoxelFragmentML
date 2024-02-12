@@ -1,13 +1,15 @@
 #include "stdafx.h"
 #include "ResourceTracker.h"
 
+#include "ChronoUtilities.h"
 #include "Graphics/Core/ComputeShader.h"
 
 const char* ResourceTracker::Measurements_STR[] = { "CPU", "RAM", "VIRTUAL_MEMORY", "GPU"};
+const char* ResourceTracker::Event_STR[] = { "MEMORY_ALLOCATION", "VOXELIZATION", "MODEL_LOAD", "FRACTURE", "DATA_TYPE_CONVERSION", "STORAGE", "NULL" };
 
 // Public methods
 
-ResourceTracker::ResourceTracker()
+ResourceTracker::ResourceTracker(): _currentEvent(NULL_EVENT), _writingSemaphore(1)
 {
 	this->initCPUResources();
 }
@@ -24,9 +26,7 @@ bool ResourceTracker::openStream(const std::string& filename)
 
 	_stream = std::ofstream(filename, std::ios::out);
 	if (_stream.is_open())
-	{
 		return true;
-	}
 
 	throw std::runtime_error("Failed to open file " + filename);
 }
@@ -34,6 +34,7 @@ bool ResourceTracker::openStream(const std::string& filename)
 bool ResourceTracker::closeStream()
 {
 	_interrupt = true;
+	_thread.join();
 	return true;
 }
 
@@ -54,10 +55,25 @@ void ResourceTracker::print(const Measurement& measurement)
 	std::cout << "----------------------------------------" << std::endl;
 }
 
+void ResourceTracker::recordEvent(const EventType eventType)
+{
+	if (_currentEvent != eventType)
+	{
+		if (_currentEvent != NULL_EVENT)
+		{
+			_writingSemaphore.acquire();
+			_stream << "* " << Event_STR[_currentEvent] << ": " << ChronoUtilities::getDuration() << " ms" << std::endl;
+			_writingSemaphore.release();
+		}
+
+		ChronoUtilities::initChrono();
+		_currentEvent = eventType;
+	}
+}
+
 void ResourceTracker::track(long waitMilliseconds)
 {
 	_thread = std::thread(&ResourceTracker::threadedWatch, this, waitMilliseconds);
-	_thread.detach();
 }
 
 // Protected methods
@@ -144,7 +160,9 @@ void ResourceTracker::threadedWatch(long waitMilliseconds)
 		// Write measurements to file
 		if (!_interrupt && _stream.is_open())
 		{
+			_writingSemaphore.acquire();
 			measurement.write(_stream);
+			_writingSemaphore.release();
 			std::this_thread::sleep_for(std::chrono::milliseconds(waitMilliseconds));
 		}
 		else

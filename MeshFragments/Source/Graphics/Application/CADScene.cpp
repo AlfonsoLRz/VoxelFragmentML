@@ -158,10 +158,7 @@ std::string CADScene::fractureGrid(std::vector<FragmentationProcedure::FragmentM
 	if (!_generateDataset && _meshGrid)
 		this->allocateMeshGrid(_fractParameters);
 	this->rebuildGrid(fractureParameters);
-	std::string result = this->fractureModel(fractureParameters);
-	this->prepareScene(fractureParameters, fragmentMetadata);
-
-	return result;
+	return this->fractureModel(fractureParameters);
 }
 
 std::string CADScene::fractureGrid(const std::string& path, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters)
@@ -217,13 +214,21 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		while (!fileList.empty() && fileList[0].find(fractureProcedure._startVessel) == std::string::npos);
 	}
 
+	ResourceTracker* tracker = ResourceTracker::getInstance();
+	tracker->openStream("Output/log" + ChronoUtilities::getCurrentDateTime() + ".txt");
+	tracker->track(5000);
+
 	this->_generateDataset = true;
+
+	tracker->recordEvent(ResourceTracker::MEMORY_ALLOCATION);
 	this->allocateMemoryDataset(fractureProcedure);
 
 	for (const std::string& path : fileList)
 	{
 		std::vector<FragmentationProcedure::FragmentMetadata> modelMetadata;
 		std::vector<std::thread*> threads;
+
+		tracker->recordEvent(ResourceTracker::MODEL_LOAD);
 		this->loadModel(path);
 
 		const std::string modelName = _mesh->getShortName();
@@ -250,11 +255,15 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 		// Initialize grid content
 		unsigned maxDimension = glm::max(fractureProcedure._fractureParameters._voxelizationSize.x, glm::max(fractureProcedure._fractureParameters._voxelizationSize.y, fractureProcedure._fractureParameters._voxelizationSize.z));
+		
+		tracker->recordEvent(ResourceTracker::VOXELIZATION);
 		_meshGrid->setAABB(_mesh->getAABB(), fractureProcedure._fractureParameters._voxelizationSize);
 		_meshGrid->fill(_mesh);
 		_meshGrid->resetMarchingCubes();
 
 		// Save representations from the starting mesh
+		tracker->recordEvent(ResourceTracker::STORAGE);
+
 		if (fractureProcedure._fractureParameters._exportPointCloud)
 			this->exportPointCloud(fractureProcedure._fractureParameters, meshFolder);
 
@@ -287,8 +296,13 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 				const std::string itFile = fragmentFile + std::to_string(maxDimension) + "r_" + std::to_string(iteration) + "it";
 				std::vector<FragmentationProcedure::FragmentMetadata> localMetadata;
 
+				tracker->recordEvent(ResourceTracker::FRACTURE);
 				this->fractureGrid(fragmentMetadata, fractureProcedure._fractureParameters);
 
+				tracker->recordEvent(ResourceTracker::DATA_TYPE_CONVERSION);
+				this->prepareScene(fractureProcedure._fractureParameters, fragmentMetadata);
+
+				tracker->recordEvent(ResourceTracker::STORAGE);
 				// Grid
 				if (fractureProcedure._fractureParameters._exportGrid)
 				{
@@ -398,21 +412,23 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 			std::cout << std::endl;
 		}
 
+		tracker->recordEvent(ResourceTracker::NULL_EVENT);
 		this->exportMetadata(meshFile, modelMetadata);
 
-		if (fractureProcedure._compressResultingFiles)
+		progressbar threadBar(threads.size());
+		std::cout << "Waiting threads to finish..." << std::endl;
+		for (int threadIdx = 0; threadIdx < threads.size(); ++threadIdx)
 		{
-			progressbar threadBar(threads.size());
-			std::cout << "Waiting threads to finish..." << std::endl;
-			for (int threadIdx = 0; threadIdx < threads.size(); ++threadIdx)
-			{
-				threadBar.update();
-				if (!threads[threadIdx]) continue;
-				threads[threadIdx]->join();
-			}
+			threadBar.update();
+			if (!threads[threadIdx]) continue;
+			threads[threadIdx]->join();
+			delete threads[threadIdx];
+		}
 
-			std::cout << std::endl;
-			
+		std::cout << std::endl;
+
+		if (fractureProcedure._compressResultingFiles)
+		{		
 			if (fractureProcedure._fractureParameters._exportGrid)
 			{
 				#if TESTING_FORMAT_MODE
@@ -456,11 +472,6 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 			}
 		}
 
-		for (std::thread* thread : threads)
-		{
-			if (thread) delete thread;
-		}
-
 		//if (!fractureProcedure._onlineFolder.empty())
 		//{
 		//	if (!std::filesystem::exists(fractureProcedure._onlineFolder)) std::filesystem::create_directory(fractureProcedure._onlineFolder);
@@ -468,7 +479,11 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		//	std::thread copyFolder(&CADScene::launchCopyingProcess, this, meshFolder, fractureProcedure._onlineFolder + modelName);
 		//	copyFolder.detach();
 		//}
+
+		break;
 	}
+
+	tracker->closeStream();
 }
 
 void CADScene::hit(const Model3D::RayGPUData& ray)

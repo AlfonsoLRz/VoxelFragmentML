@@ -26,6 +26,11 @@ namespace ChronoUtilities
 	{
 		std::chrono::high_resolution_clock::time_point _initTime;
 	}
+	
+	/**
+	*	@return The current date and time in the format "YYYY-MM-DD HH:MM:SS".
+	*/
+	std::string getCurrentDateTime();
 
 	/**
 	*	@return Measured time in the selected time unit since the clock was started. By default the time unit is milliseconds.
@@ -36,6 +41,14 @@ namespace ChronoUtilities
 	*	@brief Starts the clock so we can execute whatever we want and measure the used time.
 	*/
 	void initChrono();
+}
+
+inline std::string ChronoUtilities::getCurrentDateTime()
+{
+	time_t now = time(0);
+	tm* ltm = localtime(&now);
+	std::string dateTime = std::to_string(1900 + ltm->tm_year) + "_" + std::to_string(1 + ltm->tm_mon) + "_" + std::to_string(ltm->tm_mday) + "__" + std::to_string(ltm->tm_hour) + "_" + std::to_string(ltm->tm_min) + "_" + std::to_string(ltm->tm_sec);
+	return dateTime;
 }
 
 inline long long ChronoUtilities::getDuration(const TimeUnit timeUnit)

@@ -1,5 +1,5 @@
 #define GENERATE_DATASET true
-#define TESTING_FORMAT_MODE true
+#define TESTING_FORMAT_MODE false
 
 #include <windows.h>								// DWORD is undefined otherwise
 #include <Psapi.h>
@@ -39,6 +39,7 @@
 #include <numeric>
 #include <random>
 #include <regex>
+#include <semaphore>
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
