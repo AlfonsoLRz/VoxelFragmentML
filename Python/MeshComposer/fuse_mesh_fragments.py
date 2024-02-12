@@ -36,8 +36,8 @@ COLORS = np.array([
     [0, 0, 0, 255]
 ])
 
-folder = '../../../Datasets/AL_05L/'
-target_mesh_pattern = 'AL_05L_10f_1it*1000*'
+folder = 'assets/TU_96_2/'
+target_mesh_pattern = '*.stl'
 target_format = '.glb'
 flip_vertical = True
 

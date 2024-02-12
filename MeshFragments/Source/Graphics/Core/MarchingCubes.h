@@ -13,6 +13,7 @@ protected:
 protected:
 	unsigned        _gridSubdivisions;
 	unsigned*		_indices;
+	unsigned		_maxNumPoints;
 	unsigned        _maxTriangles;
 	uvec3           _numDivs;
 	unsigned        _numGroups;
