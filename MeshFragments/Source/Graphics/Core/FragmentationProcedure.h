@@ -10,9 +10,10 @@ struct FragmentationProcedure
 
 	FractureParameters	_fractureParameters;
 	ivec2				_fragmentInterval = ivec2(2, 10);
-	ivec2				_iterationInterval = ivec2(15, 5);
-	std::string			_folder = "D:/allopezr/Datasets/Vessels_200/";
-	std::string			_destinationFolder = "D:/allopezr/Fragments/Vessels_200/";
+	ivec2				_iterationInterval = ivec2(25, 15);
+	std::string			_folder = "D:/allopezr/Datasets/Vessels_20/";
+	std::string			_destinationFolder = "D:/allopezr/Fragments/Vessels_20/allopezr/";
+	size_t				_maxFragmentsModel = /*std::numeric_limits<size_t>::max()*/1000;
 	std::string			_onlineFolder = "E:/Online_Testing/";
 	std::string			_startVessel = "";
 	std::string			_searchExtension = ".obj";
@@ -51,9 +52,9 @@ struct FragmentationProcedure
 		_fractureParameters._exportMesh = true;
 		_fractureParameters._exportPointCloud = true;
 
-		_fractureParameters._exportGridExtension = FractureParameters::VOX;
-		_fractureParameters._exportMeshExtension = FractureParameters::STL;
-		_fractureParameters._exportPointCloudExtension = FractureParameters::ExportPointCloudExtension::PLY;
+		_fractureParameters._exportGridExtension = FractureParameters::RLE;
+		_fractureParameters._exportMeshExtension = FractureParameters::BINARY_MESH;
+		_fractureParameters._exportPointCloudExtension = FractureParameters::ExportPointCloudExtension::COMPRESSED_POINT_CLOUD;
 	}
 };
 

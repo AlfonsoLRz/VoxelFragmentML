@@ -92,7 +92,7 @@ public:
 		_biasSeeds(32),
 		_boundaryMCIterations(0.02f),
 		_boundaryMCWeight(0.2f),
-		_clampVoxelMetricUnit(256),
+		_clampVoxelMetricUnit(128),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
 		_erosionProbability(.5f),
@@ -127,7 +127,7 @@ public:
 
 		_exportGridExtension(VOX),
 		_exportMeshExtension(STL),
-		_exportPointCloudExtension(COMPRESSED_POINT_CLOUD),
+		_exportPointCloudExtension(PLY),
 
 		_exportGrid(false),
 		_exportMesh(false),

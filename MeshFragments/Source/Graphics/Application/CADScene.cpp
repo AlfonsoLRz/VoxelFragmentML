@@ -216,7 +216,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 	ResourceTracker* tracker = ResourceTracker::getInstance();
 	tracker->openStream("Output/log" + ChronoUtilities::getCurrentDateTime() + ".txt");
-	tracker->track(5000);
+	tracker->track(10000);
 
 	this->_generateDataset = true;
 
@@ -275,7 +275,9 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 
 		_mesh->getModelComponent(0)->releaseMemory();
 
-		for (int numFragments = fractureProcedure._fragmentInterval.x; numFragments <= fractureProcedure._fragmentInterval.y; ++numFragments)
+		size_t numGeneratedFragments = 0;
+
+		for (int numFragments = fractureProcedure._fragmentInterval.x; numFragments <= fractureProcedure._fragmentInterval.y && numGeneratedFragments < fractureProcedure._maxFragmentsModel; ++numFragments)
 		{
 			const std::string fragmentFile = meshFile + std::to_string(numFragments) + "f_";
 
@@ -288,7 +290,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 			std::cout << modelName << " - " << numFragments << " fragments ";
 			progressbar bar(numIterations);
 
-			for (int iteration = 0; iteration < numIterations; ++iteration)
+			for (int iteration = 0; iteration < numIterations && numGeneratedFragments < fractureProcedure._maxFragmentsModel; ++iteration)
 			{
 				bar.update();
 
@@ -405,6 +407,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 					++idx;
 				}
 
+				numGeneratedFragments += _fractureMeshes.size();
 				modelMetadata.insert(modelMetadata.end(), localMetadata.begin(), localMetadata.end());
 				fragmentMetadata.clear();
 			}
@@ -479,8 +482,6 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		//	std::thread copyFolder(&CADScene::launchCopyingProcess, this, meshFolder, fractureProcedure._onlineFolder + modelName);
 		//	copyFolder.detach();
 		//}
-
-		break;
 	}
 
 	tracker->closeStream();
