@@ -28,7 +28,7 @@ def calculate_footprint(p_idx, files_t, unit_divisor=1024 ** 2):
 
 
 if __name__ == '__main__':
-    resolution = [64, 96, 128]
+    resolution = [64, 128]
     #resolution = [128]
     extensions = [['.bing', '.vox', '.rle', '.qstack'], ['.ply', '.xyz', '.binp'], ['.obj', '.stl', '.binm']]
     headers = [['Binary raw grid', 'MagicaVoxel', 'RLE', 'QuadStack'], ['PLY', 'XYZ', 'Compressed binary'],
@@ -75,6 +75,22 @@ if __name__ == '__main__':
     average_footprint_compressed = footprint_compressed / count_files
     average_footprint_uncompressed = footprint_uncompressed / count_files
 
+    # latex_table_str = ''
+    # for data_type_idx, data_type in enumerate(headers):
+    #     for extension_idx, extension in enumerate(data_type):
+    #         latex_table_str += '\\textbf{' + headers[data_type_idx][extension_idx] + '} & '
+    #
+    #         for res_idx, res in enumerate(resolution):
+    #             latex_table_str += (f'{footprint_compressed[res_idx, data_type_idx, extension_idx]/1024:.2f}GB '
+    #                                 f'({footprint_uncompressed[res_idx, data_type_idx, extension_idx]/1024:.2f}GB) & ')
+    #             latex_table_str += (f'{average_footprint_compressed[res_idx, data_type_idx, extension_idx]:.2f}MB '
+    #                                 f'({average_footprint_uncompressed[res_idx, data_type_idx, extension_idx]:.2f}MB) '
+    #                                 f'& ')
+    #
+    #         latex_table_str = latex_table_str[:-2] + '\\\\ \n'
+    #     latex_table_str = latex_table_str[:-2] + '\n\cmidrule{1-7}\n'
+    # latex_table_str = latex_table_str[:-1]
+
     latex_table_str = ''
     for data_type_idx, data_type in enumerate(headers):
         for extension_idx, extension in enumerate(data_type):
@@ -83,12 +99,9 @@ if __name__ == '__main__':
             for res_idx, res in enumerate(resolution):
                 latex_table_str += (f'{footprint_compressed[res_idx, data_type_idx, extension_idx]/1024:.2f}GB '
                                     f'({footprint_uncompressed[res_idx, data_type_idx, extension_idx]/1024:.2f}GB) & ')
-                latex_table_str += (f'{average_footprint_compressed[res_idx, data_type_idx, extension_idx]:.2f}MB '
-                                    f'({average_footprint_uncompressed[res_idx, data_type_idx, extension_idx]:.2f}MB) '
-                                    f'& ')
 
             latex_table_str = latex_table_str[:-2] + '\\\\ \n'
-        latex_table_str = latex_table_str[:-2] + '\n\cmidrule{1-7}\n'
+        latex_table_str = latex_table_str[:-2] + '\n\cmidrule{1-4}\n'
     latex_table_str = latex_table_str[:-1]
 
     print(latex_table_str)

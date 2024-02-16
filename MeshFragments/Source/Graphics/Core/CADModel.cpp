@@ -17,7 +17,7 @@ std::unordered_map<std::string, std::unique_ptr<Material>> CADModel::_cadMateria
 std::unordered_map<std::string, std::unique_ptr<Texture>> CADModel::_cadTextures;
 
 const std::string CADModel::BINARY_EXTENSION = ".bin";
-const float CADModel::MODEL_NORMALIZATION_SCALE = 5.0f;
+const float CADModel::MODEL_NORMALIZATION_SCALE = .2499999f;
 
 /// [Public methods]
 
@@ -803,41 +803,27 @@ void CADModel::saveAssimp(const std::string& filename, const std::string& extens
 
 	auto pMesh = scene->mMeshes[0];
 
-	// Retrieving info from the model
-	std::vector<glm::vec3> vertices;
-	std::vector<ivec3> faces;
-
-	for (VertexGPUData& vertex : component->_geometry)
-		vertices.push_back(vertex._position);
-
-	for (FaceGPUData& face : component->_topology)
-		faces.push_back(ivec3(face._vertices.x, face._vertices.y, face._vertices.z));
-
 	// Vertex generation
-	const auto& assimpVertices = vertices;
+	pMesh->mVertices = new aiVector3D[component->_geometry.size()];
+	pMesh->mNumVertices = component->_geometry.size();
 
-	pMesh->mVertices = new aiVector3D[assimpVertices.size()];
-	pMesh->mNumVertices = assimpVertices.size();
-
-	int j = 0;
-	for (auto itr = assimpVertices.begin(); itr != assimpVertices.end(); ++itr)
-	{
-		pMesh->mVertices[itr - assimpVertices.begin()] = aiVector3D(assimpVertices[j].x, assimpVertices[j].y, assimpVertices[j].z);
-		++j;
-	}
+	#pragma omp parallel for
+	for (int i = 0; i < component->_geometry.size(); i++)
+		pMesh->mVertices[i] = aiVector3D(component->_geometry[i]._position.x, component->_geometry[i]._position.y, component->_geometry[i]._position.z);
 
 	// Index generation
-	pMesh->mFaces = new aiFace[faces.size()];
-	pMesh->mNumFaces = static_cast<unsigned>(faces.size());
+	pMesh->mFaces = new aiFace[component->_topology.size()];
+	pMesh->mNumFaces = static_cast<unsigned>(component->_topology.size());
 
-	for (size_t i = 0; i < faces.size(); i++)
+	#pragma omp parallel for
+	for (int i = 0; i < component->_topology.size(); i++)
 	{
 		aiFace& face = pMesh->mFaces[i];
 		face.mIndices = new unsigned int[3];
 		face.mNumIndices = 3;
-		face.mIndices[0] = faces[i].x;
-		face.mIndices[1] = faces[i].y;
-		face.mIndices[2] = faces[i].z;
+		face.mIndices[0] = component->_topology[i]._vertices.x;
+		face.mIndices[1] = component->_topology[i]._vertices.y;
+		face.mIndices[2] = component->_topology[i]._vertices.z;
 	}
 
 	Assimp::Exporter exporter;
@@ -852,9 +838,6 @@ void CADModel::saveBinary(const std::string& filename, Model3D::ModelComponent* 
 	std::ofstream fout(filename, std::ios::out | std::ios::binary);
 	if (!fout.is_open())
 		return;
-
-	const size_t numModelComps = _modelComp.size();
-	fout.write((char*)&numModelComps, sizeof(size_t));
 
 	const size_t numVertices = component->_geometry.size();
 	fout.write((char*)&numVertices, sizeof(size_t));

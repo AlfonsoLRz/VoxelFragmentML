@@ -117,7 +117,7 @@ public:
 		_seedingRandom(STD_UNIFORM),
 		_biasFocus(5),
 		_targetPoints({ 4096 }),
-		_targetTriangles({ 5000 }),
+		_targetTriangles({ }),
 		_voxelPerMetricUnit(20),
 		_voxelizationSize(256),
 
@@ -126,12 +126,12 @@ public:
 		_renderPointCloud(false),
 
 		_exportGridExtension(VOX),
-		_exportMeshExtension(STL),
+		_exportMeshExtension(OBJ),
 		_exportPointCloudExtension(PLY),
 
 		_exportGrid(false),
-		_exportMesh(false),
-		_exportPointCloud(false)
+		_exportMesh(true),
+		_exportPointCloud(true)
 	{
 		std::qsort(_targetTriangles.data(), _targetTriangles.size(), sizeof(int), [](const void* a, const void* b) {
 			return *(int*)b - *(int*)a;
