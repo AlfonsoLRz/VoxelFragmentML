@@ -90,8 +90,8 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(32),
-		_boundaryMCIterations(0.02f),
-		_boundaryMCWeight(0.2f),
+		_boundaryMCIterations(0.015f),
+		_boundaryMCWeight(0.43f),
 		_clampVoxelMetricUnit(128),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
@@ -106,8 +106,8 @@ public:
 		_mergeSeedsDistanceFunction(EUCLIDEAN),
 		_metricVoxelization(false),
 		_neighbourhoodType(VON_NEUMANN),
-		_nonBoundaryMCIterations(0.04),
-		_nonBoundaryMCWeight(0.3f),
+		_nonBoundaryMCIterations(0.048),
+		_nonBoundaryMCWeight(0.7f),
 		_numExtraSeeds(64),
 		_numImpacts(0),
 		_numSeeds(8),

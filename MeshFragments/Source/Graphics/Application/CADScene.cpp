@@ -21,8 +21,8 @@
 
 /// Initialization of static attributes
 const std::string CADScene::INTERACTIVE_APP_FOLDER = "Output/";
-//const std::string CADScene::TARGET_PATH = "D:/PyCharm/BlenderRenderer/assets/GU_033.obj";
-const std::string CADScene::TARGET_PATH = "D:/allopezr/Research/Lucy_decimated_0_1.obj";
+const std::string CADScene::TARGET_PATH = "E:/objmodels/PO_025.obj";
+//const std::string CADScene::TARGET_PATH = "D:/allopezr/Research/Lucy_decimated_0_1.obj";
 
 // [Public methods]
 
@@ -158,7 +158,10 @@ std::string CADScene::fractureGrid(std::vector<FragmentationProcedure::FragmentM
 	if (!_generateDataset && _meshGrid)
 		this->allocateMeshGrid(_fractParameters);
 	this->rebuildGrid(fractureParameters);
-	return this->fractureModel(fractureParameters);
+	const std::string result = this->fractureModel(fractureParameters);
+	this->prepareScene(fractureParameters, fragmentMetadata);
+
+	return result;
 }
 
 std::string CADScene::fractureGrid(const std::string& path, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters)

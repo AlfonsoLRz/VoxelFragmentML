@@ -233,7 +233,7 @@ void GUI::showFractureSettings()
 			{
 				ImGui::SliderInt("Grid Subdivisions", &_fractureParameters->_voxelizationSize[0], 1, _fractureParameters->_clampVoxelMetricUnit);
 
-				int maxSeeds = std::pow(2, fracturer::Seeder::VOXEL_ID_POSITION) / 32;
+				int maxSeeds = std::pow(2, fracturer::Seeder::VOXEL_ID_POSITION) / 2;
 
 				ImGui::Combo("Distance Function", &_fractureParameters->_distanceFunction, FractureParameters::Distance_STR, IM_ARRAYSIZE(FractureParameters::Distance_STR));
 					
