@@ -1,4 +1,4 @@
-#define GENERATE_DATASET true
+#define GENERATE_DATASET false
 #define TESTING_FORMAT_MODE false
 
 #include <windows.h>								// DWORD is undefined otherwise
