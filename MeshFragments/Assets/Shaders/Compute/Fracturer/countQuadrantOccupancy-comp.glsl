@@ -12,20 +12,29 @@ layout (std430, binding = 1) buffer Counter			{ uint			counter[]; };
 
 #include <Assets/Shaders/Compute/Fracturer/voxel.glsl>
 
-uniform uint numCells, subdivisions;
-uniform uvec3 step;
+uniform uint numCells;
 
 void main()
 {
 	const uint index = gl_GlobalInvocationID.x;
 	if (index >= numCells) return;
 
-	if (grid[index].value >= VOXEL_FREE)
-	{
-		uvec3 position = getPosition(index);
-		uvec3 counterPosition = uvec3(floor(vec3(position) / step));
-		uint counterIndex = counterPosition.x * subdivisions * subdivisions + counterPosition.y * subdivisions + counterPosition.z;
+	ivec3 position = ivec3(getPosition(index));
+	ivec3 minPosition = min(position - ivec3(1), ivec3(0)), maxPosition = max(position + ivec3(1), ivec3(gridDims) - ivec3(1));
+	bool allEqual = true;
+	uint16_t value = grid[index].value;
 
-		atomicAdd(counter[counterIndex], 1);
+	for (uint x = minPosition.x; x <= maxPosition.x && allEqual; x++)
+	{
+		for (uint y = minPosition.y; y <= maxPosition.y && allEqual; y++)
+		{
+			for (uint z = minPosition.z; z <= maxPosition.z && allEqual; z++)
+			{
+				allEqual = allEqual && grid[getPositionIndex(uvec3(x, y, z))].value == value;
+			}
+		}
 	}
+
+	if (!allEqual)
+		atomicAdd(counter[0], 1);
 }

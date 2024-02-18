@@ -133,7 +133,7 @@ void PointCloud3D::subselect(unsigned numPoints)
 
 void PointCloud3D::saveCompressed(const std::string& filename, const std::vector<glm::vec4>&& points)
 {
-	pcl::io::compression_Profiles_e compressionProfile = pcl::io::MED_RES_OFFLINE_COMPRESSION_WITHOUT_COLOR;
+	pcl::io::compression_Profiles_e compressionProfile = pcl::io::HIGH_RES_OFFLINE_COMPRESSION_WITHOUT_COLOR;
 	auto encoder = new pcl::io::OctreePointCloudCompression<pcl::PointXYZ>(compressionProfile, false);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
 

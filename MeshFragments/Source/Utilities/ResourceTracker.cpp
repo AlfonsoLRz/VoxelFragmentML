@@ -5,7 +5,7 @@
 #include "Graphics/Core/ComputeShader.h"
 
 const char* ResourceTracker::Measurements_STR[] = { "CPU", "RAM", "VIRTUAL_MEMORY", "GPU"};
-const char* ResourceTracker::Event_STR[] = { "MEMORY_ALLOCATION", "VOXELIZATION", "MODEL_LOAD", "FRACTURE", "DATA_TYPE_CONVERSION", "STORAGE", "NULL" };
+const char* ResourceTracker::Event_STR[] = { "MEMORY_ALLOCATION", "VOXELIZATION", "LOAD_MODEL", "FRAGMENTATION", "DATA_TYPE_CONVERSION", "STORAGE", "NULL" };
 
 // Public methods
 
@@ -69,6 +69,13 @@ void ResourceTracker::recordEvent(const EventType eventType)
 		ChronoUtilities::initChrono();
 		_currentEvent = eventType;
 	}
+}
+
+void ResourceTracker::recordFilename(const std::string& filename)
+{
+	_writingSemaphore.acquire();
+	_stream << "- " << filename << std::endl;
+	_writingSemaphore.release();
 }
 
 void ResourceTracker::track(long waitMilliseconds)

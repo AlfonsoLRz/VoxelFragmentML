@@ -46,14 +46,13 @@ unsigned RegularGrid::calculateMaxQuadrantOccupancy(unsigned subdivisions) const
 	unsigned numGroups = ComputeShader::getNumGroups(numCells);
 	uvec3 step = glm::ceil(vec3(_numDivs) / vec3(subdivisions));
 
-	this->resetBuffer(_countSSBO, unsigned(0), numCells);
+	glm::uint zero = 0;
+	ComputeShader::updateReadBufferSubset(_countSSBO, &zero, 0, 1);
 
 	_countQuadrantOccupancyShader->bindBuffers(std::vector<GLuint>{ _ssbo, _countSSBO });
 	_countQuadrantOccupancyShader->use();
 	_countQuadrantOccupancyShader->setUniform("gridDims", numDivs);
 	_countQuadrantOccupancyShader->setUniform("numCells", numCells);
-	_countQuadrantOccupancyShader->setUniform("step", step);
-	_countQuadrantOccupancyShader->setUniform("subdivisions", subdivisions);
 	_countQuadrantOccupancyShader->execute(numGroups, 1, 1, ComputeShader::getMaxGroupSize(), 1, 1);
 
 	unsigned* countData = ComputeShader::readData(_countSSBO, unsigned());
@@ -173,6 +172,7 @@ void RegularGrid::exportGrid(const std::string& filename, bool squared, Fracture
 
 void RegularGrid::fill(Model3D* model)
 {
+	bool activeVoxels = false;
 	Tetravoxelizer tetravoxelizer;
 	tetravoxelizer.initialize(_numDivs);
 
@@ -192,7 +192,10 @@ void RegularGrid::fill(Model3D* model)
 				{
 					positionIndex = y * _numDivs.x * _numDivs.z + z * _numDivs.x + x;
 					if (_voxelOpenGL[positionIndex] == 1)
+					{
 						this->set(x, y, z, VOXEL_FREE);
+						activeVoxels = true;
+					}
 				}
 			}
 		}
@@ -201,7 +204,7 @@ void RegularGrid::fill(Model3D* model)
 	tetravoxelizer.deleteResources();
 	this->updateSSBO();
 
-	if (!this->calculateMaxQuadrantOccupancy())
+	if (!activeVoxels)
 	{
 		this->fillNaive(model);
 		this->updateSSBO();
@@ -671,18 +674,18 @@ void RegularGrid::exportRLE(const std::string& filename)
 	struct RLEData
 	{
 		uint16_t value;
-		size_t repetitions;
+		uint32_t repetitions;
 	};
 
 	// Save in a binary file how many repetitions exist 
-	size_t size = _numDivs.x * _numDivs.y * _numDivs.z;
+	uint32_t size = _numDivs.x * _numDivs.y * _numDivs.z;
 	std::ofstream file(filename, std::ios::out | std::ios::binary);
 	std::vector<RLEData> rleData;
 
 	if (file.is_open())
 	{
 		uint16_t value = std::numeric_limits<uint16_t>::max();
-		size_t repetitions = 0, idx = 0;
+		uint32_t repetitions = 0, idx = 0;
 
 		while (idx < size)
 		{
@@ -700,7 +703,11 @@ void RegularGrid::exportRLE(const std::string& filename)
 		}
 
 		file.write(reinterpret_cast<char*>(&_numDivs), sizeof(glm::uvec3));
-		file.write(reinterpret_cast<char*>(rleData.data()), rleData.size() * sizeof(RLEData));
+		for (RLEData& data : rleData)
+		{
+			file.write(reinterpret_cast<char*>(&data.value), sizeof(uint16_t));
+			file.write(reinterpret_cast<char*>(&data.repetitions), sizeof(uint32_t));
+		}
 
 		file.close();
 	}
@@ -795,7 +802,7 @@ void RegularGrid::fillNaive(Model3D* model)
 	CADModel* cadModel = dynamic_cast<CADModel*>(model);
 	if (cadModel)
 	{
-		static const unsigned numVoxelizationSamples = cadModel->getAABB().volume() * 1000;
+		static const unsigned numVoxelizationSamples = cadModel->getAABB().volume() * 10000;
 		PointCloud3D* sampledPointCloud = cadModel->sampleCPU(numVoxelizationSamples, 0);
 		auto points = sampledPointCloud->getPoints();
 
@@ -832,6 +839,15 @@ uvec3 RegularGrid::getPositionIndex(const vec3& position)
 unsigned RegularGrid::getPositionIndex(int x, int y, int z) const
 {
 	return x * _numDivs.y * _numDivs.z + y * _numDivs.z + z;
+}
+
+unsigned RegularGrid::getVoxelCountEarlyExit() const
+{
+	for (const CellGrid& grid : _grid)
+		if (grid._value >= VOXEL_FREE)
+			return 1;
+
+	return 0;
 }
 
 bool RegularGrid::rayBoxIntersection(const Model3D::RayGPUData& ray, float& tMin, float& tMax, float t0, float t1)

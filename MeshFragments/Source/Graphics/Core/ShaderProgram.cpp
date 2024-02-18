@@ -1,18 +1,16 @@
 #include "stdafx.h"
 #include "ShaderProgram.h"
 
-// [Static variables initialization]
+// Static variables initialization
 
 const std::string ShaderProgram::MODULE_HEADER = "#include";
 const std::string ShaderProgram::MODULE_FILE_CHAR_1 = "<";
 const std::string ShaderProgram::MODULE_FILE_CHAR_2 = ">";
-
 std::unordered_map<std::string, std::string> ShaderProgram::_moduleCode;
 
-/// [Public methods]
+// Public methods
 
-ShaderProgram::ShaderProgram()
-	: _handler(0), _linked(false), _logString("")
+ShaderProgram::ShaderProgram() : _handler(0), _linked(false), _logString("")
 {
 }
 
@@ -22,8 +20,8 @@ ShaderProgram::~ShaderProgram()
 
 bool ShaderProgram::setSubroutineUniform(const GLenum shaderType, const std::string& subroutine, const std::string& functionName)
 {
-	GLint subroutineID	= glGetSubroutineUniformLocation(_handler, shaderType, subroutine.c_str());
-	GLint uniformID		= glGetSubroutineIndex(_handler, shaderType, functionName.c_str());
+	GLint subroutineID = glGetSubroutineUniformLocation(_handler, shaderType, subroutine.c_str());
+	GLint uniformID = glGetSubroutineIndex(_handler, shaderType, functionName.c_str());
 
 	if (subroutineID >= 0 && uniformID >= 0)			// OpenGL returns -1 if subroutine or uniform doesn't exist
 	{
@@ -38,146 +36,236 @@ bool ShaderProgram::setSubroutineUniform(const GLenum shaderType, const std::str
 
 bool ShaderProgram::setUniform(const std::string& name, GLfloat value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
 		glUniform1f(location, value);
-
 		return true;
 	}
 
-	std::cout << "Cannot find localization for: " << name << std::endl;
-	
-	return false;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform1f(_handler, glGetUniformLocation(_handler, name.c_str()), value);
+	return true;
+#endif
 }
 
 bool ShaderProgram::setUniform(const std::string& name, GLint value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
 		glUniform1i(location, value);
-
 		return true;
 	}
-	
-	std::cout << "Cannot find localization for: " << name << std::endl;
 
-	return false;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform1i(_handler, glGetUniformLocation(_handler, name.c_str()), value);
+	return true;
+#endif
 }
 
 bool ShaderProgram::setUniform(const std::string& name, const GLuint value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
 		glUniform1ui(location, value);
-
 		return true;
 	}
 
-	std::cout << "Cannot find localization for: " << name << std::endl;
-
-	return false;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform1ui(_handler, glGetUniformLocation(_handler, name.c_str()), value);
+	return true;
+#endif
 }
 
 bool ShaderProgram::setUniform(const std::string& name, const mat4& value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
 		glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
-
 		return true;
 	}
 
-	std::cout << "Cannot find localization for: " << name << std::endl;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniformMatrix4fv(_handler, glGetUniformLocation(_handler, name.c_str()), 1, GL_FALSE, &value[0][0]);
+	return true;
+#endif
+}
 
-	return false;
+bool ShaderProgram::setUniform(const std::string& name, const std::vector<mat4>& values)
+{
+#if DEBUG_UNIFORMS	
+	GLint location = glGetUniformLocation(_handler, name.c_str());
+
+	if (location >= 0)
+	{
+		glUniformMatrix4fv(location, values.size(), GL_FALSE, &(values[0][0][0]));
+		return true;
+	}
+
+	return this->showErrorMessage(name);
+#else
+	glProgramUniformMatrix4fv(_handler, glGetUniformLocation(_handler, name.c_str()), values.size(), GL_FALSE, &(values[0][0][0]));
+	return true;
+#endif
 }
 
 bool ShaderProgram::setUniform(const std::string& name, const vec2& value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
 		glUniform2fv(location, 1, &value[0]);
-
 		return true;
 	}
-	
-	std::cout << "Cannot find localization for: " << name << std::endl;
 
-	return false;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform2fv(_handler, glGetUniformLocation(_handler, name.c_str()), 1, &value[0]);
+	return true;
+#endif
+}
+
+bool ShaderProgram::setUniform(const std::string& name, const ivec2& value)
+{
+#if DEBUG_UNIFORMS	
+	GLint location = glGetUniformLocation(_handler, name.c_str());
+
+	if (location >= 0)
+	{
+		glUniform2iv(location, 1, &value[0]);
+		return true;
+	}
+
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform2iv(_handler, glGetUniformLocation(_handler, name.c_str()), 1, &value[0]);
+	return true;
+#endif
 }
 
 bool ShaderProgram::setUniform(const std::string& name, const uvec2& value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
 		glUniform2uiv(location, 1, &value[0]);
-
 		return true;
 	}
 
-	std::cout << "Cannot find localization for: " << name << std::endl;
-
-	return false;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform2uiv(_handler, glGetUniformLocation(_handler, name.c_str()), 1, &value[0]);
+	return true;
+#endif
 }
 
-bool ShaderProgram::setUniform(const std::string& name, const vec3& value)
+bool ShaderProgram::setUniform(const std::string& name, const ivec3& value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
-		glUniform3fv(location, 1, &value[0]);
-
+		glUniform3iv(location, 1, &value[0]);
 		return true;
 	}
 
-	std::cout << "Cannot find localization for: " << name << std::endl;
-
-	return false;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform3iv(_handler, glGetUniformLocation(_handler, name.c_str()), 1, &value[0]);
+	return true;
+#endif
 }
 
 bool ShaderProgram::setUniform(const std::string& name, const uvec3& value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
 		glUniform3uiv(location, 1, &value[0]);
-
 		return true;
 	}
 
-	std::cout << "Cannot find localization for: " << name << std::endl;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform3uiv(_handler, glGetUniformLocation(_handler, name.c_str()), 1, &value[0]);
+	return true;
+#endif
+}
 
-	return false;
+bool ShaderProgram::setUniform(const std::string& name, const vec3& value)
+{
+#if DEBUG_UNIFORMS	
+	GLint location = glGetUniformLocation(_handler, name.c_str());
+
+	if (location >= 0)
+	{
+		glUniform3fv(location, 1, &value[0]);
+		return true;
+	}
+
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform3fv(_handler, glGetUniformLocation(_handler, name.c_str()), 1, &value[0]);
+	return true;
+#endif
 }
 
 bool ShaderProgram::setUniform(const std::string& name, const vec4& value)
 {
+#if DEBUG_UNIFORMS	
 	GLint location = glGetUniformLocation(_handler, name.c_str());
 
 	if (location >= 0)
 	{
 		glUniform4fv(location, 1, &value[0]);
-
 		return true;
 	}
 
-	std::cout << "Cannot find localization for: " << name << std::endl;
+	return this->showErrorMessage(name);
+#else
+	glProgramUniform4fv(_handler, glGetUniformLocation(_handler, name.c_str()), 1, &value[0]);
+	return true;
+#endif
+}
 
-	return false;
+bool ShaderProgram::setUniform(const std::string& name, const std::vector<float>& values)
+{
+#if DEBUG_UNIFORMS	
+	GLint location = glGetUniformLocation(_handler, name.c_str());
+
+	if (location >= 0)
+	{
+		glUniformMatrix4fv(location, values.size(), GL_FALSE, values.data());
+		return true;
+	}
+
+	return this->showErrorMessage(name);
+#else
+	glUniformMatrix4fv(_handler, glGetUniformLocation(_handler, name.c_str()), values.size(), &values[0]);
+	return true;
+#endif
 }
 
 bool ShaderProgram::use()
@@ -185,11 +273,8 @@ bool ShaderProgram::use()
 	if ((_handler > 0) && (_linked))			// Is the program created and linked?
 	{
 		glUseProgram(_handler);
-
 		return true;
 	}
-
-	std::cout << "Cannot use shader program" << std::endl;
 
 	return false;
 }
@@ -201,7 +286,7 @@ GLuint ShaderProgram::compileShader(const char* filename, const GLenum shaderTyp
 	if (!fileExists(filename))
 	{
 		if (shaderType != GL_GEOMETRY_SHADER)
-			fprintf(stderr, "Shader source file %s not found.\n", filename);
+			fprintf(stderr, "Shader source file %s not found!\n", filename);
 
 		return 0;
 	}
@@ -209,20 +294,20 @@ GLuint ShaderProgram::compileShader(const char* filename, const GLenum shaderTyp
 	std::string shaderSourceString;
 	if (!loadFileContent(std::string(filename), shaderSourceString))						// Read shader code
 	{
-		fprintf(stderr, "Cannot open shader source file.\n");
+		fprintf(stderr, "Could not open shader source file!\n");
 		return 0;
 	}
 
 	if (!includeLibraries(shaderSourceString))												// Libraries code not found 
 	{
-		fprintf(stderr, "Cannot include the specified modules.\n");
+		fprintf(stderr, "Could not include the specified modules!\n");
 		return 0;
 	}
 
 	GLuint shaderHandler = glCreateShader(shaderType);
 	if (shaderHandler == 0)
 	{
-		fprintf(stderr, "Cannot create shader object.\n");
+		fprintf(stderr, "Could not create shader object!\n");
 		return 0;
 	}
 
@@ -248,7 +333,7 @@ GLuint ShaderProgram::compileShader(const char* filename, const GLenum shaderTyp
 			_logString.assign(cLogString);
 
 			delete[] cLogString;
-			std::cout << "Cannot compile shader " << shaderType << std::endl << _logString << std::endl;
+			std::cout << "Could not compile shader " << shaderType << std::endl << _logString << "!" << std::endl;
 		}
 	}
 
@@ -257,12 +342,8 @@ GLuint ShaderProgram::compileShader(const char* filename, const GLenum shaderTyp
 
 bool ShaderProgram::fileExists(const std::string& fileName)
 {
-	struct stat info; 
-	int ret = -1;
-
-	ret = stat(fileName.c_str(), &info);
-
-	return 0 == ret;
+	std::ifstream f(fileName.c_str());
+	return f.good();
 }
 
 ShaderProgram::ShaderTypes ShaderProgram::fromOpenGLToShaderTypes(const GLenum shaderType)
@@ -273,8 +354,6 @@ ShaderProgram::ShaderTypes ShaderProgram::fromOpenGLToShaderTypes(const GLenum s
 	case GL_FRAGMENT_SHADER: return FRAGMENT_SHADER;
 	case GL_GEOMETRY_SHADER: return GEOMETRY_SHADER;
 	case GL_COMPUTE_SHADER: return COMPUTE_SHADER;
-	case GL_TESS_CONTROL_SHADER: return TESSELATION_CONTROL_SHADER;
-	case GL_TESS_EVALUATION_SHADER: return TESSELATION_EVAL_SHADER;
 	}
 
 	return VERTEX_SHADER;
@@ -315,7 +394,7 @@ bool ShaderProgram::includeLibraries(std::string& shaderContent)
 		{
 			moduleCodeStr = moduleCode->second;
 		}
-				
+
 		shaderContent.erase(shaderContent.begin() + pos, shaderContent.begin() + char_2 + 1);			// Replace string in shader code
 		shaderContent.insert(pos, moduleCodeStr.c_str());
 		pos = shaderContent.find(MODULE_HEADER);
@@ -341,3 +420,10 @@ bool ShaderProgram::loadFileContent(const std::string& filename, std::string& co
 
 	return true;
 }
+
+bool ShaderProgram::showErrorMessage(const std::string& variableName)
+{
+	std::cerr << "Could not find shader slot for " << variableName << "!" << std::endl;
+	return false;
+}
+

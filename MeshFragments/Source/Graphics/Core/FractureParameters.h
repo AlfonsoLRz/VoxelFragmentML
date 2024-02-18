@@ -91,7 +91,7 @@ public:
 	FractureParameters() :
 		_biasSeeds(32),
 		_boundaryMCIterations(0.015f),
-		_boundaryMCWeight(0.43f),
+		_boundaryMCWeight(0.2f),
 		_clampVoxelMetricUnit(128),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
@@ -106,8 +106,8 @@ public:
 		_mergeSeedsDistanceFunction(EUCLIDEAN),
 		_metricVoxelization(false),
 		_neighbourhoodType(VON_NEUMANN),
-		_nonBoundaryMCIterations(0.048),
-		_nonBoundaryMCWeight(0.7f),
+		_nonBoundaryMCIterations(0.048f),
+		_nonBoundaryMCWeight(0.9f),
 		_numExtraSeeds(64),
 		_numImpacts(0),
 		_numSeeds(8),
@@ -116,7 +116,7 @@ public:
 		_seed(80),
 		_seedingRandom(STD_UNIFORM),
 		_biasFocus(5),
-		_targetPoints({ 4096 }),
+		_targetPoints({ 1024 }),
 		_targetTriangles({ }),
 		_voxelPerMetricUnit(20),
 		_voxelizationSize(256),
@@ -129,7 +129,7 @@ public:
 		_exportMeshExtension(OBJ),
 		_exportPointCloudExtension(PLY),
 
-		_exportGrid(false),
+		_exportGrid(true),
 		_exportMesh(true),
 		_exportPointCloud(true)
 	{

@@ -63,6 +63,7 @@ public:
 	Measurement measure();
 	static void print(const Measurement& measurement);
 	void recordEvent(const EventType eventType);
+	void recordFilename(const std::string& filename);
 	void track(long waitMilliseconds = 1000);
 };
 

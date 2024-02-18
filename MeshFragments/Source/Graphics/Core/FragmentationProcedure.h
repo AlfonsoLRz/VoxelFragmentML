@@ -11,8 +11,8 @@ struct FragmentationProcedure
 	FractureParameters	_fractureParameters;
 	ivec2				_fragmentInterval = ivec2(2, 10);
 	ivec2				_iterationInterval = ivec2(25, 15);
-	std::string			_folder = "D:/allopezr/Datasets/Vessels_20/";
-	std::string			_destinationFolder = "D:/allopezr/Fragments/Vessels_20_render/";
+	std::string			_folder = "D:/allopezr/Datasets/objmodels/";
+	std::string			_destinationFolder = "D:/allopezr/Fragments/objmodels/";
 	size_t				_maxFragmentsModel = /*std::numeric_limits<size_t>::max()*/1000;
 	std::string			_onlineFolder = "E:/Online_Testing/";
 	std::string			_startVessel = "";
@@ -43,14 +43,15 @@ struct FragmentationProcedure
 		_fractureParameters._biasSeeds = 0;
 		_fractureParameters._erode = false;
 		_fractureParameters._metricVoxelization = true;
+		_fractureParameters._voxelPerMetricUnit = _fractureParameters._clampVoxelMetricUnit;
 
 		_fractureParameters._renderGrid = false;
 		_fractureParameters._renderMesh = true;
 		_fractureParameters._renderPointCloud = false;
 
-		_fractureParameters._exportGrid = false;
+		_fractureParameters._exportGrid = true;
 		_fractureParameters._exportMesh = true;
-		_fractureParameters._exportPointCloud = false;
+		_fractureParameters._exportPointCloud = true;
 
 		_fractureParameters._exportGridExtension = FractureParameters::RLE;
 		_fractureParameters._exportMeshExtension = FractureParameters::BINARY_MESH;

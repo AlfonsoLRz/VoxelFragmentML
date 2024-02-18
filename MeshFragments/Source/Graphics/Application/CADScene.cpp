@@ -97,18 +97,33 @@ void CADScene::exportMesh(FractureParameters& fractureParameters, const std::str
 {
 	const std::string meshName = _mesh->getShortName();
 
-	for (int numTriangles : fractureParameters._targetTriangles)
+	if (fractureParameters._targetTriangles.empty())
 	{
-		_mesh->simplify(numTriangles);
 		#if TESTING_FORMAT_MODE
 		for (int meshFormat = 0; meshFormat < FractureParameters::NUM_EXPORT_MESH_EXTENSIONS; ++meshFormat)
 		{
 			fractureParameters._exportMeshExtension = static_cast<FractureParameters::ExportMeshExtension>(meshFormat);
 		#endif
-			_mesh->save(folder + meshName + "_" + std::to_string(numTriangles) + "t", static_cast<FractureParameters::ExportMeshExtension>(fractureParameters._exportMeshExtension));
+			_mesh->save(folder + meshName, static_cast<FractureParameters::ExportMeshExtension>(fractureParameters._exportMeshExtension));
 		#if TESTING_FORMAT_MODE
 		}
 		#endif
+	}
+	else
+	{
+		for (int numTriangles : fractureParameters._targetTriangles)
+		{
+			_mesh->simplify(numTriangles);
+			#if TESTING_FORMAT_MODE
+			for (int meshFormat = 0; meshFormat < FractureParameters::NUM_EXPORT_MESH_EXTENSIONS; ++meshFormat)
+			{
+				fractureParameters._exportMeshExtension = static_cast<FractureParameters::ExportMeshExtension>(meshFormat);
+			#endif
+				_mesh->save(folder + meshName + "_" + std::to_string(numTriangles) + "t", static_cast<FractureParameters::ExportMeshExtension>(fractureParameters._exportMeshExtension));
+			#if TESTING_FORMAT_MODE
+			}
+			#endif
+		}
 	}
 }
 
@@ -262,6 +277,7 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 		tracker->recordEvent(ResourceTracker::VOXELIZATION);
 		_meshGrid->setAABB(_mesh->getAABB(), fractureProcedure._fractureParameters._voxelizationSize);
 		_meshGrid->fill(_mesh);
+		tracker->recordEvent(ResourceTracker::MEMORY_ALLOCATION);
 		_meshGrid->resetMarchingCubes();
 
 		// Save representations from the starting mesh
@@ -300,6 +316,8 @@ void CADScene::generateDataset(FragmentationProcedure& fractureProcedure, const 
 				unsigned idx = 0;
 				const std::string itFile = fragmentFile + std::to_string(maxDimension) + "r_" + std::to_string(iteration) + "it";
 				std::vector<FragmentationProcedure::FragmentMetadata> localMetadata;
+
+				tracker->recordFilename(itFile);
 
 				tracker->recordEvent(ResourceTracker::FRACTURE);
 				this->fractureGrid(fragmentMetadata, fractureProcedure._fractureParameters);
@@ -774,11 +792,12 @@ void CADScene::loadModel(const std::string& path)
 
 void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FragmentationProcedure* datasetProcedure)
 {
-	Texture* whiteTexture = TextureList::getInstance()->getTexture(CGAppEnum::TEXTURE_WHITE);
 	_fractureMeshes = _meshGrid->toTriangleMesh(fractParameters, fragmentMetadata);
 
-	if (fractParameters._renderMesh)
+	if (fractParameters._renderMesh and !GENERATE_DATASET)
 	{
+		Texture* whiteTexture = TextureList::getInstance()->getTexture(CGAppEnum::TEXTURE_WHITE);
+
 		for (int idx = 0; idx < _fractureMeshes.size(); ++idx)
 		{
 			Material* material = new Material;

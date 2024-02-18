@@ -110,6 +110,11 @@ protected:
 	unsigned getPositionIndex(int x, int y, int z) const;
 
 	/**
+	*	@brief Checks the number of active voxels, but early exits when at least one is found.
+	*/
+	unsigned getVoxelCountEarlyExit() const;
+
+	/**
 	*	@brief Checks if a ray intersects the bounding box.
 	*/
 	bool rayBoxIntersection(const Model3D::RayGPUData& ray, float& tMin, float& tMax, float t0, float t1);

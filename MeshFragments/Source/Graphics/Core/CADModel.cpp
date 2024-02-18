@@ -839,12 +839,12 @@ void CADModel::saveBinary(const std::string& filename, Model3D::ModelComponent* 
 	if (!fout.is_open())
 		return;
 
-	const size_t numVertices = component->_geometry.size();
-	fout.write((char*)&numVertices, sizeof(size_t));
+	const uint32_t numVertices = component->_geometry.size();
+	fout.write((char*)&numVertices, sizeof(uint32_t));
 	if (numVertices) fout.write((char*)&component->_geometry[0], numVertices * sizeof(Model3D::VertexGPUData));
 
-	const size_t numTriangles = component->_topology.size();
-	fout.write((char*)&numTriangles, sizeof(size_t));
+	const uint32_t numTriangles = component->_topology.size();
+	fout.write((char*)&numTriangles, sizeof(uint32_t));
 	if (numTriangles) fout.write((char*)&component->_topology[0], numTriangles * sizeof(Model3D::FaceGPUData));
 
 	delete component;
