@@ -234,7 +234,7 @@ public:
 	/**
 	*	@brief Fractures voxelized model.
 	*/
-	std::string fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters);
+	std::string fractureGrid(std::vector<FragmentationProcedure::FragmentMetadata>& fragmentMetadata, FractureParameters& fractureParameters, bool prepareScene = true);
 
 	/**
 	*	@brief Fractures voxelized model.

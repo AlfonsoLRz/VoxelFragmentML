@@ -150,9 +150,9 @@ Model3D::~Model3D()
 	for (auto& it : _modelComp)
 		delete it;
 
-	glDeleteTextures(1, &_ssaoKernelTextureID);
-	glDeleteTextures(1, &_ssaoNoiseTextureID);
-	glDeleteTextures(1, &_shadowTextureID);
+	//glDeleteTextures(1, &_ssaoKernelTextureID);
+	//glDeleteTextures(1, &_ssaoNoiseTextureID);
+	//glDeleteTextures(1, &_shadowTextureID);
 }
 
 void Model3D::drawAsLines(RenderingShader* shader, const RendEnum::RendShaderTypes shaderType, std::vector<mat4>& matrix)

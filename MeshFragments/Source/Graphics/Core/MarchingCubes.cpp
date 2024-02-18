@@ -367,9 +367,6 @@ CADModel* MarchingCubes::triangulateFieldGPU(GLuint gridSSBO, uint16_t targetVal
 	unsigned numSteps = _gridSubdivisions * _gridSubdivisions * _gridSubdivisions, stepIdx = 0;
 	unsigned maxVoxels = glm::max(fractureParams._voxelizationSize.x, glm::max(fractureParams._voxelizationSize.y, fractureParams._voxelizationSize.z));
 
-	std::vector<vec4> triangleVertices;
-	std::vector<uvec4> triangleIndices;
-
 	for (int x = 0; x < _numDivs.x; x += _steps.x)
 	{
 		for (int y = 0; y < _numDivs.y; y += _steps.y)
