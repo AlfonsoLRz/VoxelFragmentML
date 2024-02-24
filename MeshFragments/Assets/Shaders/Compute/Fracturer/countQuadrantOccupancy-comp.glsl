@@ -17,7 +17,7 @@ uniform uint numCells;
 void main()
 {
 	const uint index = gl_GlobalInvocationID.x;
-	if (index >= numCells) return;
+	if (index >= numCells || grid[index].value < VOXEL_FREE) return;
 
 	ivec3 position = ivec3(getPosition(index));
 	ivec3 minPosition = min(position - ivec3(1), ivec3(0)), maxPosition = max(position + ivec3(1), ivec3(gridDims) - ivec3(1));
