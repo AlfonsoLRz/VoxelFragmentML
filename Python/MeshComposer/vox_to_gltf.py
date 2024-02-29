@@ -41,7 +41,7 @@ COLORS = np.array([
     [0, 0, 0]
 ])
 
-folder = 'assets/TU_96_2/'
+folder = 'assets/BA_87bis_1/'
 target_mesh_pattern = '*.vox'
 target_format = '.glb'
 flip_vertical = True
