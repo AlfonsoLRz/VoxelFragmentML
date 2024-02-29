@@ -36,10 +36,11 @@ COLORS = np.array([
     [0, 0, 0, 255]
 ])
 
-folder = 'assets/TU_96_2/'
-target_mesh_pattern = '*.stl'
+folder = 'assets/BA_87bis_1/'
+target_mesh_pattern = '*.obj'
 target_format = '.glb'
 flip_vertical = True
+decimate = 5000
 
 # Retrieve meshes by looking for a pattern
 meshes_path = glob.glob(folder + target_mesh_pattern)
@@ -48,10 +49,14 @@ print('Found ' + str(len(meshes_path)) + ' meshes')
 
 meshes = [load_mesh(mesh) for mesh in meshes_path]
 for idx, mesh in enumerate(meshes):
+    print('Processing mesh ' + str(idx) + '...')
+    print('Number of faces: ' + str(len(mesh.faces)) + '...')
     mesh.fix_normals()
     mesh.visual.vertex_colors = COLORS[idx % len(COLORS)]
     if flip_vertical:
         mesh.apply_scale([1, -1, 1])
+    if decimate is not None:
+        mesh = mesh.simplify_quadric_decimation(decimate)
 
 explode(meshes)
 

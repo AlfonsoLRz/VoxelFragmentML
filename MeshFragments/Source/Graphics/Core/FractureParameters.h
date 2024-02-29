@@ -90,7 +90,7 @@ public:
 	*/
 	FractureParameters() :
 		_biasSeeds(32),
-		_boundaryMCIterations(0.015f),
+		_boundaryMCIterations(0.048f),
 		_boundaryMCWeight(0.2f),
 		_clampVoxelMetricUnit(128),
 		_erode(false),
@@ -117,7 +117,7 @@ public:
 		_seedingRandom(STD_UNIFORM),
 		_biasFocus(5),
 		_targetPoints({ 1024 }),
-		_targetTriangles({ }),
+		_targetTriangles({ 10000 }),
 		_voxelPerMetricUnit(20),
 		_voxelizationSize(256),
 

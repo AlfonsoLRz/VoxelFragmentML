@@ -37,10 +37,12 @@ COLORS = np.array([
     [0, 0, 0]
 ])
 
-folder = 'assets/TU_96_2/'
+
+folder = 'assets/BA_87bis_1/'
 target_mesh_pattern = '*.ply'
 target_format = '.ply'
 flip_vertical = True
+flip_horizontal = True
 
 # Retrieve meshes by looking for a pattern
 point_clouds_path = glob.glob(folder + target_mesh_pattern)
@@ -60,7 +62,7 @@ for idx, point_cloud in enumerate(point_clouds):
 explode(point_clouds)
 
 # Visualize point clouds all at once, with colors
-# open3d.visualization.draw_geometries(point_clouds)
+open3d.visualization.draw_geometries(point_clouds)
 
 # Save
 common_str = os.path.commonprefix(point_clouds_path)
@@ -76,3 +78,22 @@ for point_cloud in point_clouds:
 
 # Export with colors
 open3d.io.write_point_cloud(folder + common_str + target_format, merged_point_cloud)
+
+# Load .ply with trimesh
+import trimesh
+
+# Load .ply file
+mesh = trimesh.load(folder + common_str + target_format)
+# swap y and z axis
+mesh.vertices[:, [1, 2]] = mesh.vertices[:, [2, 1]]
+
+if flip_vertical:
+    mesh.apply_scale([1, -1, 1])
+
+if flip_horizontal:
+    mesh.apply_scale([-1, 1, 1])
+    # rotate 180 degrees around y axis
+    mesh.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [0, 1, 0]))
+
+# Save as .glb
+trimesh.exchange.export.export_mesh(mesh, folder + common_str + '.glb')
