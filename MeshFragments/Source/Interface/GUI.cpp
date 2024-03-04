@@ -280,7 +280,7 @@ void GUI::showFractureSettings()
 				ImGui::EndTabItem();
 			}
 
-			if (ImGui::BeginTabItem("Erosion"))
+			if (ImGui::BeginTabItem("Storage"))
 			{
 				ImGui::Combo("Grid Extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportGrid_STR, IM_ARRAYSIZE(FractureParameters::ExportGrid_STR));
 				ImGui::SameLine(0, 20);

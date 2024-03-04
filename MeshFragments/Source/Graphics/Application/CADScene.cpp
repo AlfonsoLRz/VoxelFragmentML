@@ -185,10 +185,6 @@ std::string CADScene::fractureGrid(const std::string& path, std::vector<Fragment
 	if (path.empty())
 		return "Invalid path";
 
-	//ResourceTracker tracker;
-	//tracker.openStream("Output/log.txt");
-	//tracker.track(10000);
-
 	this->eraseFragmentContent();
 	this->loadModel(path);
 
@@ -206,8 +202,6 @@ std::string CADScene::fractureGrid(const std::string& path, std::vector<Fragment
 	this->rebuildGrid(fractureParameters);
 	std::string result = this->fractureModel(fractureParameters);
 	this->prepareScene(fractureParameters, fragmentMetadata);
-
-	//tracker.closeStream();
 
 	return result;
 }
@@ -740,7 +734,7 @@ void CADScene::loadDefaultLights()
 	sunLight->setDirection(vec3(-0.1, -0.8f, 1.0f));
 	sunLight->setId(vec3(0.5f));
 	sunLight->setIs(vec3(0.0f));
-	sunLight->castShadows(true);
+	sunLight->castShadows(false);
 	sunLight->setShadowIntensity(0.0f, 1.0f);
 	sunLight->setBlurFilterSize(5);
 
@@ -829,7 +823,7 @@ void CADScene::prepareScene(FractureParameters& fractParameters, std::vector<Fra
 
 	if (fractParameters._renderPointCloud and !GENERATE_DATASET)
 	{
-		_pointCloud = _mesh->sample(100, fractParameters._pointCloudSeedingRandom);
+		_pointCloud = _mesh->sample(fractParameters._targetPoints.empty() ? 1000 : fractParameters._targetPoints[0], fractParameters._pointCloudSeedingRandom);
 		_pointCloudRenderer = new DrawPointCloud(_pointCloud);
 
 		std::vector<float> vertexClusterIdx;
@@ -868,6 +862,9 @@ void CADScene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingPara
 	}
 
 	{
+		shader->use();
+		shader->setUniform("materialScattering", rendParams->_materialScattering);
+
 		for (unsigned int i = 0; i < _lights.size(); ++i)																// Multipass rendering
 		{
 			if (i == 0)
@@ -884,8 +881,6 @@ void CADScene::drawAsTriangles(Camera* camera, const mat4& mModel, RenderingPara
 				matrix[RendEnum::BIAS_VIEW_PROJ_MATRIX] = bias * _lights[i]->getCamera()->getViewProjMatrix();
 			}
 
-			shader->use();
-			shader->setUniform("materialScattering", rendParams->_materialScattering);
 			_lights[i]->applyLight(shader, matrix[RendEnum::VIEW_MATRIX]);
 			_lights[i]->applyShadowMapTexture(shader);
 			shader->applyActiveSubroutines();

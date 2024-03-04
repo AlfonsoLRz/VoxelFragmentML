@@ -108,7 +108,7 @@ public:
 		_neighbourhoodType(VON_NEUMANN),
 		_nonBoundaryMCIterations(0.048f),
 		_nonBoundaryMCWeight(0.9f),
-		_numExtraSeeds(64),
+		_numExtraSeeds(16),
 		_numImpacts(0),
 		_numSeeds(8),
 		_pointCloudSeedingRandom(STD_UNIFORM),
@@ -123,15 +123,15 @@ public:
 
 		_renderGrid(true),
 		_renderMesh(true),
-		_renderPointCloud(false),
+		_renderPointCloud(true),
 
 		_exportGridExtension(VOX),
 		_exportMeshExtension(OBJ),
 		_exportPointCloudExtension(PLY),
 
-		_exportGrid(true),
-		_exportMesh(true),
-		_exportPointCloud(true)
+		_exportGrid(false),
+		_exportMesh(false),
+		_exportPointCloud(false)
 	{
 		std::qsort(_targetTriangles.data(), _targetTriangles.size(), sizeof(int), [](const void* a, const void* b) {
 			return *(int*)b - *(int*)a;
