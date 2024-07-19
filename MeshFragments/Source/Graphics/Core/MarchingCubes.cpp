@@ -307,7 +307,7 @@ MarchingCubes::MarchingCubes(RegularGrid& regularGrid, unsigned subdivisions, co
 	_steps = glm::ceil(vec3(_numDivs) / vec3(_gridSubdivisions));
 	_numThreads = _steps.x * _steps.y * _steps.z;
 	_numGroups = ComputeShader::getNumGroups(_numThreads);
-	_maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3 * 1.7;
+	_maxNumPoints = regularGrid.calculateMaxQuadrantOccupancy(subdivisions) * _maxTriangles * 3 * 2;
 	_indices = new unsigned[_maxNumPoints];
 	std::iota(_indices, _indices + _maxNumPoints, 0);
 

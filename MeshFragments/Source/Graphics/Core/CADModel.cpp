@@ -17,7 +17,7 @@ std::unordered_map<std::string, std::unique_ptr<Material>> CADModel::_cadMateria
 std::unordered_map<std::string, std::unique_ptr<Texture>> CADModel::_cadTextures;
 
 const std::string CADModel::BINARY_EXTENSION = ".bin";
-const float CADModel::MODEL_NORMALIZATION_SCALE = .2499999f;
+const float CADModel::MODEL_NORMALIZATION_SCALE = .499999f;
 
 /// [Public methods]
 
@@ -145,7 +145,6 @@ bool CADModel::load()
 			}
 		}
 
-#if GENERATE_DATASET
 		glm::vec3 scale = _aabb.extent();
 		float maxScale = MODEL_NORMALIZATION_SCALE / glm::max(scale.x, glm::max(scale.y, scale.z)) * 2.0f;
 
@@ -155,7 +154,6 @@ bool CADModel::load()
 		_aabb.dot(transformation);
 		for (Model3D::ModelComponent* modelComp : _modelComp)
 			modelComp->_aabb.dot(transformation);
-#endif
 
 		std::cout << "Number of vertices: " << this->getNumVertices() << std::endl;
 		std::cout << "Number of faces: " << this->getNumFaces() << std::endl;
@@ -374,7 +372,7 @@ std::thread* CADModel::save(const std::string& filename, FractureParameters::Exp
 {
 	const std::string meshExtensionStr = FractureParameters::ExportMesh_STR[meshExtension];
 	std::thread* thread = nullptr;
-	Model3D::ModelComponent* component = _modelComp[0]->copyComponent(!TESTING_FORMAT_MODE);
+	Model3D::ModelComponent* component = _modelComp[0]->copyComponent(!TESTING_FORMAT_MODE && !GENERATE_DATASET);
 
 	if (meshExtension == FractureParameters::ExportMeshExtension::BINARY_MESH)
 		thread = new std::thread(&CADModel::saveBinary, this, filename + "." + meshExtensionStr, component);
