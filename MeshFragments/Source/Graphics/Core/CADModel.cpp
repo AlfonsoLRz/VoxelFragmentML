@@ -621,8 +621,7 @@ Model3D::ModelComponent* CADModel::processMesh(aiMesh* mesh, const aiScene* scen
 	{
 		Model3D::VertexGPUData vertex;
 		vertex._position = vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-		vertex._normal = vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-
+		if (mesh->mNormals) vertex._normal = vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
 		if (mesh->mTangents) vertex._tangent = vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
 		if (mesh->mTextureCoords[0]) vertex._textCoord = vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 
@@ -637,7 +636,13 @@ Model3D::ModelComponent* CADModel::processMesh(aiMesh* mesh, const aiScene* scen
 	for (int i = 0; i < mesh->mNumFaces; i++)
 	{
 		aiFace& face = mesh->mFaces[i];
-		faces[i] = Model3D::FaceGPUData{ uvec3(face.mIndices[0], face.mIndices[1], face.mIndices[2]) };
+		if (face.mNumIndices == 3)
+			faces[i] = Model3D::FaceGPUData{ uvec3(face.mIndices[0], face.mIndices[1], face.mIndices[2]) };
+		else
+		{
+			faces[i] = Model3D::FaceGPUData{ uvec3(0) };
+			std::cout << "ERROR::CADModel::processMesh::Face with more than 3 vertices." << std::endl;
+		}
 	}
 
 	// Material
