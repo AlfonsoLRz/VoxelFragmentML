@@ -11,8 +11,8 @@ struct FragmentationProcedure
 	FractureParameters	_fractureParameters;
 	ivec2				_fragmentInterval = ivec2(2, 10);
 	ivec2				_iterationInterval = ivec2(25, 15);
-	std::string			_folder = "D:/allopezr/Datasets/Artifacts/200/";
-	std::string			_destinationFolder = "D:/allopezr/Fragments/Artifacts_200_ours/";
+	std::string			_folder = "D:/allopezr/Datasets/Vessels_200/";
+	std::string			_destinationFolder = "D:/allopezr/Fragments/Vessels_200_ours/";
 	size_t				_maxFragmentsModel = /*std::numeric_limits<size_t>::max()*/1000;
 	std::string			_onlineFolder = "E:/Online_Testing/";
 	std::string			_startVessel = "";
