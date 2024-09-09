@@ -33,15 +33,19 @@ namespace fracturer
         typedef std::function<float(float min, float max, int index, int coord)> RandomFunctionFloat;
         typedef std::unordered_map<uint16_t, RandomFunctionFloat> RandomUniformMapFloat;
 
-        static Halton_sampler       _haltonSampler;
-        static Halton_enum          _haltonEnum;
+        static Halton_sampler               _haltonSampler;
+        static Halton_enum                  _haltonEnum;
 
-        static RandomInitUniformMap _randomInitFunction;
-        static RandomUniformMap     _randomFunction;
-        static RandomUniformMapFloat _randomFunctionFloat;
+        static boost::mt19937               _boostRng;
+        static boost::normal_distribution<> _boostNormalDistribution;
+        static std::unique_ptr<boost::variate_generator<boost::mt19937&, boost::normal_distribution<>>> _boostGenerator;
+
+        static RandomInitUniformMap         _randomInitFunction;
+        static RandomUniformMap             _randomFunction;
+        static RandomUniformMapFloat        _randomFunctionFloat;
 
     protected:
-        static const int            MAX_TRIES = 1000000;     //!< Maximun number of tries on seed search.
+        static const int MAX_TRIES = 1000000;     //!< Maximun number of tries on seed search.
 
     public:
         /**

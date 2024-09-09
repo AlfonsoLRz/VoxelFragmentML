@@ -21,8 +21,8 @@ public:
 	enum DistanceFunction : uint8_t { EUCLIDEAN, MANHATTAN, CHEBYSHEV, DISTANCE_FUNCTIONS };
 	inline static const char* Distance_STR[DISTANCE_FUNCTIONS] = { "Euclidean", "Manhattan", "Chebyshev" };
 
-	enum RandomUniformType { STD_UNIFORM, HALTON, NUM_RANDOM_FUNCTIONS };
-	inline static const char* Random_STR[NUM_RANDOM_FUNCTIONS] = { "STD Uniform", "Halton" };
+	enum RandomUniformType { STD_UNIFORM, HALTON, BOOST_NORMAL_DISTRIBUTION, NUM_RANDOM_FUNCTIONS };
+	inline static const char* Random_STR[NUM_RANDOM_FUNCTIONS] = { "STD Uniform", "Halton", "Boost Normal Dist."};
 
 	enum ErosionType { SQUARE, ELLIPSE, CROSS, NUM_EROSION_CONVOLUTIONS };
 	inline static const char* Erosion_STR[NUM_EROSION_CONVOLUTIONS] = { "Square", "Ellipse", "Cross" };
@@ -119,7 +119,7 @@ public:
 		_targetPoints({ 1024 }),
 		_targetTriangles({ 10000 }),
 		_voxelPerMetricUnit(20),
-		_voxelizationSize(256),
+		_voxelizationSize(128),
 
 		_renderGrid(true),
 		_renderMesh(true),

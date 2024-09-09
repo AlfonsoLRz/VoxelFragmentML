@@ -552,10 +552,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;_SILENCE_CXX23_DENORM_DEPRECATION_WARNING</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>Source;Source/PrecompiledHeaders;Libraries/;Libraries/lodepng;Libraries/imgui;Libraries/imgui/examples;Libraries/implot;Libraries/objloader;Libraries/spline;Libraries/imfiledialog;Libraries/MagicaVoxel_File_Writer;Libraries/simplify;Libraries/tinymesh/src/tinymesh/;Libraries/vox/</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>

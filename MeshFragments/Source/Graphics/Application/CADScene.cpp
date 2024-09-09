@@ -21,7 +21,7 @@
 
 /// Initialization of static attributes
 const std::string CADScene::INTERACTIVE_APP_FOLDER = "Output/";
-const std::string CADScene::TARGET_PATH = "E:/objmodels/PO_025.obj";
+const std::string CADScene::TARGET_PATH = "D:/allopezr/Research/serapis.obj";
 //const std::string CADScene::TARGET_PATH = "D:/allopezr/Research/Lucy_decimated_0_1.obj";
 
 // [Public methods]

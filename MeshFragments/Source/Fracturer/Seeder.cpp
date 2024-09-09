@@ -1,24 +1,38 @@
 #include "stdafx.h"
 #include "Seeder.h"
 
+#include <boost/random.hpp>
+#include <boost/random/normal_distribution.hpp>
+
 namespace fracturer
 {
     Halton_sampler  Seeder::_haltonSampler;
     Halton_enum     Seeder::_haltonEnum (1, 1);
 
+    boost::mt19937  Seeder::_boostRng;
+    boost::normal_distribution<> Seeder::_boostNormalDistribution = boost::normal_distribution<>(.5, .25);
+    std::unique_ptr<boost::variate_generator<boost::mt19937&, boost::normal_distribution<>>> Seeder::_boostGenerator;
+
     fracturer::Seeder::RandomInitUniformMap Seeder::_randomInitFunction = {
         { FractureParameters::STD_UNIFORM, [](int size) -> void {}},
-        { FractureParameters::HALTON, [](int size) -> void { Seeder::_haltonSampler.init_faure(); Seeder::_haltonEnum = Halton_enum(size, 1); }}				// Enumerate samples per pixel for the given resolution,
+        { FractureParameters::HALTON, [](int size) -> void { Seeder::_haltonSampler.init_faure(); Seeder::_haltonEnum = Halton_enum(size, 1); }},	
+        { FractureParameters::BOOST_NORMAL_DISTRIBUTION, [](int size) -> void { 
+            Seeder::_boostGenerator.reset(new boost::variate_generator<boost::mt19937&, boost::normal_distribution<>>(
+                Seeder::_boostRng, Seeder::_boostNormalDistribution
+            ));
+        }}
     };
 
     fracturer::Seeder::RandomUniformMap Seeder::_randomFunction = {
         { FractureParameters::STD_UNIFORM, [](int min, int max, int index, int coord) -> int { return RandomUtilities::getUniformRandomInt(min, max); }},
         { FractureParameters::HALTON, [](int min, int max, int index, int coord) -> int { return int(Seeder::_haltonSampler.sample(coord, index) * (max - min) + min); }},
+        { FractureParameters::BOOST_NORMAL_DISTRIBUTION, [](int min, int max, int index, int coord) -> int { return int(glm::clamp((*Seeder::_boostGenerator.get())(), .0, 1.0) * (max - min) + min); }}
     };
 
     fracturer::Seeder::RandomUniformMapFloat Seeder::_randomFunctionFloat = {
         { FractureParameters::STD_UNIFORM, [](float min, float max, int index, int coord) -> float { return RandomUtilities::getUniformRandom(min, max); }},
         { FractureParameters::HALTON, [](float min, float max, int index, int coord) -> float { return Seeder::_haltonSampler.sample(coord, index) * (max - min) + min; }},
+        { FractureParameters::BOOST_NORMAL_DISTRIBUTION, [](float min, float max, int index, int coord) -> float { return glm::clamp((*Seeder::_boostGenerator.get())(), .0, 1.0) * (max - min) + min; }}
     };
 
     void Seeder::getFloatNoise(unsigned int maxBufferSize, unsigned int nseeds, int randomSeedFunction, std::vector<float>& noiseBuffer)
