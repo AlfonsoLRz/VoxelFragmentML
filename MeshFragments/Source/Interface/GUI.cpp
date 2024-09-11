@@ -282,7 +282,7 @@ void GUI::showFractureSettings()
 
 			if (ImGui::BeginTabItem("Storage"))
 			{
-				ImGui::Combo("Grid Extension", &_fractureParameters->_exportMeshExtension, FractureParameters::ExportGrid_STR, IM_ARRAYSIZE(FractureParameters::ExportGrid_STR));
+				ImGui::Combo("Grid Extension", &_fractureParameters->_exportGridExtension, FractureParameters::ExportGrid_STR, IM_ARRAYSIZE(FractureParameters::ExportGrid_STR));
 				ImGui::SameLine(0, 20);
 				if (ImGui::Button("Export Grid"))
 					_scene->exportGrid(*_fractureParameters);

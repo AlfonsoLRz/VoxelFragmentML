@@ -92,7 +92,7 @@ public:
 		_biasSeeds(32),
 		_boundaryMCIterations(0.048f),
 		_boundaryMCWeight(0.2f),
-		_clampVoxelMetricUnit(128),
+		_clampVoxelMetricUnit(200),
 		_erode(false),
 		_erosionConvolution(ELLIPSE),
 		_erosionProbability(.5f),
