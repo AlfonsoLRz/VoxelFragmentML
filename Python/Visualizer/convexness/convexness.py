@@ -1,8 +1,7 @@
 import itertools
 import math
 import numpy as np
-import scipy
-import tqdm
+from tqdm import tqdm
 import trimesh
 
 
@@ -68,3 +67,57 @@ def measure_convexness(mesh, num_samples, n_ray_splits=10):
     convexity /= n_rays
 
     return convexity
+
+
+def measure_convexness_2(mesh, num_samples, n_ray_splits=10):
+    # convex hull
+    convex_hull = trimesh.convex.convex_hull(mesh)
+
+    # samples n points from the mesh
+    samples, face_id = mesh.sample(num_samples, return_index=True)
+
+    # compute the barycentric coordinates of each sample
+    barycentric_cd = trimesh.triangles.points_to_barycentric(triangles=mesh.triangles[face_id], points=samples)
+
+    # interpolate vertex normals from barycentric coordinates
+    interpolated_normal = trimesh.unitize((mesh.vertex_normals[mesh.faces[face_id]] * trimesh.unitize(barycentric_cd)
+                                           .reshape((-1, 3, 1))).sum(axis=1))
+
+    # push points a bit inwards according to the bounding box
+    max_p, min_p = np.max(samples, axis=0), np.min(samples, axis=0)
+    bounding_box_diagonal = np.linalg.norm(max_p - min_p)
+    pushed_samples = samples - interpolated_normal * bounding_box_diagonal * 1e-4
+
+    # detect which ones are inside
+    inside = mesh.contains(pushed_samples)
+
+    # filter out the ones that are outside
+    pushed_samples = pushed_samples[inside]
+
+    # shoot rays from every sample following the normal
+    ray_origins = pushed_samples
+    ray_directions = interpolated_normal[inside]
+
+    # intersect with the convex hull
+    locations, index_ray, _ = convex_hull.ray.intersects_location(
+        ray_origins=ray_origins, ray_directions=ray_directions, multiple_hits=False
+    )
+
+    # distance from every origin to the intersection
+    ray_origins = ray_origins[index_ray]
+    distance = np.linalg.norm(locations - ray_origins, axis=1)
+
+    return np.mean(distance)
+
+
+if __name__ == '__main__':
+    # load a mesh
+    mesh = trimesh.load('D:/allopezr/Research/Ajax.obj')
+
+    # measure convexness
+    convexness = measure_convexness(mesh, num_samples=1000)
+    print('Convexness:', convexness)
+
+    # measure convexness 2
+    convexness = measure_convexness_2(mesh, num_samples=10000)
+    print('Convexness 2:', convexness)
