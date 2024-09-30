@@ -8,7 +8,7 @@
 ![assimp](https://img.shields.io/badge/assimp-5.2.4-orange.svg) 
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-GPU-based fragmentation of voxelizations, using OpenGL compute shaders. This project is aimed at generating datasets for feeding neural networks for learning fragment assembly.
+GPU-based fragmentation of voxelizations using OpenGL compute shaders. This project is aimed at generating datasets for training fragment assembly models.
 
  <p align="center" >
     <img src="Assets/teaser.png"/></br>
