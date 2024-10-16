@@ -211,4 +211,8 @@ Python/MeshComposer/assets/
 *.pyc
 
 # Web
-!web/
+!docs/
+docs/decompress/.idea/
+docs/decompress/venv
+docs/decompress/decompress_point_cloud/.vs/
+docs/decompress/decompress_point_cloud/x64/

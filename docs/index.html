@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Fragment dataset" />
+        <meta name="author" content="anonymous" />
+
+        <title>Fragment dataset</title>
+        <!-- Bootstrap core CSS -->
+        <!--link href="bootstrap.min.css" rel="stylesheet"-->
+        <link
+            rel="stylesheet"
+            href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+            integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+            crossorigin="anonymous"
+        />
+
+        <!--    <link rel="icon" href="img/favicon.gif" type="image/gif">-->
+        <style type="text/css">
+            .container {
+                zoom: 1;
+                margin-left: auto;
+                margin-right: auto;
+                vertical-align: middle;
+                width: 100%;
+                max-width: 1000px;
+            }
+            .container_img {
+                zoom: 1;
+                margin-left: auto;
+                margin-right: auto;
+                vertical-align: middle;
+                width: 100%;
+                max-width: 1200px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container" align="center">
+                <h2>
+                    Generating implicit object fragment datasets for machine learning
+                </h2>
+                <h4><i>Computers & Graphics</i></h4>
+                <!--<p>
+                    <a href="https://alfonsolrz.github.io">Alfonso López-Ruiz</a><sup>1,*</sup>
+                        <a href="https://orcid.org/0000-0003-1423-9496">
+                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
+                        </a>
+                        ,&nbsp;
+                    <a href="https://www4.ujaen.es/~ajrueda/">Antonio J. Rueda-Ruiz</a><sup>1,*</sup>
+                        <a href="https://orcid.org/0000-0001-7692-454X">
+                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
+                        </a>
+                        ,&nbsp;
+                    <a href="https://orcid.org/0000-0002-3075-6963">Rafael J. Segura-Sánchez</a><sup>1,*</sup>
+                        <a href="https://orcid.org/0000-0002-3075-6963">
+                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
+                        </a>
+                        ,&nbsp;
+                    </br>
+                    <a href="https://orcid.org/0000-0003-0958-990X">Carlos J. Ogayar-Anguita</a><sup>1,*</sup>
+                        <a href="https://orcid.org/0000-0003-0958-990X">
+                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
+                        </a>
+                        ,&nbsp;
+                    <a href="https://orcid.org/0000-0003-2180-449X">Pablo Navarro</a><sup>1,*</sup>
+                        <a href="https://orcid.org/0000-0003-2180-449X">
+                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
+                        </a>
+                        ,&nbsp;
+                    <a href="https://orcid.org/0000-0001-6624-4102">José M. Fuertes</a><sup>1,*</sup>
+                        <a href="https://orcid.org/0000-0001-6624-4102">
+                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
+                        </a>
+                    <br/><br/>
+                    <sup>1</sup>Computer Science Department, University of Jaén&nbsp;&nbsp;<br>
+                    <sup>2</sup>Instituto Patagónico de Ciencias Sociales y Humanas. Centro Nacional Patagónico, CONICET, Puerto Madryn, Argentina&nbsp;&nbsp;
+                </p>
+                    <sup>*</sup> Equal contribution
+                </p>-->
+                <h5>
+                    <!--<a href="https://arxiv.org/abs/2210.11463">[Paper]</a>&nbsp;-->
+                    <a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/">[Data]</a>&nbsp;
+<!--                     <a href="https://github.com/Wuziyi616/multi_part_assembly">[Benchmark Code]</a>&nbsp; -->
+<!--                     <a href="https://github.com/sgsellan/fracture-modes#dataset">[Data Generation Code]</a> -->
+<!--                     <a href="https://www.kaggle.com/datasets/dazitu616/breaking-bad-dataset">[Alternative Data Host (Kaggle)]</a>&nbsp; -->
+                </h5>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="container_img">
+                <p align="center">
+                    <img
+                        border="0"
+                        src="data/intro/overview.png"
+                        style="width: 90%"
+                    />
+                </p>
+            </div>
+            <div class="container">
+                <div align="center"><h2>Dataset</h2></div>
+                <hr />
+                <p>
+                    Our fragment dataset was generated with <b>1,052 Iberian vessels</b>, by fragmenting
+                    every mesh between 2 and 10 times. The number of iterations for every number of fragments
+                    was linearly interpolated in [25, 15], hence generating 25 fragments while breaking models into 2 pieces. 
+                    The fragmentation was stopped for every mesh once 1k fragments were obtained. 
+                    A total of <b>1,040,428</b> point clouds and triangle meshes have been released together with <b>187,257</b> voxelizations.
+                    From these, 1,052 are dedicated to storing the original mesh. Triangle meshes are saved in their 
+                    original format, as obtained from marching cubes, point clouds were sampled with 1024 points, and voxelizations 
+                    have a resolution of up to 128<sup>3</sup>.
+                </p>
+            </div>
+            <div class="container_img">
+                <div class="row align-items-center">
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4></h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/body/vessel/BA_87bis_1_6f_128r_17it_mesh.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4> </h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/body/vessel/BA_87bis_1_6f_128r_17it_pc.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4></h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/body/vessel/BA_87bis_1_6f_128r_17it.vox.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="-90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                    <!---------- ----------->
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4></h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/body/vessel/CC_04_4_5f_128r_9it.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4> </h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/body/vessel/CC_04_4_5f_128r_9it_pc.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                    <div class="col-md-2 padding-0 canvas-row">
+                        <h4></h4>
+                        <model-viewer
+                            alt="Object"
+                            src="data/body/vessel/CC_04_4_5f_128r_9it.vox.glb"
+                            style="
+                                width: 100%;
+                                height: 250px;
+                                background-color: #ffffff;
+                            "
+                            exposure=".8"
+                            camera-orbit="-90deg 90deg 105%"
+                            auto-rotate
+                            camera-controls
+                        >
+                        </model-viewer>
+                    </div>
+                </div>
+            </div>
+            <br/>
+
+            <!-- Loads <model-viewer> for modern browsers: -->
+                <script
+                type="module"
+                src="https://unpkg.com/@google/model-viewer/dist/model-viewer.js"
+            ></script>
+
+            <div class="container">
+
+                <div align="center"><h3>Accessing the dataset</h3></div>
+                <p>
+                    The dataset has been released in <a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/">our research centre page</a>. It was split into multiple files
+                    since the whole zip was about <b>450 GB</b>. A lighter version, with 200 fragmented vessels and no individual file zipping has also been provided with .obj and .ply file formats (<b>27 GB</b>).
+                </p>
+                <br/>
+
+                <div align="center"><h3>Decompress binary files</h3></div>
+                <p>
+                    We have provided sample scripts to decompress meshes, point clouds and voxels. Decompression for mesh and voxel has been implemented in
+                    Python, where point clouds are decompressed in C++ since it requires the Point Cloud Library (PCL).
+                </p>
+                <img
+                    border="0"
+                    src="data/body/decompress_binaries.png"
+                    style="width: 100%; padding-bottom: 3%;"
+                />
+                <br/>
+
+                <div align="center"><h3>Vessel classification</h3></div>
+                <p>
+                    Our dataset is supplied as a single file, but the root name of files determine the vessel classification, as detailed in a previous work of ours<!--[<a href="https://www.sciencedirect.com/science/article/pii/S1296207421000042">Navarro et al., 2022</a>,
+                    <a href="https://link.springer.com/article/10.1007/s11042-016-4076-9">Lucena et al., 2017</a>]-->. 
+                    This a yet unexplored branch since archaeological artefacts are hardly found intact; indeed, it is rather common to find small fragments. All these 
+                    factors harden their digitization, and therefore, any application operating over 3D archaeological artefacts is hard to reproduce in the real-world. 
+                    Yet, we provide <i>class_vessel.csv</i> for any future work that may find helpful this vessel categorization.
+                </p>
+                <div class="container_img">
+                    <p align="center">
+                        <img
+                            border="0"
+                            src="data/body/navarro_2022.jpg"
+                            style="width: 60%"
+                        />
+                    </p>
+                    <p align="center">
+                        <i>
+                            Eleven vessel profiles, as annotated in the provided <i>class_vessel.csv</i> file
+                            <!--[<a href="https://www.sciencedirect.com/science/article/pii/S1296207421000042">Navarro et al., 2022</a>,
+                             <a href="https://link.springer.com/article/10.1007/s11042-016-4076-9">Lucena et al., 2017</a>].-->
+                        </i>
+                    </p>
+                </div>
+            </div>
+            <br/>
+        </div>
+        <br/><br/>
+
+        <script
+            src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+            integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+            crossorigin="anonymous"
+        ></script>
+		<!-- Import the component -->
+		<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    </body>
+</html>
