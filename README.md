@@ -11,7 +11,7 @@
 GPU-based fragmentation of voxelizations using OpenGL compute shaders. This project is aimed at generating datasets for training fragment assembly models. While this fragmentation method can be applied over any mesh, this work specifically focus on archaeological artefacts such as those depicted in *Figure 1*.
 
  <p align="center" >
-    <img src="docs/data/Dataset.png"/></br>
+    <img src="data/Dataset.png"/></br>
     <em>Figure 1. Assembled fragments of Iberian vessels.</em>
 </p>
 
@@ -44,7 +44,7 @@ The fragment data is available at <a href="https://s5-ceatic.ujaen.es/fragment-d
 Otherwise, please go to `decompress` folder to learn how to decompress binary files (triangle meshes, point clouds and voxelizations). Point clouds are decompressed in C++ using the Point Cloud Library, whereas the others are decompressed using Python.
 
 <p>
-    <img src="docs/data/decompress_binaries.png">
+    <img src="data/decompress_binaries.png">
 </p>
 
 ## Citation
