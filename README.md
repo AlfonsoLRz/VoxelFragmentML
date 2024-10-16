@@ -44,7 +44,7 @@ The fragment data is available at <a href="https://s5-ceatic.ujaen.es/fragment-d
 Otherwise, please go to `decompress` folder to learn how to decompress binary files (triangle meshes, point clouds and voxelizations). Point clouds are decompressed in C++ using the Point Cloud Library, whereas the others are decompressed using Python.
 
 <p>
-    <img src="data/decompress_binaries.png">
+    <img src="docs/data/decompress_binaries.png">
 </p>
 
 ## Citation
