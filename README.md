@@ -11,7 +11,7 @@
 GPU-based fragmentation of voxelizations using OpenGL compute shaders. This project is aimed at generating datasets for training fragment assembly models. While this fragmentation method can be applied over any mesh, this work specifically focus on archaeological artefacts such as those depicted in *Figure 1*.
 
  <p align="center" >
-    <img src="data/Dataset.png"/></br>
+    <img src="docs/data/Dataset.png"/></br>
     <em>Figure 1. Assembled fragments of Iberian vessels.</em>
 </p>
 
