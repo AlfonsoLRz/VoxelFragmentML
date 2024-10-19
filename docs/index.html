@@ -1,302 +1,493 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Fragment dataset" />
-        <meta name="author" content="anonymous" />
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
+  <!-- Replace the content tag with appropriate information -->
+  <meta name="description" content="DESCRIPTION META TAG">
+  <meta property="og:title" content="SOCIAL MEDIA TITLE TAG"/>
+  <meta property="og:description" content="SOCIAL MEDIA DESCRIPTION TAG TAG"/>
+  <meta property="og:url" content="URL OF THE WEBSITE"/>
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
+  <meta property="og:image" content="static/image/your_banner_image.png" />
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
 
-        <title>Fragment dataset</title>
-        <!-- Bootstrap core CSS -->
-        <!--link href="bootstrap.min.css" rel="stylesheet"-->
-        <link
-            rel="stylesheet"
-            href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-            integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
-            crossorigin="anonymous"
-        />
 
-        <!--    <link rel="icon" href="img/favicon.gif" type="image/gif">-->
-        <style type="text/css">
-            .container {
-                zoom: 1;
-                margin-left: auto;
-                margin-right: auto;
-                vertical-align: middle;
-                width: 100%;
-                max-width: 1000px;
-            }
-            .container_img {
-                zoom: 1;
-                margin-left: auto;
-                margin-right: auto;
-                vertical-align: middle;
-                width: 100%;
-                max-width: 1200px;
-            }
-        </style>
-    </head>
+  <meta name="twitter:title" content="TWITTER BANNER TITLE META TAG">
+  <meta name="twitter:description" content="TWITTER BANNER DESCRIPTION META TAG">
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X600-->
+  <meta name="twitter:image" content="static/images/your_twitter_banner_image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- Keywords for your paper to be indexed by-->
+  <meta name="keywords" content="KEYWORDS SHOULD BE PLACED HERE">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <body>
-        <div class="jumbotron jumbotron-fluid">
-            <div class="container" align="center">
-                <h2>
-                    Generating implicit object fragment datasets for machine learning
-                </h2>
-                <h4><i>Computers & Graphics</i></h4>
-                <p>
-                    <a href="https://alfonsolrz.github.io">Alfonso López-Ruiz</a><sup>1,*</sup>
-                        <a href="https://orcid.org/0000-0003-1423-9496">
-                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
-                        </a>
-                        ,&nbsp;
-                    <a href="https://www4.ujaen.es/~ajrueda/">Antonio J. Rueda-Ruiz</a><sup>1,*</sup>
-                        <a href="https://orcid.org/0000-0001-7692-454X">
-                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
-                        </a>
-                        ,&nbsp;
-                    <a href="https://orcid.org/0000-0002-3075-6963">Rafael J. Segura-Sánchez</a><sup>1,*</sup>
-                        <a href="https://orcid.org/0000-0002-3075-6963">
-                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
-                        </a>
-                        ,&nbsp;
-                    </br>
-                    <a href="https://orcid.org/0000-0003-0958-990X">Carlos J. Ogayar-Anguita</a><sup>1,*</sup>
-                        <a href="https://orcid.org/0000-0003-0958-990X">
-                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
-                        </a>
-                        ,&nbsp;
-                    <a href="https://orcid.org/0000-0003-2180-449X">Pablo Navarro</a><sup>1,*</sup>
-                        <a href="https://orcid.org/0000-0003-2180-449X">
-                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
-                        </a>
-                        ,&nbsp;
-                    <a href="https://orcid.org/0000-0001-6624-4102">José M. Fuertes</a><sup>1,*</sup>
-                        <a href="https://orcid.org/0000-0001-6624-4102">
-                            <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
-                        </a>
-                    <br/><br/>
-                    <sup>1</sup>Computer Science Department, University of Jaén&nbsp;&nbsp;<br>
-                    <sup>2</sup>Instituto Patagónico de Ciencias Sociales y Humanas. Centro Nacional Patagónico, CONICET, Puerto Madryn, Argentina&nbsp;&nbsp;
-                </p>
-                    <sup>*</sup> Equal contribution
-                </p>
-                <h5>
-                    <a href="https://doi.org/10.1016/j.cag.2024.104104">[Paper]</a>&nbsp;
-                    <a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/">[Data]</a>&nbsp;
-<!--                     <a href="https://github.com/Wuziyi616/multi_part_assembly">[Benchmark Code]</a>&nbsp; -->
-<!--                     <a href="https://github.com/sgsellan/fracture-modes#dataset">[Data Generation Code]</a> -->
-<!--                     <a href="https://www.kaggle.com/datasets/dazitu616/breaking-bad-dataset">[Alternative Data Host (Kaggle)]</a>&nbsp; -->
-                </h5>
+
+  <title>Academic Project Page</title>
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+  rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+
+  <!-- Bootstrap core CSS -->
+  <!--link href="bootstrap.min.css" rel="stylesheet"-->
+  <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+  />
+
+  <!--    <link rel="icon" href="img/favicon.gif" type="image/gif">-->
+  <style type="text/css">
+    .container {
+        zoom: 1;
+        margin-left: auto;
+        margin-right: auto;
+        vertical-align: middle;
+        width: 100%;
+        max-width: 1000px;
+    }
+    .container_img {
+        zoom: 1;
+        margin-left: auto;
+        margin-right: auto;
+        vertical-align: middle;
+        width: 100%;
+        max-width: 1200px;
+    }
+  </style>
+</head>
+<body>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Generating implicit object fragment datasets for machine learning</h1>
+            <div class="is-size-5 publication-authors">
+              <!-- Paper authors -->
+              <span class="author-block">
+                <a href="FIRST AUTHOR PERSONAL LINK" target="_blank">Alfonso López-Ruiz</a><sup>1, *</sup>,
+              </span>
+              <span class="author-block">
+                Antonio J. Rueda-Ruiz<sup>1, *</sup>,
+              </span>
+              <span class="author-block">
+                Rafael J. Segura-Sánchez<sup>1, *</sup>
+              </span>
+              <span class="author-block">
+                Carlos J. Ogayar-Anguita<sup>1, *</sup>
+              </span>
+              <span class="author-block">
+                Pablo Navarro<sup>2, *</sup>
+              </span>
+              <span class="author-block">
+                José M. Fuertes<sup>1, *</sup>
+              </span>
+            </div>
+
+            <div class="is-size-6 publication-authors">
+              <span class="author-block">
+                <sup>1</sup>Computer Science Department, University of Jaén, Jaén, Spain<br>
+                <sup>2</sup>Instituto Patagónico de Ciencias Sociales y Humanas. Centro Nacional Patagónico, CONICET, Puerto Madryn, Argentina<br>
+                Computers & Graphics (Elsevier)</span>
+              <span class="eql-cntrb"><small><br><sup>*</sup>Indicates Equal Contribution</small></span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- Arxiv PDF link -->
+                <span class="link-block">
+                  <a href="https://doi.org/10.1016/j.cag.2024.104104" target="_blank" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+
+                <!-- Github link -->
+                <span class="link-block">
+                  <a href="https://github.com/AlfonsoLRz/VoxelFragmentML" target="_blank" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+
+                <!-- ArXiv abstract Link -->
+                <span class="link-block">
+                  <a href="https://arxiv.org/abs/<ARXIV PAPER ID>" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fas fa-download"></i>
+                  </span>
+                  <span>Data</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Teaser video-->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <img src="data/overview.png"/>
+    </div>
+  </div>
+</section>
+
+<section class="hero is-small is-light">
+  <div class="hero-body">
+    <div class="container">
+      <!-- Paper video. -->
+      <h2 class="title is-3">Dataset</h2>
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <p style="text-align: justify;">
+            Our fragment dataset was generated with <b>1,052 Iberian vessels</b>, by fragmenting
+            every mesh between 2 and 10 times. The number of iterations for every number of fragments
+            was linearly interpolated in [25, 15], hence generating 25 fragments while breaking models into 2 pieces. 
+            The fragmentation was stopped for every mesh once 1k fragments were obtained. 
+            A total of <b>1,040,428</b> point clouds and triangle meshes have been released together with <b>187,257</b> voxelizations.
+            From these, 1,052 are dedicated to storing the original mesh. Triangle meshes are saved in their 
+            original format, as obtained from marching cubes, point clouds were sampled with 1024 points, and voxelizations 
+            have a resolution of up to 128<sup>3</sup>.
+          </p>
+          <img src="data/dataset.png"/>
+          <div class="container_img">
+            <div class="row align-items-center">
+              <div class="col-md-2 padding-0 canvas-row">
+                <h4></h4>
+                  <model-viewer
+                      alt="Object"
+                      src="data/body/vessel/BA_87bis_1_6f_128r_17it_mesh.glb"
+                      style="
+                          width: 100%;
+                          height: 250px;
+                          background-color: #ffffff;
+                      "
+                      exposure=".8"
+                      camera-orbit="90deg 90deg 105%"
+                      auto-rotate
+                      camera-controls>
+                  </model-viewer>
+              </div>
+              <div class="col-md-2 padding-0 canvas-row">
+                <h4> </h4>
+                <model-viewer
+                      alt="Object"
+                      src="data/body/vessel/BA_87bis_1_6f_128r_17it_pc.glb"
+                      style="
+                          width: 100%;
+                          height: 250px;
+                          background-color: #ffffff;
+                      "
+                      exposure=".8"
+                      camera-orbit="90deg 90deg 105%"
+                      auto-rotate
+                      camera-controls>
+                  </model-viewer>
+              </div>
+              <div class="col-md-2 padding-0 canvas-row">
+                  <h4></h4>
+                  <model-viewer
+                      alt="Object"
+                      src="data/body/vessel/BA_87bis_1_6f_128r_17it.vox.glb"
+                      style="
+                          width: 100%;
+                          height: 250px;
+                          background-color: #ffffff;
+                      "
+                      exposure=".8"
+                      camera-orbit="-90deg 90deg 105%"
+                      auto-rotate
+                      camera-controls
+                  >
+                  </model-viewer>
+              </div>
+              <!---------- ----------->
+              <div class="col-md-2 padding-0 canvas-row">
+                  <h4></h4>
+                  <model-viewer
+                      alt="Object"
+                      src="data/body/vessel/CC_04_4_5f_128r_9it.glb"
+                      style="
+                          width: 100%;
+                          height: 250px;
+                          background-color: #ffffff;
+                      "
+                      exposure=".8"
+                      camera-orbit="90deg 90deg 105%"
+                      auto-rotate
+                      camera-controls
+                  >
+                  </model-viewer>
+              </div>
+              <div class="col-md-2 padding-0 canvas-row">
+                  <h4> </h4>
+                  <model-viewer
+                      alt="Object"
+                      src="data/body/vessel/CC_04_4_5f_128r_9it_pc.glb"
+                      style="
+                          width: 100%;
+                          height: 250px;
+                          background-color: #ffffff;
+                      "
+                      exposure=".8"
+                      camera-orbit="90deg 90deg 105%"
+                      auto-rotate
+                      camera-controls
+                  >
+                  </model-viewer>
+              </div>
+              <div class="col-md-2 padding-0 canvas-row">
+                  <h4></h4>
+                  <model-viewer
+                      alt="Object"
+                      src="data/body/vessel/CC_04_4_5f_128r_9it.vox.glb"
+                      style="
+                          width: 100%;
+                          height: 250px;
+                          background-color: #ffffff;
+                      "
+                      exposure=".8"
+                      camera-orbit="-90deg 90deg 105%"
+                      auto-rotate
+                      camera-controls
+                  >
+                  </model-viewer>
+              </div>
             </div>
         </div>
-
-        <div class="section">
-            <div class="container_img">
-                <p align="center">
-                    <img
-                        border="0"
-                        src="data/overview.png"
-                        style="width: 90%"
-                    />
-                </p>
-            </div>
-            <div class="container">
-                <div align="center"><h2>Dataset</h2></div>
-                <hr />
-                <p>
-                    Our fragment dataset was generated with <b>1,052 Iberian vessels</b>, by fragmenting
-                    every mesh between 2 and 10 times. The number of iterations for every number of fragments
-                    was linearly interpolated in [25, 15], hence generating 25 fragments while breaking models into 2 pieces. 
-                    The fragmentation was stopped for every mesh once 1k fragments were obtained. 
-                    A total of <b>1,040,428</b> point clouds and triangle meshes have been released together with <b>187,257</b> voxelizations.
-                    From these, 1,052 are dedicated to storing the original mesh. Triangle meshes are saved in their 
-                    original format, as obtained from marching cubes, point clouds were sampled with 1024 points, and voxelizations 
-                    have a resolution of up to 128<sup>3</sup>.
-                </p>
-            </div>
-            <div class="container_img">
-                <div class="row align-items-center">
-                    <div class="col-md-2 padding-0 canvas-row">
-                        <h4></h4>
-                        <model-viewer
-                            alt="Object"
-                            src="data/vessel/BA_87bis_1_6f_128r_17it.vox.glb"
-                            style="
-                                width: 100%;
-                                height: 250px;
-                                background-color: #ffffff;
-                            "
-                            exposure=".8"
-                            camera-orbit="-90deg 90deg 105%"
-                            auto-rotate
-                            camera-controls
-                        >
-                        </model-viewer>
-                    </div>
-                    <div class="col-md-2 padding-0 canvas-row">
-                        <h4></h4>
-                        <model-viewer
-                            alt="Object"
-                            src="data/vessel/BA_87bis_1_6f_128r_17it_mesh.glb"
-                            style="
-                                width: 100%;
-                                height: 250px;
-                                background-color: #ffffff;
-                            "
-                            exposure=".8"
-                            camera-orbit="90deg 90deg 105%"
-                            auto-rotate
-                            camera-controls
-                        >
-                        </model-viewer>
-                    </div>
-                    <div class="col-md-2 padding-0 canvas-row">
-                        <h4> </h4>
-                        <model-viewer
-                            alt="Object"
-                            src="data/vessel/BA_87bis_1_6f_128r_17it_pc.glb"
-                            style="
-                                width: 100%;
-                                height: 250px;
-                                background-color: #ffffff;
-                            "
-                            exposure=".8"
-                            camera-orbit="90deg 90deg 105%"
-                            auto-rotate
-                            camera-controls
-                        >
-                        </model-viewer>
-                    </div>
-                    <!---------- ----------->
-                    <div class="col-md-2 padding-0 canvas-row">
-                        <h4></h4>
-                        <model-viewer
-                            alt="Object"
-                            src="data/vessel/CC_04_4_5f_128r_9it.vox.glb"
-                            style="
-                                width: 100%;
-                                height: 250px;
-                                background-color: #ffffff;
-                            "
-                            exposure=".8"
-                            camera-orbit="-90deg 90deg 105%"
-                            auto-rotate
-                            camera-controls
-                        >
-                        </model-viewer>
-                    </div>
-                    <div class="col-md-2 padding-0 canvas-row">
-                        <h4></h4>
-                        <model-viewer
-                            alt="Object"
-                            src="data/vessel/CC_04_4_5f_128r_9it.glb"
-                            style="
-                                width: 100%;
-                                height: 250px;
-                                background-color: #ffffff;
-                            "
-                            exposure=".8"
-                            camera-orbit="90deg 90deg 105%"
-                            auto-rotate
-                            camera-controls
-                        >
-                        </model-viewer>
-                    </div>
-                    <div class="col-md-2 padding-0 canvas-row">
-                        <h4> </h4>
-                        <model-viewer
-                            alt="Object"
-                            src="data/vessel/CC_04_4_5f_128r_9it_pc.glb"
-                            style="
-                                width: 100%;
-                                height: 250px;
-                                background-color: #ffffff;
-                            "
-                            exposure=".8"
-                            camera-orbit="90deg 90deg 105%"
-                            auto-rotate
-                            camera-controls
-                        >
-                        </model-viewer>
-                    </div>
-                </div>
-            </div>
-            <br/>
-
-            <!-- Loads <model-viewer> for modern browsers: -->
-                <script
-                type="module"
-                src="https://unpkg.com/@google/model-viewer/dist/model-viewer.js"
-            ></script>
-
-            <div class="container">
-
-                <div align="center"><h3>Accessing the dataset</h3></div>
-                <p>
-                    The dataset has been released in <a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/">our research centre page</a>. It was split into multiple files
-                    since the whole zip was about <b>450 GB</b>. A lighter version, with 200 fragmented vessels and no individual file zipping has also been provided with .obj and .ply file formats (<b>27 GB</b>).
-                </p>
-                <br/>
-
-                <div align="center"><h3>Decompress binary files</h3></div>
-                <p>
-                    We have provided sample scripts to decompress meshes, point clouds and voxels. Decompression for mesh and voxel has been implemented in
-                    Python, where point clouds are decompressed in C++ since it requires the Point Cloud Library (PCL).
-                </p>
-                <img
-                    border="0"
-                    src="data/decompress_binaries.png"
-                    style="width: 100%; padding-bottom: 3%;"
-                />
-                <br/>
-
-                <div align="center"><h3>Vessel classification</h3></div>
-                <p>
-                    Our dataset is supplied as a single file, but the root name of files determine the vessel classification, as detailed in a previous work of ours<!--[<a href="https://www.sciencedirect.com/science/article/pii/S1296207421000042">Navarro et al., 2022</a>,
-                    <a href="https://link.springer.com/article/10.1007/s11042-016-4076-9">Lucena et al., 2017</a>]-->. 
-                    This a yet unexplored branch since archaeological artefacts are hardly found intact; indeed, it is rather common to find small fragments. All these 
-                    factors harden their digitization, and therefore, any application operating over 3D archaeological artefacts is hard to reproduce in the real-world. 
-                    Yet, we provide <i>class_vessel.csv</i> for any future work that may find helpful this vessel categorization.
-                </p>
-                <div class="container_img">
-                    <p align="center">
-                        <img
-                            border="0"
-                            src="data/navarro_2022.jpg"
-                            style="width: 60%"
-                        />
-                    </p>
-                    <p align="center">
-                        <i>
-                            Eleven vessel profiles, as annotated in the provided <i>class_vessel.csv</i> file
-                            <!--[<a href="https://www.sciencedirect.com/science/article/pii/S1296207421000042">Navarro et al., 2022</a>,
-                             <a href="https://link.springer.com/article/10.1007/s11042-016-4076-9">Lucena et al., 2017</a>].-->
-                        </i>
-                    </p>
-                </div>
-            </div>
-            <br/>
         </div>
-        <br/><br/>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End teaser video -->
 
-        <script
-            src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-            crossorigin="anonymous"
-        ></script>
-        <script
-            src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-            crossorigin="anonymous"
-        ></script>
-        <script
-            src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
-            integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
-            crossorigin="anonymous"
-        ></script>
-		<!-- Import the component -->
-		<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-    </body>
+<!-- Paper abstract -->
+<!--<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ullamcorper tellus sed ante aliquam tempus. Etiam porttitor urna feugiat nibh elementum, et tempor dolor mattis. Donec accumsan enim augue, a vulputate nisi sodales sit amet. Proin bibendum ex eget mauris cursus euismod nec et nibh. Maecenas ac gravida ante, nec cursus dui. Vivamus purus nibh, placerat ac purus eget, sagittis vestibulum metus. Sed vestibulum bibendum lectus gravida commodo. Pellentesque auctor leo vitae sagittis suscipit.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>-->
+<!-- End paper abstract -->
+
+
+<!-- Image carousel -->
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container">
+      <div id="results-carousel" class="carousel results-carousel">
+       <div class="item">
+        <!-- Your image here -->
+        <img src="static/images/carousel1.jpg" alt="MY ALT TEXT"/>
+        <h2 class="subtitle has-text-centered">
+          First image description.
+        </h2>
+      </div>
+      <div class="item">
+        <!-- Your image here -->
+        <img src="static/images/carousel2.jpg" alt="MY ALT TEXT"/>
+        <h2 class="subtitle has-text-centered">
+          Second image description.
+        </h2>
+      </div>
+      <div class="item">
+        <!-- Your image here -->
+        <img src="static/images/carousel3.jpg" alt="MY ALT TEXT"/>
+        <h2 class="subtitle has-text-centered">
+         Third image description.
+       </h2>
+     </div>
+     <div class="item">
+      <!-- Your image here -->
+      <img src="static/images/carousel4.jpg" alt="MY ALT TEXT"/>
+      <h2 class="subtitle has-text-centered">
+        Fourth image description.
+      </h2>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<!-- End image carousel -->
+
+
+
+
+<!-- Youtube video -->
+<section class="hero is-small is-light">
+  <div class="hero-body">
+    <div class="container">
+      <!-- Paper video. -->
+      <h2 class="title is-3">Video Presentation</h2>
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          
+          <div class="publication-video">
+            <!-- Youtube embed code here -->
+            <iframe src="https://www.youtube.com/embed/JkaxUblCGz0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End youtube video -->
+
+
+<!-- Video carousel -->
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title is-3">Another Carousel</h2>
+      <div id="results-carousel" class="carousel results-carousel">
+        <div class="item item-video1">
+          <video poster="" id="video1" autoplay controls muted loop height="100%">
+            <!-- Your video file here -->
+            <source src="static/videos/carousel1.mp4"
+            type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-video2">
+          <video poster="" id="video2" autoplay controls muted loop height="100%">
+            <!-- Your video file here -->
+            <source src="static/videos/carousel2.mp4"
+            type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-video3">
+          <video poster="" id="video3" autoplay controls muted loop height="100%">\
+            <!-- Your video file here -->
+            <source src="static/videos/carousel3.mp4"
+            type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End video carousel -->
+
+
+
+
+
+
+<!-- Paper poster -->
+<!--<section class="hero is-small is-light">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title">Poster</h2>
+
+      <iframe  src="static/pdfs/sample.pdf" width="100%" height="550">
+          </iframe>
+        
+      </div>
+    </div>
+  </section>-->
+<!--End paper poster -->
+
+
+<!--BibTex citation -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>
+        @article{LopezGenerating2024,
+          title = {Generating implicit object fragment datasets for machine learning},
+          journal = {Computers & Graphics},
+          pages = {104104},
+          year = {2024},
+          issn = {0097-8493},
+          doi = {https://doi.org/10.1016/j.cag.2024.104104},
+          url = {https://www.sciencedirect.com/science/article/pii/S0097849324002395},
+          author = {Alfonso López and Antonio J. Rueda and Rafael J. Segura and Carlos J. Ogayar and Pablo Navarro and José M. Fuertes},
+          keywords = {Voxel, Fragmentation, Fracture dataset, Voronoi, GPU programming}
+        }
+      </code></pre>
+    </div>
+</section>
+<!--End BibTex citation -->
+
+
+  <footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+
+          <p>
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+            You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script
+src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+crossorigin="anonymous"
+></script>
+<script
+src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+crossorigin="anonymous"
+></script>
+<script
+src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+crossorigin="anonymous"
+></script>
+<!-- Import the component -->
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+<!-- Statcounter tracking code -->
+  
+<!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
+
+<!-- End of Statcounter Code -->
+
+</body>
 </html>
