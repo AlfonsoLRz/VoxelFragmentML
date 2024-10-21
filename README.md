@@ -1,7 +1,7 @@
 # Voxel fragmentation
 
 ![c++](https://img.shields.io/github/languages/top/AlfonsoLRz/VoxelFragmentML) 
-![opengl](https://img.shields.io/badge/opengl-4.5-red.svg) 
+![opengl](https://img.shields.io/badge/opengl-4.6-red.svg) 
 ![glfw3](https://img.shields.io/badge/glfw3-3.3.7-purple.svg) 
 ![glew](https://img.shields.io/badge/glew-2.2.0-yellow.svg) 
 ![glew](https://img.shields.io/badge/glm-0.9.9.8-green.svg) 
@@ -21,7 +21,7 @@ The code in this repository has some dependencies which are following listed:
 
 - assimp 5.2.4.
 - glew 2.2.0.
-- opengl 4.5.
+- opengl 4.6.
 - glfw3 3.3.7.
 - glm 0.9.9.8.
 - [simplify](https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification).
@@ -34,7 +34,7 @@ The code in this repository has some dependencies which are following listed:
 The project is primarily intended to be used in Windows. The Microsoft Visual Studio project files are uploaded to the repo and therefore it should be trivial to open it (regardless of changing the development platform kit). The project was configured as follows:
 
 - Development platform kit: `v143`.
-- Language standard: `C++ 17`.
+- Language standard: `C++ 23`.
 - Integration with `vcpkg`. After cloning `vcpkg` and launching the main `.bat`, it can be integrated with MSVC by executing `vcpkg integrate install` in the command line (note that `vcpkg` can be registered in the system path for easier usage).
 
 ## Data download
@@ -45,6 +45,7 @@ Otherwise, please go to `decompress` folder to learn how to decompress binary fi
 
 <p>
     <img src="docs/data/decompress_binaries.png">
+    <em>Figure 2. Rendering uncompressed data.</em>
 </p>
 
 ## Citation
