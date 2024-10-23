@@ -8,9 +8,14 @@
 ![assimp](https://img.shields.io/badge/assimp-5.2.4-orange.svg) 
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
+<a href="https://doi.org/10.1016/j.cag.2024.104104" target="_blank">[Paper]</a>
+<a href="https://zenodo.org/records/13899699" target="_blank">[Voxel data (Zenodo, 3GB)]</a>
+<a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/" target="_blank">[Complete dataset (450 GB)]</a>
+<a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/" target="_blank">[Triangle meshes and point clouds (partial, 27 GB)]</a>
+
 GPU-based fragmentation of voxelizations using OpenGL compute shaders. This project is aimed at generating datasets for training fragment assembly models. While this fragmentation method can be applied over any mesh, this work specifically focus on archaeological artefacts such as those depicted in *Figure 1*.
 
- <p align="center" >
+ <p align="center">
     <img src="docs/data/dataset.png"/></br>
     <em>Figure 1. Assembled fragments of Iberian vessels.</em>
 </p>
@@ -39,11 +44,19 @@ The project is primarily intended to be used in Windows. The Microsoft Visual St
 
 ## Data download
 
-The fragment data is available at <a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/">our research institute's page</a>. Please, note that there are two datasets; one is split into eight files since it is approximately 450GB, whereas the other (`vessels_200_obj_ply_no_zipped.zip`) is lighter (27 GB). The latter is intended for testing the dataset since it only contains decimated fragments of 200 models, with no individual zipping. However, note that these are provided as triangle meshes and point clouds derived from marching cubes, and may have more geometric inaccuracies. 
+The whole fragment data is available at <a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/">our research institute's page</a>. However, two lighter versions have been released since the complete dataset is too heavy (450 GB). Moreover, we encourage the readers to primarily use the Zenodo dataset if your work is centred on implicit data/voxels. In summary, these are the available datasets:
 
-Otherwise, please go to `decompress` folder to learn how to decompress binary files (triangle meshes, point clouds and voxelizations). Point clouds are decompressed in C++ using the Point Cloud Library, whereas the others are decompressed using Python.
+- A <a href="https://zenodo.org/records/13899699" target="_blank">3GB dataset</a> composed only of voxel data, published in Zenodo.
 
-<p>
+- The <a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/" target="_blank">whole fragment dataset</a>, split into eight files of ~50GB (totalling 450GB) with compressed voxel data, point clouds and triangle meshes.
+
+- A <a href="https://s5-ceatic.ujaen.es/fragment-dataset-uja/" target="_blank">lighter version</a> of uncompressed triangle meshes and point clouds (`vessels_200_obj_ply_no_zipped.zip`; 27 GB). This is mainly intended for testing the dataset since it only contains decimated fragments of 200 models, with no individual zipping. However, note that these are provided as triangle meshes and point clouds derived from marching cubes, and may have more geometric inaccuracies. 
+
+## Decompress binary data
+
+The scripts to decompress binary grids, meshes and point clouds are available at `docs/decompress`. Point clouds are decompressed in C++ using the Point Cloud Library (PCL), whereas the other formats are decompressed using Python.
+
+<p align="center">
     <img src="docs/data/decompress_binaries.png">
     <em>Figure 2. Rendering uncompressed data.</em>
 </p>
